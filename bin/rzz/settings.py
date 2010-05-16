@@ -1,4 +1,6 @@
-# Django settings for rzz project.
+import os.path
+
+PROJECT_PATH = '/home/raph/Projects/django_rzz/'
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -35,12 +37,12 @@ USE_I18N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ''
+MEDIA_ROOT = os.path.join(PROJECT_PATH, 'share/media/')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = '/site_media/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -75,6 +77,8 @@ TEMPLATE_DIRS = (
 
 INSTALLED_APPS = (
 	'rzz.news',
+	'rzz.artists',
+	'rzz.friends',
     'django.contrib.auth',
 	'django.contrib.admin',
     'django.contrib.contenttypes',
