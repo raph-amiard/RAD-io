@@ -20,7 +20,7 @@ class QueueCommandWrapper():
 		connection.write(command)
 		response = connection.read_until('END')[:-3]
 		return int(response)
-	
+
 	def push(self, uri):
 		"""
 		Push a source with the corresponding uri into the queue

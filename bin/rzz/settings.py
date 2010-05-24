@@ -1,6 +1,13 @@
 import os.path
+from django.conf import global_settings 
+import logging
+
+CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
 PROJECT_PATH = '/home/raph/Projects/django_rzz/'
+
+LOG_FILENAME = os.path.join(PROJECT_PATH, 'log/logging.out')
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -10,7 +17,6 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-
 DATABASE_ENGINE = 'postgresql_psycopg2' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME = 'rzz'          # Or path to database file if using sqlite3.
 DATABASE_USER = 'rzz'          # Not used with sqlite3.
@@ -61,6 +67,7 @@ TEMPLATE_LOADERS = (
 
 TEMPLATE_CONTEXT_PROCESSORS = (
 	'django.core.context_processors.auth',
+    'django.core.context_processors.media'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -72,17 +79,21 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'rzz.urls'
 
 TEMPLATE_DIRS = (
-	'templates',
+	os.path.join(PROJECT_PATH, 'bin/rzz/templates')
 )
+
+FILE_UPLOAD_HANDLERS = ('rzz.utils.handlers.UploadProgressCachedHandler', ) + global_settings.FILE_UPLOAD_HANDLERS
 
 INSTALLED_APPS = (
 	'rzz.news',
 	'rzz.artists',
 	'rzz.friends',
+    'rzz.audiosources',
+    'rzz.utils',
     'django.contrib.auth',
 	'django.contrib.admin',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-	'south',
-)
+    'south',
+    )
