@@ -1,32 +1,23 @@
-import eyeD3
+from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
 import shutil, os
 from django import forms
 from rzz.audiosources.models import AudioFile
+import logging as log
 
 class AudioFileForm(forms.ModelForm):
-	
-	def save(self, force_insert=False, force_update=False, commit=True):
-		"""
-		"""
-		audiofile = self.instance
-
-		tmp_path = self.files['file'].temporary_file_path()
-		tmp_path_2 = '{0}{1}'.format(''.join(tmp_path.split('.')[:-1]), '.mp3')
-		shutil.copy(tmp_path, tmp_path_2)
-
-		mp3_file = eyeD3.Mp3AudioFile(tmp_path_2)
-		tag = mp3_file.getTag()
-		audiofile.title = tag.getTitle()
-		audiofile.artist = tag.getArtist()
-		audiofile.length = mp3_file.getPlayTime()
-		
-		os.remove(tmp_path_2)
-		audiofile = super(AudioFileForm, self).save(commit=False)
-
-		if commit:
-			audiofile.save()
-		return audiofile
-
-	class Meta:
-		model = AudioFile
-		fields = ['file']
+    def clean(self):
+        """
+        """
+        audiofile = self.instance
+        tmp_path = self.files['file'].temporary_file_path()
+        
+        mp3 = MP3(tmp_path, ID3=EasyID3)
+        audiofile.length = int(mp3.info.length)
+        audiofile.title = u' '.join(mp3['title']) if 'title' in mp3 else ''
+        audiofile.artist = u' '.join(mp3['artist']) if 'artist' in mp3 else ''
+        return self.cleaned_data
+    
+    class Meta:
+        model = AudioFile
+        fields = ['file']

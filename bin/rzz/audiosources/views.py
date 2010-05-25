@@ -5,7 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.simple import direct_to_template
 from django.http import HttpResponse
 
-from rzz.audiosources.models import AudioFile
+from rzz.audiosources.models import AudioFile, AudioSource, SourceElement
 from rzz.audiosources.forms import AudioFileForm
 from rzz.audiosources.forms import AudioFileForm
 from rzz.utils.models import instance_to_json
@@ -16,9 +16,30 @@ def create_audio_source(request):
     View for dynamic creation of an audio source
     """
     #FIXME: Work in progress
+    if request.method == 'POST':
+        log.debug(request.POST)
+        audio_source = AudioSource()
+        log.debug(request.POST[u'title'])
+        audio_source.title = request.POST['title']
+        audio_source.length = 0
+        audio_source.save()
+        for key, val in request.POST.items():
+            try:
+                pos = int(key)
+                id = int(val)
+                audiofile = AudioFile.objects.get(pk=int(val))
+                source_element = SourceElement()
+                source_element.position = pos
+                source_element.audiosource = audio_source
+                source_element.audiofile = audiofile 
+                source_element.save()
+                audio_source.length += audiofile.length 
+            except ValueError:
+                pass
     return direct_to_template(request, 
                               'audiosources/create_audiosource.html', 
                               extra_context={'form':AudioFileForm()})
+
 @staff_member_required
 def create_audio_file(request):
     """
