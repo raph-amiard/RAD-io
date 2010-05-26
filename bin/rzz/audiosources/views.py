@@ -4,6 +4,7 @@ import json
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.simple import direct_to_template
 from django.http import HttpResponse
+from copy import copy
 
 from rzz.audiosources.models import AudioFile, AudioSource, SourceElement
 from rzz.audiosources.forms import AudioFileForm
@@ -15,7 +16,6 @@ def create_audio_source(request):
     """
     View for dynamic creation of an audio source
     """
-    #FIXME: Work in progress
     if request.method == 'POST':
         log.debug(request.POST)
         audio_source = AudioSource()
@@ -57,3 +57,21 @@ def create_audio_file(request):
     return direct_to_template(request,
                               'audiosources/audiofile_form.html',
                               extra_context={'form':AudioFileForm()})
+
+def audio_files_list(request):
+    """
+    Displays a list of audio files depending on filter clauses
+    Meant to be used by ajax
+    """
+    opts = copy(request.GET)
+    num_page = opts.pop('p', 0)
+    nb_items = 50
+    bottom = nb_items * num_page
+    top = bottom + nb_items
+    if opts:
+        audiofiles = AudioFile.objects.filter(**opts)[bottom:top]
+    else:
+        audiofiles = AudioFile.objects.all()[bottom:top]
+    return direct_to_template(request,
+                              'audiosources/audiofile_list.html',
+                              extra_context={'audiofiles': audiofiles})

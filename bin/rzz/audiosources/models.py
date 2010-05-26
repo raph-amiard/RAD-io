@@ -11,28 +11,33 @@ def audio_file_name(instance, filename):
 	else:
 		return 'audiofiles/{0}'.format(sanitize_filename(filename))
 
+class Tag(models.Model):
+    name = models.CharField('Tag', max_length=50)
+    isgenre = models.BooleanField()
+
 class AudioModel(models.Model):
-	length = models.IntegerField()
+    length = models.IntegerField()
+    tags = models.ManyToManyField(Tag)
 
-	def formatted_length(self):
-		hours = self.length / 3600
-		minutes = (self.length % 3600) / 60
-		seconds = (self.length % 60)
-		output = '{0}:{1}'.format(minutes, seconds)
-		output = '{0}:'.format(hours) + (output if hours else '')
-		return output
+    def formatted_length(self):
+        hours = self.length / 3600
+        minutes = (self.length % 3600) / 60
+        seconds = (self.length % 60)
+        output = '{0}:{1}'.format(minutes, seconds)
+        output = '{0}:'.format(hours) + (output if hours else '')
+        return output
 
-	class Meta:
-		abstract = True
+    class Meta:
+        abstract = True
 
 class AudioFile(AudioModel):
-	title = models.CharField('Audiofile title :', max_length=400)
-	artist = models.CharField('Audiofile artist :', max_length=200)
+	title = models.CharField('Audiofile title', max_length=400)
+	artist = models.CharField('Audiofile artist', max_length=200)
 	rzz_artist = models.ForeignKey(Artist, null=True)
 	file = models.FileField(upload_to=audio_file_name)
 
 class AudioSource(AudioModel):
-	title = models.CharField('AudioSource title :', max_length=400)
+	title = models.CharField('AudioSource title', max_length=400)
 	rzz_artist = models.ForeignKey(Artist, null=True)
 	audio_files = models.ManyToManyField(AudioFile, through='SourceElement')
 
