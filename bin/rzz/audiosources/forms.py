@@ -1,6 +1,5 @@
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
-import shutil, os
 from django import forms
 from rzz.audiosources.models import AudioFile
 import logging as log

@@ -11,7 +11,11 @@ def audio_file_name(instance, filename):
 	else:
 		return 'audiofiles/{0}'.format(sanitize_filename(filename))
 
+class TagCategory(models.Model):
+    name = models.CharField('Categorie', max_length=50)
+
 class Tag(models.Model):
+    category = models.ForeignKey(TagCategory)
     name = models.CharField('Tag', max_length=50)
     isgenre = models.BooleanField()
 
