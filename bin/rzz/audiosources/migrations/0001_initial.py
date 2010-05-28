@@ -8,6 +8,14 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
+        # Adding model 'Tag'
+        db.create_table('audiosources_tag', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=50)),
+            ('isgenre', self.gf('django.db.models.fields.BooleanField')(default=False, blank=True)),
+        ))
+        db.send_create_signal('audiosources', ['Tag'])
+
         # Adding model 'AudioFile'
         db.create_table('audiosources_audiofile', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -19,6 +27,14 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('audiosources', ['AudioFile'])
 
+        # Adding M2M table for field tags on 'AudioFile'
+        db.create_table('audiosources_audiofile_tags', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('audiofile', models.ForeignKey(orm['audiosources.audiofile'], null=False)),
+            ('tag', models.ForeignKey(orm['audiosources.tag'], null=False))
+        ))
+        db.create_unique('audiosources_audiofile_tags', ['audiofile_id', 'tag_id'])
+
         # Adding model 'AudioSource'
         db.create_table('audiosources_audiosource', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -27,6 +43,14 @@ class Migration(SchemaMigration):
             ('rzz_artist', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['artists.Artist'], null=True)),
         ))
         db.send_create_signal('audiosources', ['AudioSource'])
+
+        # Adding M2M table for field tags on 'AudioSource'
+        db.create_table('audiosources_audiosource_tags', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('audiosource', models.ForeignKey(orm['audiosources.audiosource'], null=False)),
+            ('tag', models.ForeignKey(orm['audiosources.tag'], null=False))
+        ))
+        db.create_unique('audiosources_audiosource_tags', ['audiosource_id', 'tag_id'])
 
         # Adding model 'SourceElement'
         db.create_table('audiosources_sourceelement', (
@@ -40,11 +64,20 @@ class Migration(SchemaMigration):
 
     def backwards(self, orm):
         
+        # Deleting model 'Tag'
+        db.delete_table('audiosources_tag')
+
         # Deleting model 'AudioFile'
         db.delete_table('audiosources_audiofile')
 
+        # Removing M2M table for field tags on 'AudioFile'
+        db.delete_table('audiosources_audiofile_tags')
+
         # Deleting model 'AudioSource'
         db.delete_table('audiosources_audiosource')
+
+        # Removing M2M table for field tags on 'AudioSource'
+        db.delete_table('audiosources_audiosource_tags')
 
         # Deleting model 'SourceElement'
         db.delete_table('audiosources_sourceelement')
@@ -64,6 +97,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'length': ('django.db.models.fields.IntegerField', [], {}),
             'rzz_artist': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['artists.Artist']", 'null': 'True'}),
+            'tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['audiosources.Tag']", 'symmetrical': 'False'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '400'})
         },
         'audiosources.audiosource': {
@@ -72,6 +106,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'length': ('django.db.models.fields.IntegerField', [], {}),
             'rzz_artist': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['artists.Artist']", 'null': 'True'}),
+            'tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['audiosources.Tag']", 'symmetrical': 'False'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '400'})
         },
         'audiosources.sourceelement': {
@@ -80,6 +115,12 @@ class Migration(SchemaMigration):
             'audiosource': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['audiosources.AudioSource']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'position': ('django.db.models.fields.IntegerField', [], {})
+        },
+        'audiosources.tag': {
+            'Meta': {'object_name': 'Tag'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'isgenre': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         }
     }
 

@@ -5,32 +5,32 @@ from south.v2 import SchemaMigration
 from django.db import models
 
 class Migration(SchemaMigration):
-    
+
     def forwards(self, orm):
         
         # Adding model 'NewsPost'
         db.create_table('news_newspost', (
-            ('date_modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('poster', self.gf('django.db.models.fields.related.ForeignKey')(related_name='created_newspost_set', to=orm['auth.User'])),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('title', self.gf('django.db.models.fields.CharField')(max_length=200)),
             ('content', self.gf('django.db.models.fields.CharField')(max_length=10000)),
-            ('editor', self.gf('django.db.models.fields.related.ForeignKey')(related_name='modified_newspost_set', null=True, to=orm['auth.User'])),
             ('date_created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('date_modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
+            ('poster', self.gf('django.db.models.fields.related.ForeignKey')(related_name='created_newspost_set', to=orm['auth.User'])),
+            ('editor', self.gf('django.db.models.fields.related.ForeignKey')(related_name='modified_newspost_set', null=True, to=orm['auth.User'])),
         ))
         db.send_create_signal('news', ['NewsPost'])
 
         # Adding model 'Comment'
         db.create_table('news_comment', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('poster_name', self.gf('django.db.models.fields.CharField')(max_length=30)),
             ('content', self.gf('django.db.models.fields.CharField')(max_length=300)),
             ('date_created', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('poster_name', self.gf('django.db.models.fields.CharField')(max_length=30)),
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('news_post', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['news.NewsPost'])),
         ))
         db.send_create_signal('news', ['Comment'])
-    
-    
+
+
     def backwards(self, orm):
         
         # Deleting model 'NewsPost'
@@ -38,14 +38,14 @@ class Migration(SchemaMigration):
 
         # Deleting model 'Comment'
         db.delete_table('news_comment')
-    
-    
+
+
     models = {
         'auth.group': {
             'Meta': {'object_name': 'Group'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '80'}),
-            'permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'blank': 'True'})
+            'permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'})
         },
         'auth.permission': {
             'Meta': {'unique_together': "(('content_type', 'codename'),)", 'object_name': 'Permission'},
@@ -59,7 +59,7 @@ class Migration(SchemaMigration):
             'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'blank': 'True'}),
+            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'blank': 'True'}),
             'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'blank': 'True'}),
@@ -67,7 +67,7 @@ class Migration(SchemaMigration):
             'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
-            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'blank': 'True'}),
+            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
             'username': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '30'})
         },
         'contenttypes.contenttype': {
@@ -96,5 +96,5 @@ class Migration(SchemaMigration):
             'title': ('django.db.models.fields.CharField', [], {'max_length': '200'})
         }
     }
-    
+
     complete_apps = ['news']
