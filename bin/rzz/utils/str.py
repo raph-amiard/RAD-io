@@ -15,3 +15,4 @@ def sanitize_filestring(str):
     Sanitizes a string supposed to go in a filename
     """
     return sanitize_filename(str.strip())
+

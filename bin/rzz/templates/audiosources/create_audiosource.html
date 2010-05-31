@@ -13,7 +13,17 @@
     {% include "audiosources/audiofile_form.html" %}
   </div>
   <h3>Ordre des morceaux:</h3>
-  <ul id="uploaded_audiofiles">
-  </ul>
+  <div class="playlist_box">
+    <ul id="uploaded_audiofiles">
+    {% for audiofile in audiofiles %}
+      <li class="ui-state-default">
+        <input type="hidden" value="{{ audiofile.id }}"/>
+        <p> Titre: {{ audiofile.title }} Artiste: {{ audiofile.artist }} </p>
+        <div class="audiofile_actions"> <a href="{{ audiofile.form_url }}">Edit</a> </div>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+  <div id="audiofiles_actions_container"></div>
   <input type="submit" name="playlist_submit" value="Créer la playlist"/>
 {% endblock %}

@@ -46,7 +46,17 @@ function gen_ajaxform_options(target_form, new_form)
                 } else {
                     form.html('<p> Upload Successful </p>');
                     form.hide(1000);
-                    $('#uploaded_audiofiles').append('<li class="ui-state-default"> <input type="hidden" value="'+response.id+'"/> <p> Titre: '+response.title+' Artiste: '+response.artist+'</li>');
+                    $('#uploaded_audiofiles').append('<li class="ui-state-default"> <input type="hidden" value="' + 
+                                                     response.id + '"/> <p> Titre: ' +
+                                                     response.title + ' Artiste: ' + response.artist + 
+                                                     '<div class="audiofile_actions">' + '<a href="' + response.form_url+'">Edit</a>' + 
+                                                     '</div></li>' );
+                    $('.audiofile_actions a').click(function(e) {
+                        e.preventDefault();
+                        $.get(this.href, function(html) {
+                            $('#audiofiles_actions_container').html(html);
+                        });
+                    });
                 }
             } else {
                 form.html(response);
@@ -64,7 +74,7 @@ function gen_ajaxform_options(target_form, new_form)
 
 // Add upload progress for multipart forms.
 $(document).ready(function() {
-    $('#uploaded_audiofiles').sortable({ axis: 'y' });
+    $('#uploaded_audiofiles').sortable({ axis: 'y' , containment:$('.playlist_box')});
     var audiofileforms = $('.audiofileform');
     var newform = $('.audiofileform:first').clone();
     audiofileforms.each(function(i) {

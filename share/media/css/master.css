@@ -1,0 +1,21 @@
+body {
+  font-family: arial, helvetica, sans-serif;
+}
+
+.playlist_box {
+  border:1px solid black;
+  width:300px;
+  height:400px;
+}
+
+#uploaded_audiofiles {
+  margin:0;
+  padding:0;
+  list-style-type:none;
+}
+
+#uploaded_audiofiles li {
+  margin-top:2px;
+  margin-bottom:2px;
+  font-size:12px;
+}

@@ -22,8 +22,6 @@ class AudioFileForm(forms.ModelForm):
         fields = ['file']
         
 class EditAudioFileForm(forms.Form):
-    tags = forms.CharField(max_length=200)
-    genres = forms.CharField(max_length=200)
-    title = forms.CharField(max_length=400)
     artist = forms.CharField(max_length=200)
-    #link_to_artist = forms.BooleanField()
+    title = forms.CharField(max_length=400)
+    tags = forms.CharField(max_length=300)

@@ -1,0 +1,7 @@
+<form class="{{ class }}" action="{{ url }}" {% if files %}enctype="multipart/form-data"{% endif %} method="post">
+  {{ form.as_p }}
+  <input type="Submit" value="Envoyer" />
+  {% if progress_bar %}
+    <div class="progress_bar"></div>
+  {% endif %}
+</form>

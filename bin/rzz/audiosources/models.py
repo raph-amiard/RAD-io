@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.urlresolvers import reverse
+
 from rzz.utils.str import sanitize_filename, sanitize_filestring
 from rzz.artists.models import Artist
 
@@ -17,7 +19,6 @@ class TagCategory(models.Model):
 class Tag(models.Model):
     category = models.ForeignKey(TagCategory)
     name = models.CharField('Tag', max_length=50)
-    isgenre = models.BooleanField()
 
 class AudioModel(models.Model):
     length = models.IntegerField()
@@ -35,15 +36,23 @@ class AudioModel(models.Model):
         abstract = True
 
 class AudioFile(AudioModel):
-	title = models.CharField('Audiofile title', max_length=400)
-	artist = models.CharField('Audiofile artist', max_length=200)
-	rzz_artist = models.ForeignKey(Artist, null=True)
-	file = models.FileField(upload_to=audio_file_name)
+    title = models.CharField('Audiofile title', max_length=400)
+    artist = models.CharField('Audiofile artist', max_length=200)
+    rzz_artist = models.ForeignKey(Artist, null=True)
+    file = models.FileField(upload_to=audio_file_name)
+    
+    def __unicode__(self):
+        return self.artist + u' - ' + self.title 
+    def form_url(self):
+        return reverse('audio-file-edit',args=[self.id])
 
 class AudioSource(AudioModel):
-	title = models.CharField('AudioSource title', max_length=400)
-	rzz_artist = models.ForeignKey(Artist, null=True)
-	audio_files = models.ManyToManyField(AudioFile, through='SourceElement')
+    title = models.CharField('AudioSource title', max_length=400)
+    rzz_artist = models.ForeignKey(Artist, null=True)
+    audio_files = models.ManyToManyField(AudioFile, through='SourceElement')
+    
+    def __unicode__(self):
+        return self.title 
 
 class SourceElement(models.Model):
 	position = models.IntegerField()
