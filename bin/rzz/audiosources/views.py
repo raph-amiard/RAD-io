@@ -7,10 +7,11 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
 
-from rzz.audiosources.models import AudioFile, AudioSource, SourceElement
+from rzz.audiosources.models import AudioFile, AudioSource, SourceElement,Tag, TagCategory
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.models import instance_to_json
 from rzz.utils.views import generic_form
+from rzz.audiosources.utils import process_tags
 
 @staff_member_required
 def create_audio_source(request):
@@ -92,14 +93,17 @@ def edit_audio_file(request, audiofile_id):
         if form.is_valid():
             audio_file.title = form.cleaned_data['title']
             audio_file.artist = form.cleaned_data['artist']
-            for category, tags in process_tags(form.cleaned_data['tags']):
+            for category, tags in process_tags(form.cleaned_data['tags']).items():
+                print "{0}, {1}".format(category, tags)
                 c = TagCategory(name=category)
                 c.save()
                 for tag in tags:
+                    print "Tag :" + tag
                     t = Tag(category=c,name=tag).save()
                     audio_file.tags.add(t)
+            audio_file.save()
             return HttpResponse(instance_to_json(audio_file,
-                                                 status='ok')
+                                                 status='ok'))
         else:
             return HttpResponse(json.dumps(dict(form.errors.items() 
                                                 + [('status','errors')])))
