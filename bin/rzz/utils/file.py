@@ -6,11 +6,6 @@ from mutagen.mp3 import MP3
 
 from django.conf import settings
 
-def rename_field_file(field_file, new_name):
-    move_field_file(field_file, 
-                    path.join(path.split(field_file.name)[0],
-                              new_name))
-
 def move_field_file(field_file, new_path):
     split = new_path.split('/')
     name = split[-1]
