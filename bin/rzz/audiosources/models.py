@@ -4,7 +4,7 @@ from django.db import models
 from django.core.urlresolvers import reverse
 
 from rzz.utils.str import sanitize_filename, sanitize_filestring
-from rzz.utils.file import rename_field_file, set_mp3_metadata
+from rzz.utils.file import move_field_file, set_mp3_metadata
 from rzz.artists.models import Artist
 
 def audio_file_name(instance, filename):
@@ -56,13 +56,12 @@ class AudioFile(AudioModel):
         return self.artist + u' - ' + self.title 
     def form_url(self):
         return reverse('audio-file-edit',args=[self.id])
-    def save(self, *args, **kwargs):
-        if self.pk:
-            set_mp3_metadata(self.file.path, self.artist, self.title)
-            rename_field_file(self.file, 
-                              audio_file_name(self, 
-                                              path.split(self.file.name)[1]))
-            super(AudioFile, self).save(*args, **kwargs)
+    def update_file(self):
+        print 'INTO UPDATE FILE'
+        set_mp3_metadata(self.file.path, self.artist, self.title)
+        move_field_file(self.file, 
+                          audio_file_name(self, 
+                                          path.split(self.file.name)[1]))
 
 
 class AudioSource(AudioModel):
