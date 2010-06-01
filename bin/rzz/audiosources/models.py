@@ -55,10 +55,15 @@ class AudioFile(AudioModel):
     
     def __unicode__(self):
         return self.artist + u' - ' + self.title 
+
     def form_url(self):
         return reverse('audio-file-edit',args=[self.id])
+
+    def save_and_update_file(self):
+        self.save()
+        self.update_file()
+
     def update_file(self):
-        print 'INTO UPDATE FILE'
         set_mp3_metadata(self.file.path, self.artist, self.title)
         move_field_file(self.file, 
                           audio_file_name(self, 
@@ -75,5 +80,5 @@ class AudioSource(AudioModel):
 
 class SourceElement(models.Model):
 	position = models.IntegerField()
-	audiofile = models.ForeignKey(AudioFile)
-	audiosource = models.ForeignKey(AudioSource)
+    audiofile = models.ForeignKey(AudioFile)
+    audiosource = models.ForeignKey(AudioSource)

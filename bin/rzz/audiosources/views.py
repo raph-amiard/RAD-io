@@ -51,11 +51,8 @@ def create_audio_file(request):
     # 3. Ajax response ?
     if request.method == 'POST':
         form = AudioFileForm(request.POST, request.FILES)
-        print 'INTO CREATE AUDIOFILE'
         if form.is_valid():
-            print 'FORM IS VALID'
             audiofile = form.save()
-            print 'AUDIOFILE: {0}'.format(audiofile)
             return HttpResponse(instance_to_json(audiofile, 
                                                  status='ok',
                                                  form_url=audiofile.form_url()))
@@ -99,15 +96,11 @@ def edit_audio_file(request, audiofile_id):
             if artist != audiofile.artist or title != audiofile.title:
                 audiofile.title = title
                 audiofile.artist = artist
-                audiofile.save()
-                audiofile.update_file()
+                audiofile.save_and_update_file()
             for category, tags in process_tags(form.cleaned_data['tags']).items():
-                print "{0}, {1}".format(category, tags)
-                c = TagCategory(name=category)
-                c.save()
+                c, _ = TagCategory.objects.get_or_create(name=category)
                 for tag in tags:
-                    print "Tag :" + tag
-                    t = Tag(category=c,name=tag).save()
+                    t, _ = Tag.objects.get_or_create(category=c,name=tag)
                     audiofile.tags.add(t)
             audiofile.save()
             return HttpResponse(instance_to_json(audiofile,
@@ -118,3 +111,11 @@ def edit_audio_file(request, audiofile_id):
                                                 + [('status','errors')])))
     return generic_form(request, form, 
                         reverse(edit_audio_file, args=[audiofile_id]))
+
+
+def autocomplete_list():
+    """
+    Returns a list of tags as to be typed in the tags charfield
+    Meant to be used by autocomplete
+    """
+    pass
