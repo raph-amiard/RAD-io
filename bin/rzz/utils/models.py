@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.fields.files import FieldFile
 import json
 
 def instance_to_json(instance, *args, **kwargs):
@@ -9,4 +10,6 @@ def instance_to_json(instance, *args, **kwargs):
         fields = [f.attname for f in instance._meta._fields()]
         return dict([(f, instance.__dict__[f]) for f in fields] + kwargs.items())
 
-    return json.dumps(instance_to_dict(instance))
+    d = instance_to_dict(instance)
+    d = dict([pair for pair in d.items() if type(pair[1]) != FieldFile])
+    return json.dumps(d)
