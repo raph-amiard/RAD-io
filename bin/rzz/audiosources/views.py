@@ -51,8 +51,11 @@ def create_audio_file(request):
     # 3. Ajax response ?
     if request.method == 'POST':
         form = AudioFileForm(request.POST, request.FILES)
+        print 'INTO CREATE AUDIOFILE'
         if form.is_valid():
+            print 'FORM IS VALID'
             audiofile = form.save()
+            print 'AUDIOFILE: {0}'.format(audiofile)
             return HttpResponse(instance_to_json(audiofile, 
                                                  status='ok',
                                                  form_url=audiofile.form_url()))
@@ -85,14 +88,19 @@ def edit_audio_file(request, audiofile_id):
     AJAX
     Returns a form to edit audiofile
     """
-    audio_file = get_object_or_404(AudioFile, pk=audiofile_id)
-    form = EditAudioFileForm(initial= {'title':audio_file.title,
-                                       'artist':audio_file.artist})
+    audiofile = get_object_or_404(AudioFile, pk=audiofile_id)
+    form = EditAudioFileForm(initial= {'title':audiofile.title,
+                                       'artist':audiofile.artist})
     if request.method =='POST':
         form = EditAudioFileForm(request.POST)
         if form.is_valid():
-            audio_file.title = form.cleaned_data['title']
-            audio_file.artist = form.cleaned_data['artist']
+            artist = form.cleaned_data['artist']
+            title = form.cleaned_data['title']
+            if artist != audiofile.artist or title != audiofile.title:
+                audiofile.title = title
+                audiofile.artist = artist
+                audiofile.save()
+                audiofile.update_file()
             for category, tags in process_tags(form.cleaned_data['tags']).items():
                 print "{0}, {1}".format(category, tags)
                 c = TagCategory(name=category)
@@ -100,10 +108,11 @@ def edit_audio_file(request, audiofile_id):
                 for tag in tags:
                     print "Tag :" + tag
                     t = Tag(category=c,name=tag).save()
-                    audio_file.tags.add(t)
-            audio_file.save()
-            return HttpResponse(instance_to_json(audio_file,
-                                                 status='ok'))
+                    audiofile.tags.add(t)
+            audiofile.save()
+            return HttpResponse(instance_to_json(audiofile,
+                                                 status='ok',
+                                                 form_url=audiofile.form_url()))
         else:
             return HttpResponse(json.dumps(dict(form.errors.items() 
                                                 + [('status','errors')])))
