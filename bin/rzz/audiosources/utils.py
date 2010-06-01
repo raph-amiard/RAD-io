@@ -8,7 +8,8 @@ def append_to_key(dct, key, val):
 def process_tags(tags_string):
     if tags_string == u'':
         return {}
-    splitted_tags = [tag.split(':') for tag in tags_string.split(' ')]
+    splitted_tags = [tag.strip().split(':') 
+                     for tag in tags_string.split(',') if not tag.isspace()]
     output = {}
     for tag in splitted_tags:
         l = len(tag)
