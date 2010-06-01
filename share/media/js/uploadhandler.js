@@ -1,5 +1,13 @@
 var TOTAL_PLAYLIST_LENGTH = 0
 
+function split(val) {
+    return val.split(/,\s*/);
+}
+
+function extractLast(term) {
+    return split(term).pop();
+}
+
 function gen_uuid() {
     var uuid = ""
     for (var i=0; i < 32; i++) {
@@ -50,8 +58,31 @@ function populate_form_errors(errors, form) {
 function handle_audiofiles_actions (e) {
     $pl_element = $(this).parents('.ui-state-default').first()
     e.preventDefault();
-    $.get(this.href, function(html) {
-        $('#audiofiles_actions_container').html(html)
+    $.getJSON(this.href, function(data) {
+        $('#audiofiles_actions_container').html(data.html);
+        availableTags = data.tag_list;
+        $('#id_tags').autocomplete({
+			minLength: 0,
+			source: function(request, response) {
+				// delegate back to autocomplete, but extract the last term
+				response($.ui.autocomplete.filter(availableTags, extractLast(request.term)));
+			},
+			focus: function() {
+				// prevent value inserted on focus
+				return false;
+			},
+			select: function(event, ui) {
+				var terms = split( this.value );
+				// remove the current input
+				terms.pop();
+				// add the selected item
+				terms.push( ui.item.value );
+				// add placeholder to get the comma-and-space at the end
+				terms.push("");
+				this.value = terms.join(", ");
+				return false;
+			}
+		});
         $('#audiofiles_actions_container form').ajaxForm({
             success: function(form_res) {
                 console.log(form_res);

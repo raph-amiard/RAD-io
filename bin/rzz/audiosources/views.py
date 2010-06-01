@@ -5,12 +5,12 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.simple import direct_to_template
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
+from django.template import Context, loader
 from django.shortcuts import get_object_or_404
 
-from rzz.audiosources.models import AudioFile, AudioSource, SourceElement,Tag, TagCategory
+from rzz.audiosources.models import AudioFile, AudioSource, SourceElement,Tag, TagCategory, tag_list
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
-from rzz.utils.models import instance_to_json
-from rzz.utils.views import generic_form
+from rzz.utils.jsonutils import instance_to_json
 from rzz.audiosources.utils import process_tags
 
 @staff_member_required
@@ -109,13 +109,7 @@ def edit_audio_file(request, audiofile_id):
         else:
             return HttpResponse(json.dumps(dict(form.errors.items() 
                                                 + [('status','errors')])))
-    return generic_form(request, form, 
-                        reverse(edit_audio_file, args=[audiofile_id]))
-
-
-def autocomplete_list():
-    """
-    Returns a list of tags as to be typed in the tags charfield
-    Meant to be used by autocomplete
-    """
-    pass
+    template = loader.get_template('audiosources/audiofile_edit_form.html')
+    ctx = Context({'form':form, 'audiofile':audiofile})
+    return HttpResponse(json.dumps({'html':template.render(ctx),
+                                    'tag_list':tag_list()}))

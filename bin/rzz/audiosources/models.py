@@ -5,7 +5,15 @@ from django.core.urlresolvers import reverse
 
 from rzz.utils.str import sanitize_filename, sanitize_filestring
 from rzz.utils.file import move_field_file, set_mp3_metadata
+from rzz.audiosources.utils import append_to_key
 from rzz.artists.models import Artist
+
+def tag_list():
+    output = []
+    for cat in TagCategory.objects.all():
+        output += ['{0}:{1}'.format(cat.name, tag.name) 
+                   for tag in cat.tag_set.all()]
+    return output
 
 def audio_file_name(instance, filename):
 	ext = filename.split('.')[-1]
@@ -44,6 +52,18 @@ class AudioModel(models.Model):
         output = '{0}:'.format(hours) + (output if hours else '')
         return output
 
+    def tags_by_category(self):
+        output = {}
+        for tag in self.tags.all():
+            append_to_key(output, tag.category.name, tag.name)
+        return output
+
+    def autocomplete_list(self):
+        output = []
+        for category,tags in self.tags_by_category().items():
+            output += ['{0}:{1}'.format(category, tag) for tag in tags]
+        return output
+        
     class Meta:
         abstract = True
 
@@ -79,6 +99,8 @@ class AudioSource(AudioModel):
         return self.title 
 
 class SourceElement(models.Model):
-	position = models.IntegerField()
+    position = models.IntegerField()
     audiofile = models.ForeignKey(AudioFile)
     audiosource = models.ForeignKey(AudioSource)
+
+

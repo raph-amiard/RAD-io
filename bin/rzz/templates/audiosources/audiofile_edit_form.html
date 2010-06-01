@@ -1,0 +1,20 @@
+<form action="{% url audio-file-edit audiofile.id %}" method="post">
+  {{ form.as_p }}
+  <input type="Submit" value="Envoyer" />
+  {% if audiofile.tags %}
+    <h3> Tags actuels </h3>
+    <table> 
+      <tr><th>Categorie</th><th>tags</th></tr>
+    {% for category,tags in audiofile.tags_by_category.items %}
+      <tr>
+        <td>{{ category }}</td>
+        <td>
+          {% for tag in tags %}
+            {{ tag }}
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+  {% endif %}
+</form>

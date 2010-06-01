@@ -14,3 +14,4 @@ def process_tags(tags_string):
         l = len(tag)
         append_to_key(output, tag[0] if l > 1 else 'general', tag[1] if l > 1 else tag[0])
     return output
+
