@@ -1,9 +1,39 @@
+var TOTAL_PLAYLIST_LENGTH = 0
+
 function gen_uuid() {
     var uuid = ""
     for (var i=0; i < 32; i++) {
         uuid += Math.floor(Math.random() * 16).toString(16); 
     }
     return uuid
+}
+
+function playlist_element(audio_file, inner) {
+  out1 = '<li class="ui-state-default">'
+  out2 = '</li>'
+  console.log(audio_file);
+  output = '<input type="hidden" value="' + 
+         audio_file.id + '"/> <p> Titre: ' +
+         audio_file.title + ' Artiste: ' + audio_file.artist + 
+         ' Durée: ' + format_length(audio_file.length) +
+         '<div class="audiofile_actions">' + '<a href="' + audio_file.form_url+'">Edit</a>' + 
+         '</div>';
+  if (inner) {
+      return output;
+  } else {
+      return out1 + output + out2;
+  }
+}
+
+function format_length(l) {
+    hours = Math.floor(l / 3600)
+    minutes = Math.floor((l % 3600) / 60)
+    seconds = Math.floor(l % 60)
+    if (hours) {
+        return hours + 'h' + minutes + 'm' + seconds
+    } else {
+        return minutes + 'm' + seconds
+    }
 }
 
 function populate_form_errors(errors, form) {
@@ -15,6 +45,23 @@ function populate_form_errors(errors, form) {
             }
         }
     }
+}
+
+function handle_audiofiles_actions (e) {
+    $pl_element = $(this).parents('.ui-state-default').first()
+    e.preventDefault();
+    $.get(this.href, function(html) {
+        $('#audiofiles_actions_container').html(html)
+        $('#audiofiles_actions_container form').ajaxForm({
+            success: function(form_res) {
+                console.log(form_res);
+                $pl_element.html(playlist_element(form_res, true));
+                $('#audiofiles_actions_container').html('');
+                $('.audiofile_actions a').click(handle_audiofiles_actions);
+            },
+            dataType:'json'
+        });
+    });
 }
 
 function gen_ajaxform_options(target_form, new_form)
@@ -46,17 +93,10 @@ function gen_ajaxform_options(target_form, new_form)
                 } else {
                     form.html('<p> Upload Successful </p>');
                     form.hide(1000);
-                    $('#uploaded_audiofiles').append('<li class="ui-state-default"> <input type="hidden" value="' + 
-                                                     response.id + '"/> <p> Titre: ' +
-                                                     response.title + ' Artiste: ' + response.artist + 
-                                                     '<div class="audiofile_actions">' + '<a href="' + response.form_url+'">Edit</a>' + 
-                                                     '</div></li>' );
-                    $('.audiofile_actions a').click(function(e) {
-                        e.preventDefault();
-                        $.get(this.href, function(html) {
-                            $('#audiofiles_actions_container').html(html);
-                        });
-                    });
+                    $('#uploaded_audiofiles').append(playlist_element(response));
+                    TOTAL_PLAYLIST_LENGTH += response.length
+                    $('#playlist_length').text(format_length(TOTAL_PLAYLIST_LENGTH))
+                    $('.audiofile_actions a').click(handle_audiofiles_actions);
                 }
             } else {
                 form.html(response);
