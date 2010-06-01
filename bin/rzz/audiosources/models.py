@@ -17,7 +17,7 @@ def audio_file_name(instance, filename):
 		return 'audiofiles/{0}'.format(sanitize_filename(filename))
 
 class TagCategory(models.Model):
-    name = models.CharField('Categorie', max_length=50)
+    name = models.CharField('Categorie', max_length=50, unique=True)
 
     def __unicode__(self):
         return self.name
@@ -29,7 +29,8 @@ class Tag(models.Model):
 
     def __unicode__(self):
         return self.name
-    
+    class Meta:
+        unique_together = ("category", "name")
 
 class AudioModel(models.Model):
     length = models.IntegerField()
