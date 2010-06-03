@@ -1,0 +1,10 @@
+<li class="ui-state-default">
+  <input type="hidden" value="<%= audiofile.id %>"/> 
+  <p> Titre: <span id="audiofile_title"> <%= audiofile.title %> </span>
+      Artiste: <span id="audiofile_artist"> <%= audiofile.artist %> </span> 
+      Duree: <%= format_length(audiofile.length) %>
+  </p>
+  <div class="audiofile_actions">
+    <a href="<%= form_url %>">Edit</a>
+  </div>
+</li>
