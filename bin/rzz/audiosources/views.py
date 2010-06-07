@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 
 from rzz.audiosources.models import AudioFile, AudioSource, SourceElement,Tag, TagCategory, tag_list
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
-from rzz.utils.jsonutils import instance_to_json
+from rzz.utils.jsonutils import instance_to_json, instance_to_dict
 from rzz.audiosources.utils import process_tags
 
 @staff_member_required
@@ -53,9 +53,9 @@ def create_audio_file(request):
         form = AudioFileForm(request.POST, request.FILES)
         if form.is_valid():
             audiofile = form.save()
-            return HttpResponse(instance_to_json(audiofile, 
-                                                 status='ok',
-                                                 form_url=audiofile.form_url()))
+            return HttpResponse(json.dumps({'audiofile':instance_to_dict(audiofile),
+                                            'status':'ok',
+                                            'form_url':audiofile.form_url()}))
         else:
             return HttpResponse(json.dumps(dict(form.errors.items() 
                                                 + [('status', 'error')])))
