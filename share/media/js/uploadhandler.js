@@ -16,23 +16,6 @@ function gen_uuid() {
     return uuid
 }
 
-function playlist_element(audio_file, inner) {
-  out1 = '<li class="ui-state-default">'
-  out2 = '</li>'
-  console.log(audio_file);
-  output = '<input type="hidden" value="' + 
-         audio_file.id + '"/> <p> Titre: ' +
-         audio_file.title + ' Artiste: ' + audio_file.artist + 
-         ' Durée: ' + format_length(audio_file.length) +
-         '<div class="audiofile_actions">' + '<a href="' + audio_file.form_url+'">Edit</a>' + 
-         '</div>';
-  if (inner) {
-      return output;
-  } else {
-      return out1 + output + out2;
-  }
-}
-
 function format_length(l) {
     hours = Math.floor(l / 3600)
     minutes = Math.floor((l % 3600) / 60)
@@ -124,8 +107,10 @@ function gen_ajaxform_options(target_form, new_form)
                 } else {
                     form.html('<p> Upload Successful </p>');
                     form.hide(1000);
-                    $('#uploaded_audiofiles').append(playlist_element(response));
-                    TOTAL_PLAYLIST_LENGTH += response.length
+                    console.log(response);
+                    var html = new EJS({ url: '/site_media/js_templates/playlist_element.ejs'}).render(response);
+                    $('#uploaded_audiofiles').append(html);
+                    TOTAL_PLAYLIST_LENGTH += response.audiofile.length
                     $('#playlist_length').text(format_length(TOTAL_PLAYLIST_LENGTH))
                     $('.audiofile_actions a').click(handle_audiofiles_actions);
                 }

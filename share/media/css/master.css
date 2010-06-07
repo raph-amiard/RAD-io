@@ -19,3 +19,5 @@ body {
   margin-bottom:2px;
   font-size:12px;
 }
+
+.ui-selected { background: #F39814; color: white; }
