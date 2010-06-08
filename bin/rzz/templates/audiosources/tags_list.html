@@ -1,0 +1,8 @@
+{% for tag_cat in tag_categories_list %}
+  <p> {{ tag_cat.name }} </p>
+  <ul>
+    {% for tag in tag_cat.tag_set.all %}
+      <li> {{ tag.name }} </li>
+    {% endfor %}
+  </ul>
+{% endfor %}

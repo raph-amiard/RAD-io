@@ -3,7 +3,7 @@ from django.conf.urls.defaults import *
 
 import rzz.audiosources.views as views
 from rzz.audiosources.forms import AudioFileForm
-from rzz.audiosources.models import AudioFile
+from rzz.audiosources.models import AudioFile, TagCategory
 
 urlpatterns = patterns('',
 	url(r'^audiofile/add/$',views.create_audio_file, name='create-audio-file'),
@@ -12,4 +12,8 @@ urlpatterns = patterns('',
                                                         'page':0} , name='audio-files-list'),
     url(r'^audiofile/(?P<audiofile_id>\d+)/edit/$', views.edit_audio_file, name='audio-file-edit'),
     url(r'^audiomodel/(?P<audiomodel_id>\d+)/tag/(?P<tag_id>\d+)/delete/$', views.delete_audiomodel_tag, name='delete-audiomodel-tag'),
+    url(r'^tags/list/$', 'django.views.generic.list_detail.object_list' , 
+        {'queryset': TagCategory.objects.all(),
+         'template_name': 'audiosources/tags_list.html',
+         'template_object_name': 'tag_categories'}),
     )
