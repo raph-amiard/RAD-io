@@ -33,3 +33,32 @@ body {
     position:absolute;
     right:3px;
 }
+
+#tag_selector {
+    position:fixed;
+    left:0;
+    top:0;
+    height:100%;
+    width:200px;
+    border-right:1px solid black;
+    list-style-type:none;
+}
+
+#track_selector {
+    position:fixed;
+    left:200px;
+    top:0;
+    height:100%;
+    width:200px;
+    border-right:1px solid black;
+}
+
+body {
+    position:absolute;
+    left:400px;
+    margin-left:20px;
+}
+
+h2 {
+    margin:20px;
+}

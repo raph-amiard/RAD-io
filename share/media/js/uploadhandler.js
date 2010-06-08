@@ -164,5 +164,11 @@ $(document).ready(function() {
             alert(response);
         });
     });
+    $.get('/audiosources/audiofile/list/', function(html) {
+        $('#track_selector_content').html(html);
+    });
+    $.get('/audiosources/tag/list/', function(html) {
+        $('#tag_selector_content').html(html);
+    });
 });
 

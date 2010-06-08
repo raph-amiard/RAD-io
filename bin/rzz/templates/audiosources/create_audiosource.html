@@ -6,25 +6,37 @@
 {% endblock %}
 
 {% block content %}
-  <h2>Créer une nouvelle playlist</h2>
-  <p> Nom de la playlist: <input type="text" name="playlist_title" value=""/> </p>
-  <div id="audiofile_forms">
-    <h3>Envoyer des morceaux:</h3>
-    {% include "audiosources/audiofile_form.html" %}
+  <div id="tag_selector">
+   <h2> Tags et catégories:</h2> 
+   <div id="tag_selector_content">
+   </div>
   </div>
-  <h3>Ordre des morceaux:</h3>
-  <div class="playlist_box">
-    <ul id="uploaded_audiofiles">
-    {% for audiofile in audiofiles %}
-      <li class="ui-state-default">
-        <input type="hidden" value="{{ audiofile.id }}"/>
-        <p> Titre: {{ audiofile.title }} Artiste: {{ audiofile.artist }} </p>
-        <div class="audiofile_actions"> <a href="{{ audiofile.form_url }}">Edit</a> </div>
-      </li>
-    {% endfor %}
-    </ul>
+  <div id="track_selector">
+   <h2> Tracks:</h2> 
+   <div id="track_selector_content">
+   </div>
   </div>
-  <p> Durée de la playlist : <span id="playlist_length"></span> </p>
-  <div id="audiofiles_actions_container"></div>
-  <input type="submit" name="playlist_submit" value="Créer la playlist"/>
+  <div id="main">
+    <h2>Créer une nouvelle playlist</h2>
+    <p> Nom de la playlist: <input type="text" name="playlist_title" value=""/> </p>
+    <div id="audiofile_forms">
+      <h3>Envoyer des morceaux:</h3>
+      {% include "audiosources/audiofile_form.html" %}
+    </div>
+    <h3>Ordre des morceaux:</h3>
+    <div class="playlist_box">
+      <ul id="uploaded_audiofiles">
+      {% for audiofile in audiofiles %}
+        <li class="ui-state-default">
+          <input type="hidden" value="{{ audiofile.id }}"/>
+          <p> Titre: {{ audiofile.title }} Artiste: {{ audiofile.artist }} </p>
+          <div class="audiofile_actions"> <a href="{{ audiofile.form_url }}">Edit</a> </div>
+        </li>
+      {% endfor %}
+      </ul>
+    </div>
+    <p> Durée de la playlist : <span id="playlist_length"></span> </p>
+    <div id="audiofiles_actions_container"></div>
+    <input type="submit" name="playlist_submit" value="Créer la playlist"/>
+  </div>
 {% endblock %}
