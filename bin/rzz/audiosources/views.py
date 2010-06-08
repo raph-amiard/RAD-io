@@ -12,6 +12,7 @@ from rzz.artists.models import Artist
 from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, SourceElement,Tag, TagCategory, tag_list
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict
+from rzz.utils.queries import Q_or
 from rzz.audiosources.utils import process_tags
 
 @staff_member_required
@@ -64,19 +65,34 @@ def create_audio_file(request):
                               'audiosources/audiofile_form.html',
                               extra_context={'form':AudioFileForm()})
 
-def audio_files_list(request):
+def audio_models_list(request,audiomodel_klass, page):
     """
     AJAX
     Displays a list of audio files depending on filter clauses
     """
-    num_page = request.GET['p']
     nb_items = 50
-    bottom = nb_items * num_page
+    bottom = nb_items * page
     top = bottom + nb_items
-    if opts:
-        audiofiles = AudioFile.objects.filter(**opts)[bottom:top]
+    text_filter = request.GET['text_filter'] if request.GET.has_key('text_filter') else None
+    tags = Tag.objects.filter(id__in=[int(el) for key, el in request.GET.items() if "tag_" in key])
+
+    if text_filter:
+        search_clauses = ['title']
+        if audiomodel_klass == AudioFile:
+            search_clauses += ['artist']
+        search_dict = dict([(sc + '__icontains', text_filter) for sc in search_clauses])
+        audiofiles = AudioFile.objects.filter(Q_or(**search_dict))
     else:
-        audiofiles = AudioFile.objects.all()[bottom:top]
+        audiofiles = AudioFile.objects.all()
+    for tag in tags:
+        audiofiles = audiofiles.filter(tags=tag)
+
+    cnt = audiofiles.count()
+    if bottom > cnt:
+        raise Http404
+    audiofiles = audiofiles[bottom:top if top <= cnt else cnt]
+    
+    print audiofiles
     return direct_to_template(request,
                               'audiosources/audiofile_list.html',
                               extra_context={'audiofiles': audiofiles})
