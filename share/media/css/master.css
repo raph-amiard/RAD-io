@@ -1,23 +1,35 @@
 body {
-  font-family: arial, helvetica, sans-serif;
+    font-family: arial, helvetica, sans-serif;
 }
 
 .playlist_box {
-  border:1px solid black;
-  width:300px;
-  height:400px;
+    border:1px solid black;
+    width:300px;
+    height:400px;
 }
 
 #uploaded_audiofiles {
-  margin:0;
-  padding:0;
-  list-style-type:none;
+    margin:0;
+    padding:0;
+    list-style-type:none;
 }
 
 #uploaded_audiofiles li {
-  margin-top:2px;
-  margin-bottom:2px;
-  font-size:12px;
+    margin-top:2px;
+    margin-bottom:2px;
+    font-size:12px;
 }
 
 .ui-selected { background: #F39814; color: white; }
+
+.ui-state-default {
+    position:relative;
+    font-size:10px;
+    font-weight:normal;
+    color:#000;
+}
+
+.audiofile_length {
+    position:absolute;
+    right:3px;
+}
