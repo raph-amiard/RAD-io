@@ -69,7 +69,7 @@ function handle_audiofiles_actions (e) {
         $('#audiofiles_actions_container form').ajaxForm({
             success: function(form_res) {
                 console.log(form_res);
-                $pl_element.html(playlist_element(form_res, true));
+                $pl_element.html(new EJS({ url: '/site_media/js_templates/playlist_element.ejs'}).render(form_res));
                 $('#audiofiles_actions_container').html('');
                 $('.audiofile_actions a').click(handle_audiofiles_actions);
             },
@@ -107,7 +107,6 @@ function gen_ajaxform_options(target_form, new_form)
                 } else {
                     form.html('<p> Upload Successful </p>');
                     form.hide(1000);
-                    console.log(response);
                     var html = new EJS({ url: '/site_media/js_templates/playlist_element.ejs'}).render(response);
                     $('#uploaded_audiofiles').append(html);
                     TOTAL_PLAYLIST_LENGTH += response.audiofile.length
