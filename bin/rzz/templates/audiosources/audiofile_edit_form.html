@@ -10,7 +10,10 @@
         <td>{{ category }}</td>
         <td>
           {% for tag in tags %}
-            {{ tag }}
+            <span class='audiofile_tag'> 
+              {{ tag.name }}
+              <a class='audiofile_tag_delete' href="{% url delete-audiomodel-tag audiofile.id tag.id %}">x</a>
+            </span>
           {% endfor %}
         </td>
       </tr>
