@@ -103,9 +103,9 @@ def edit_audio_file(request, audiofile_id):
                     t, _ = Tag.objects.get_or_create(category=c,name=tag)
                     audiofile.tags.add(t)
             audiofile.save()
-            return HttpResponse(instance_to_json(audiofile,
-                                                 status='ok',
-                                                 form_url=audiofile.form_url()))
+            return HttpResponse(json.dumps({'audiofile':instance_to_dict(audiofile),
+                                            'status':'ok',
+                                            'form_url':audiofile.form_url()}))
         else:
             return HttpResponse(json.dumps(dict(form.errors.items() 
                                                 + [('status','errors')])))
