@@ -8,7 +8,8 @@ from django.core.urlresolvers import reverse
 from django.template import Context, loader
 from django.shortcuts import get_object_or_404
 
-from rzz.audiosources.models import AudioFile, AudioSource, SourceElement,Tag, TagCategory, tag_list
+from rzz.artists.models import Artist
+from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, SourceElement,Tag, TagCategory, tag_list
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict
 from rzz.audiosources.utils import process_tags
@@ -80,6 +81,15 @@ def audio_files_list(request):
                               'audiosources/audiofile_list.html',
                               extra_context={'audiofiles': audiofiles})
 
+def delete_audiomodel_tag(request, audiomodel_id, tag_id):
+    audiomodel = get_object_or_404(AudioModel, pk=audiomodel_id);
+    tag = get_object_or_404(Tag, pk=tag_id);
+    try:
+        audiomodel.tags.remove(tag);
+        return HttpResponse(json.dumps({'status':'ok'}), mimetype='application/json')
+    except:
+        return HttpResponse(json.dumps({'status':'errors'}), mimetype='application/json')
+
 def edit_audio_file(request, audiofile_id):
     """
     AJAX
@@ -112,4 +122,5 @@ def edit_audio_file(request, audiofile_id):
     template = loader.get_template('audiosources/audiofile_edit_form.html')
     ctx = Context({'form':form, 'audiofile':audiofile})
     return HttpResponse(json.dumps({'html':template.render(ctx),
-                                    'tag_list':tag_list()}))
+                                    'tag_list':tag_list(),
+                                    'artist_list':[a.name for a in Artist.objects.all()]}))
