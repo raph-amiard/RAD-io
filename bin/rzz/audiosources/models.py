@@ -41,7 +41,7 @@ class Tag(models.Model):
         unique_together = ("category", "name")
 
 class AudioModel(models.Model):
-    length = models.IntegerField()
+    length = models.IntegerField(default=0)
     tags = models.ManyToManyField(Tag)
 
     def formatted_length(self):
@@ -55,17 +55,14 @@ class AudioModel(models.Model):
     def tags_by_category(self):
         output = {}
         for tag in self.tags.all():
-            append_to_key(output, tag.category.name, tag.name)
+            append_to_key(output, tag.category.name, tag)
         return output
 
     def autocomplete_list(self):
         output = []
         for category,tags in self.tags_by_category().items():
-            output += ['{0}:{1}'.format(category, tag) for tag in tags]
+            output += ['{0}:{1}'.format(category, tag.name) for tag in tags]
         return output
-        
-    class Meta:
-        abstract = True
 
 class AudioFile(AudioModel):
     title = models.CharField('Audiofile title', max_length=400)
