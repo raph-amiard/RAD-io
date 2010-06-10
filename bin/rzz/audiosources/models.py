@@ -49,7 +49,7 @@ class AudioModel(models.Model):
         minutes = (self.length % 3600) / 60
         seconds = (self.length % 60)
         output = '{0}:{1}'.format(minutes, seconds)
-        output = '{0}:'.format(hours) + (output if hours else '')
+        output = '{0}:'.format(hours) + output if hours else output
         return output
 
     def tags_by_category(self):
