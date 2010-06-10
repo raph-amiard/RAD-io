@@ -92,7 +92,6 @@ function handle_audiofiles_actions (e) {
                 $('#audiofile_title', $pl_element).text(form_res.audiofile.title);
                 $('#audiofile_artist', $pl_element).text(form_res.audiofile.artist);
                 $('#audiofiles_actions_container').html('');
-                $('.audiofile_actions a').click(handle_audiofiles_actions);
             }
         });
     });
@@ -131,7 +130,6 @@ function gen_ajaxform_options(target_form, new_form)
                     $('#uploaded_audiofiles').append(html);
                     TOTAL_PLAYLIST_LENGTH += response.audiofile.length
                     $('#playlist_length').text(format_length(TOTAL_PLAYLIST_LENGTH))
-                    $('.audiofile_actions a').click(handle_audiofiles_actions);
                 }
             } else {
                 form.html(response);
@@ -157,18 +155,41 @@ $(document).ready(function() {
         $(this).ajaxForm(options);
     });
     $('input[name="playlist_submit"]').click(function(e) {
-        data = {'title' :$('input[name="playlist_title"]').val()};
+        var data = {'title' :$('input[name="playlist_title"]').val()};
         $.each($('#uploaded_audiofiles li input'), function(i, input) {data[i] = input.value;});
         $.post(location.href,data, function(response) {
             alert('post successfull');
             alert(response);
         });
     });
+
+    var sel_data = {};
     $.get('/audiosources/audiofile/list/', function(html) {
-        $('#track_selector_content').html(html);
+        $('#track_selector').html(html);
+    });
+    $('#text_selector').keyup(function(e) {
+        sel_data['text_filter'] = $('#text_selector').val();
+        $.get('/audiosources/audiofile/list/',sel_data, function(html) {
+            $('#track_selector').html(html);
+        });
     });
     $.get('/audiosources/tag/list/', function(html) {
-        $('#tag_selector_content').html(html);
+
+        $('#tag_selector').html(html);
+
+        var sel_handler = function(event, ui) {
+            sel_data = {text_filter: sel_data['text_filter']};
+            $.each($('#tag_selector ul li.ui-selected input'), function(i, input) {sel_data['tag_'+i] = input.value});
+            $.get('/audiosources/audiofile/list/',sel_data, function(html) {
+                $('#track_selector').html(html);
+            });
+        }
+
+        $('#tag_selector ul').selectable({
+            stop: sel_handler,
+        });
     });
+    $('.audiofile_actions a').live('click', handle_audiofiles_actions);
+
 });
 
