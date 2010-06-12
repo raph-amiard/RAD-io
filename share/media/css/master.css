@@ -30,6 +30,9 @@ body {
   color:#000;
 }
 
+.audiomodel-box {
+  position:relative;
+}
 .audiofile_length {
   position:absolute;
   right:3px;
@@ -39,6 +42,27 @@ body {
   position:fixed;
   border-right:1px solid black;
   top:0;
+}
+
+.selector_container {
+  box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  -webkit-box-sizing:border-box;
+  height:100%;
+  top:0;
+  position:fixed;
+}
+
+#track_selector_container {
+  padding-top:55px;
+  width:200px;
+  left:130px;
+}
+
+#tag_selector_container {
+  padding-top:25px;
+  width:129px;
+  left:0;
 }
 
 #tag_selector_header {
@@ -61,20 +85,13 @@ body {
 }
 
 #tag_selector {
-  margin-top:25px;
   overflow-y:auto;
-  width:129px;
-  left:0;
-  top:0;
-  border-bottom:4px solid #AAA;
+  height:100%;
 }
 
 #track_selector {
-  margin-top:55px;
-  margin-bottom:-55px;
-  width:200px;
-  left:130px;
   overflow-y:auto;
+  height:100%;
 }
 
 #tag_selector ul, #track_selector ul {
@@ -89,6 +106,5 @@ body {
 
 body {
   position:absolute;
-  left:330px;
-  margin-left:20px;
+  left:400px;
 }
