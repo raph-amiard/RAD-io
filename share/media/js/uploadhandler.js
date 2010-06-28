@@ -164,14 +164,14 @@ $(document).ready(function() {
     });
 
     var sel_data = {};
-    $.get('/audiosources/audiofile/list/', function(html) {
+    var track_selector_update = function(html) {
         $('#track_selector').html(html);
-    });
+        $('#track_selector ul').selectable();
+    };
+    $.get('/audiosources/audiofile/list/', track_selector_update );
     $('#text_selector').keyup(function(e) {
         sel_data['text_filter'] = $('#text_selector').val();
-        $.get('/audiosources/audiofile/list/',sel_data, function(html) {
-            $('#track_selector').html(html);
-        });
+        $.get('/audiosources/audiofile/list/',sel_data, track_selector_update);
     });
     $.get('/audiosources/tag/list/', function(html) {
 
