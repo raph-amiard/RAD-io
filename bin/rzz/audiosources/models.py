@@ -7,6 +7,7 @@ from rzz.utils.str import sanitize_filename, sanitize_filestring
 from rzz.utils.file import move_field_file, set_mp3_metadata
 from rzz.audiosources.utils import append_to_key
 from rzz.artists.models import Artist
+from rzz.utils.jsonutils import instance_to_dict
 
 def tag_list():
     output = []
@@ -71,10 +72,15 @@ class AudioFile(AudioModel):
     file = models.FileField(upload_to=audio_file_name)
     
     def __unicode__(self):
-        return self.artist + u' - ' + self.title 
+        return u'%s - %s' % (self.artist, self.title)
 
     def form_url(self):
         return reverse('audio-file-edit',args=[self.id])
+
+    def to_dict(self):
+        d = instance_to_dict(self)
+        d.update({'form_url':self.form_url()})
+        return d
 
     def save_and_update_file(self):
         self.save()
