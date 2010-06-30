@@ -1,7 +1,8 @@
 {% extends "base_jquery_ui.html" %}
 
 {% block scripts %}
-  <script type="text/javascript" src="{{ MEDIA_URL }}js/uploadhandler.js"></script>
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/select.js"></script>
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/audiosources.js"></script>
   <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.form.js"></script> 
 {% endblock %}
 
@@ -13,13 +14,16 @@
     <div id="tag_selector">
     </div>
   </div>
-  <div id="track_selector_header" class="selector">
-    <h4> Tracks:</h4> 
-    <input type="text" id="text_selector"/>
-  </div>
-  <div id="track_selector_container" class="selector selector_container">
+  <div id="track_selector_container" class="track_selector_align selector selector_container">
     <div id="track_selector" >
     </div>
+  </div>
+  <div id="track_selector_footer" class="track_selector_align">
+  <button id="add_to_playlist_button" type="button"> Selectionner </button>
+  </div>
+  <div id="track_selector_header" class="track_selector_align selector">
+    <h4> Tracks:</h4> 
+    <input type="text" id="text_selector"/>
   </div>
   <div id="main">
     <h2>Créer une nouvelle playlist</h2>
