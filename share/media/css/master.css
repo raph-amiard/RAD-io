@@ -30,6 +30,10 @@ body {
   color:#000;
 }
 
+.unselectable {
+  cursor:default;
+}
+
 .audiomodel-box {
   position:relative;
 }
@@ -40,7 +44,6 @@ body {
 
 .selector {
   position:fixed;
-  border-right:1px solid black;
   top:0;
 }
 
@@ -53,10 +56,27 @@ body {
   position:fixed;
 }
 
-#track_selector_container {
-  padding-top:55px;
+.track_selector_align {
   width:200px;
   left:130px;
+}
+
+#track_selector_container {
+  padding-top:55px;
+  padding-bottom:55px;
+  border-right:1px solid black;
+}
+
+#track_selector_header {
+  height:55px;
+  background-color:#CCD;
+}
+
+#track_selector_footer {
+  height:55px;
+  bottom:0;
+  position:fixed;
+  background-color:#CCD;
 }
 
 #tag_selector_container {
@@ -69,13 +89,6 @@ body {
   height:25px;
   width:129px;
   left:0;
-  background-color:#CCD;
-}
-
-#track_selector_header {
-  height:55px;
-  left:130px;
-  width:200px;
   background-color:#CCD;
 }
 
