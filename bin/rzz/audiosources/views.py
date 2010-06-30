@@ -22,11 +22,11 @@ def create_audio_source(request):
     """
     if request.method == 'POST':
         audio_source = AudioSource(title=request.POST['title'], length=0)
+        audio_source.save()
         for key, val in request.POST.items():
             try:
-                pos = int(key)
-                id = int(val)
-                audiofile = AudioFile.objects.get(pk=int(val))
+                pos, id = int(key),  int(val)
+                audiofile = AudioFile.objects.get(pk=id)
                 source_element = SourceElement(position=pos,
                                                audiosource=audio_source,
                                                audiofile=audiofile)
@@ -55,9 +55,8 @@ def create_audio_file(request):
         form = AudioFileForm(request.POST, request.FILES)
         if form.is_valid():
             audiofile = form.save()
-            return HttpResponse(json.dumps({'audiofile':instance_to_dict(audiofile),
-                                            'status':'ok',
-                                            'form_url':audiofile.form_url()}))
+            return HttpResponse(json.dumps({'audiofile':audiofile.to_dict(),
+                                            'status':'ok'}))
         else:
             return HttpResponse(json.dumps(dict(form.errors.items() 
                                                 + [('status', 'error')])))
@@ -81,9 +80,9 @@ def audio_models_list(request,audiomodel_klass, page):
         if audiomodel_klass == AudioFile:
             search_clauses += ['artist']
         search_dict = dict([(sc + '__icontains', text_filter) for sc in search_clauses])
-        audiofiles = AudioFile.objects.filter(Q_or(**search_dict))
+        audiofiles = audiomodel_klass.objects.filter(Q_or(**search_dict))
     else:
-        audiofiles = AudioFile.objects.all()
+        audiofiles = audiomodel_klass.objects.all()
     for tag in tags:
         audiofiles = audiofiles.filter(tags=tag)
 
@@ -92,10 +91,7 @@ def audio_models_list(request,audiomodel_klass, page):
         raise Http404
     audiofiles = audiofiles[bottom:top if top <= cnt else cnt]
 
-    print audiofiles
-    return direct_to_template(request,
-                              'audiosources/audiofile_list.html',
-                              extra_context={'audiofiles': audiofiles})
+    return HttpResponse(json.dumps([af.to_dict() for af in audiofiles]), mimetype='application/json')
 
 def delete_audiomodel_tag(request, audiomodel_id, tag_id):
     audiomodel = get_object_or_404(AudioModel, pk=audiomodel_id);
@@ -111,6 +107,7 @@ def edit_audio_file(request, audiofile_id):
     AJAX
     Returns a form to edit audiofile
     """
+    # TODO : Use js templating instead of django templating
     audiofile = get_object_or_404(AudioFile, pk=audiofile_id)
     form = EditAudioFileForm(initial= {'title':audiofile.title,
                                        'artist':audiofile.artist})
@@ -129,9 +126,8 @@ def edit_audio_file(request, audiofile_id):
                     t, _ = Tag.objects.get_or_create(category=c,name=tag)
                     audiofile.tags.add(t)
             audiofile.save()
-            return HttpResponse(json.dumps({'audiofile':instance_to_dict(audiofile),
-                                            'status':'ok',
-                                            'form_url':audiofile.form_url()}))
+            return HttpResponse(json.dumps({'audiofile':audiofile.to_dict(),
+                                            'status':'ok'}))
         else:
             return HttpResponse(json.dumps(dict(form.errors.items() 
                                                 + [('status','errors')])))
