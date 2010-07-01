@@ -23,3 +23,13 @@ def add_tags_to_model(tags_string, audiomodel):
         for tag in tags:
             t, _ = Tag.objects.get_or_create(category=c,name=tag)
             audiomodel.tags.add(t)
+
+def add_audiofiles_to_audiosource(tuples_list, audio_source):
+    from rzz.audiosources.models import AudioFile, SourceElement
+    for pos, id in tuples_list:
+        audiofile = AudioFile.objects.get(pk=id)
+        source_element = SourceElement(position=pos,
+                                       audiosource=audio_source,
+                                       audiofile=audiofile)
+        source_element.save()
+        audio_source.length += audiofile.length 

@@ -13,7 +13,7 @@ from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, SourceEl
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
-from rzz.audiosources.utils import add_tags_to_model
+from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource
 
 @staff_member_required
 def create_audio_source(request):
@@ -23,17 +23,12 @@ def create_audio_source(request):
     if request.method == 'POST':
         audio_source = AudioSource(title=request.POST['title'], length=0)
         audio_source.save()
-        for key, val in request.POST.items():
-            try:
-                pos, id = int(key),  int(val)
-                audiofile = AudioFile.objects.get(pk=id)
-                source_element = SourceElement(position=pos,
-                                               audiosource=audio_source,
-                                               audiofile=audiofile)
-                source_element.save()
-                audio_source.length += audiofile.length 
-            except ValueError:
-                pass
+
+        playlist_tuples = [(int(key.split('_')[1]), int(val)) 
+                           for key, val in request.POST.items() 
+                           if key.startswith('audiofile_')]
+
+        add_audiofiles_to_audiosource(playlist_tuples, audio_source)
 
         add_tags_to_model(request.POST['tags'], audio_source)
         audio_source.save()
@@ -53,7 +48,7 @@ def edit_audio_source(request, audiosource_id):
     """
     audio_source = get_object_or_404(AudioSource, id=audiosource_id)
     if request.method == 'POST':
-        pass
+        audio_source.audio_files.all().delete()
 
     ctx = {'form':AudioFileForm(),
            'audiosource':audio_source}

@@ -103,6 +103,14 @@ class AudioSource(AudioModel):
     def __unicode__(self):
         return self.title 
 
+    def form_url(self):
+        return reverse('edit-audio-source',args=[self.id])
+
+    def to_dict(self):
+        d = super(AudioSource, self).to_dict()
+        d.update({'form_url':self.form_url()})
+        return d
+
 class SourceElement(models.Model):
     position = models.IntegerField()
     audiofile = models.ForeignKey(AudioFile)

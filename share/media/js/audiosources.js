@@ -184,16 +184,6 @@ function add_tracks_to_playlist() {
     });
 }
 
-function submit_playlist (e) {
-    var data = {
-        'title': $('input[name="playlist_title"]').val(),
-        'tags': $('input[name="playlist_tags"]').val()
-    };
-    $.each($('#uploaded_audiofiles li input'), function(i, input) {data[i] = input.value;});
-    $.post(location.href,data, function(response) {
-        alert('post successfull');
-    });
-}
 
 var sel_data = {};
 
@@ -210,20 +200,36 @@ function tag_sel_handler (html) {
     $('#tag_selector ul').make_selectable({handler:sel_handler}); 
 }
 
+function playlist_edit_handler () {
+
+      function submit_playlist (e) {
+          e.preventDefault();
+          data = {};
+          $.each($('#uploaded_audiofiles li input'), function(i, input) {data["audiofile_" + i] = input.value;});
+          console.log(data);
+          $(this).ajaxSubmit({
+              success: function(response) {
+                           alert('post successfull');
+                       },
+              data: data
+          });
+      }
+
+    $('#uploaded_audiofiles').sortable({ axis: 'y' , containment:$('.playlist_box')});
+    $('#audiosource_form', document).submit(submit_playlist);
+}
 
 // Add upload progress for multipart forms.
 $(function() {
     var audiofileforms = $('.audiofileform');
     var newform = $('.audiofileform:first').clone();
 
-    $('#uploaded_audiofiles').sortable({ axis: 'y' , containment:$('.playlist_box')});
-
     audiofileforms.each(function(i) {
         var options = gen_ajaxform_options($(this), newform);
         $(this).ajaxForm(options);
     });
     
-    $('input[name="playlist_submit"]').click(submit_playlist);
+    playlist_edit_handler();
 
     $.getJSON(audiomodel_route().view_url, track_selector_update);
     
@@ -237,8 +243,10 @@ $(function() {
     $('#add_to_playlist_button').click(add_tracks_to_playlist);
 
     $('#create_playlist_button').click(function(e) {
-        $('#main').load('/audiosources/audiosource/add/');
-        $('input[name="playlist_submit"]').click(submit_playlist);
+        $.get('/audiosources/audiosource/add/', function(html) {
+            $('#main').html(html);
+            playlist_edit_handler();
+        });
     });
     
     $('#source_type').make_selectable({

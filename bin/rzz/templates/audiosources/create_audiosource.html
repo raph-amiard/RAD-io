@@ -1,29 +1,31 @@
 <h2>Créer une nouvelle playlist</h2>
-<p> Nom de la playlist: <input type="text" name="playlist_title" value="{% if audiosource %}{{ audiosource.title }}{% endif %}"/> </p>
-<p> Tags: <input type="text" name="playlist_tags" value="{% if audiosource %}{{ audiosource.title }}{% endif %}"/> </p>
-{% if audiosource %}
-  {% with audiosource as audiomodel %}
-    {% include "audiosources/tags_table.html" %}
-  {% endwith %}
-{% endif %}
 <div id="audiofile_forms">
   <h3>Envoyer des morceaux:</h3>
   {% include "audiosources/audiofile_form.html" %}
 </div>
-<h3>Ordre des morceaux:</h3>
-<div class="playlist_box">
-  <ul id="uploaded_audiofiles">
+<form id="audiosource_form" action="{% if audiosource %}{{ audiosource.form_url }}{% else %}{% url create-audio-source %}{% endif %}" method="POST" accept-charset="utf-8">
+  <p> Nom de la playlist: <input type="text" name="title" value="{% if audiosource %}{{ audiosource.title }}{% endif %}"/> </p>
   {% if audiosource %}
-    {% for audiofile in audiosource.audio_files.all %}
-      <li class="ui-state-default">
-        <input type="hidden" value="{{ audiofile.id }}"/>
-        <p> Titre: {{ audiofile.title }} Artiste: {{ audiofile.artist }} </p>
-        <div class="audiofile_actions"> <a href="{{ audiofile.form_url }}">Edit</a> </div>
-      </li>
-    {% endfor %}
+    {% with audiosource as audiomodel %}
+      {% include "audiosources/tags_table.html" %}
+    {% endwith %}
   {% endif %}
-  </ul>
-</div>
-<p> Durée de la playlist : <span id="playlist_length">{% if audiosource %}{{ audiosource.formatted_length }}{% endif %}</span> </p>
-<div id="audiofiles_actions_container"></div>
-<input type="submit" name="playlist_submit" value="Créer la playlist"/>
+  <p> Tags: <input type="text" name="tags" value=""/> </p>
+  <h3>Ordre des morceaux:</h3>
+  <div class="playlist_box">
+    <ul id="uploaded_audiofiles">
+    {% if audiosource %}
+      {% for audiofile in audiosource.audio_files.all %}
+        <li class="ui-state-default">
+          <input type="hidden" value="{{ audiofile.id }}"/>
+          <p> Titre: {{ audiofile.title }} Artiste: {{ audiofile.artist }} </p>
+          <div class="audiofile_actions"> <a href="{{ audiofile.form_url }}">Edit</a> </div>
+        </li>
+      {% endfor %}
+    {% endif %}
+    </ul>
+  </div>
+  <p> Durée de la playlist : <span id="playlist_length">{% if audiosource %}{{ audiosource.formatted_length }}{% endif %}</span> </p>
+  <div id="audiofiles_actions_container"></div>
+  <input type="submit" value="Créer la playlist"/>
+</form>
