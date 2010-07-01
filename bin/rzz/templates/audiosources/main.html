@@ -1,0 +1,51 @@
+{% extends "base_jquery_ui.html" %}
+
+{% block scripts %}
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/select.js"></script>
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/audiosources.js"></script>
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.form.js"></script> 
+{% endblock %}
+
+{% block content %}
+  <div id="tag_selector_header" class="selector">
+    <div class="head_and_foot">
+    <h4> Tags:</h4> 
+    </div>
+  </div>
+  <div id="tag_selector_container" class="selector">
+    <div id="tag_selector">
+    </div>
+  </div>
+  <div id="track_selector_container" class="track_selector_align selector selector_container">
+    <div id="track_selector">
+    </div>
+  </div>
+  <div id="track_selector_footer" class="track_selector_align">
+    <div class="head_and_foot" id="audiofile_select_footer">
+      <button id="add_to_playlist_button" type="button"> Selectionner </button>
+    </div>
+    <div class="head_and_foot" id="audiosource_select_footer" style="display:none;">
+      <button id="create_playlist_button" type="button"> Créer nouvelle playlist </button>
+    </div>
+  </div>
+  <div id="track_selector_header" class="track_selector_align selector">
+    <div class="head_and_foot">
+      <h4> Browse:</h4> 
+      <div id="source_type">
+        <span class="choice_selector unselectable" id="audiofile_select">Tracks</span>
+        <span class="choice_selector unselectable" id="audiosource_select">Sources</span>
+      </div>
+      <input type="text" id="text_selector"/>
+    </div>
+  </div>
+
+  <div id="main">
+    {% if current_view == "create_audiosource" %}
+      {% include "audiosources/create_audiosource.html" %}
+    {% endif %}
+    {% if not current_view %}
+      <p> Bienvenue sur l'interface de gestion des contenus de Radio Zero Zero </p>
+    {% endif %}
+  </div>
+
+{% endblock %}

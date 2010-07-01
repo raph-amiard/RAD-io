@@ -15,8 +15,10 @@ def instance_to_json(instance, *args, **kwargs):
     """
     return json.dumps(instance_to_dict(instance, *args, **kwargs))
 
-def JSONResponse(dict):
+def JSONResponse(dict, mimetype=True):
     """
     Encapsulates the common JSON HttpResponse pattern
+    The mimetype arg is used to fix a dirty bug when using firefox with json.form
+    where if the content is json, firefox will try to open the said content as a file
     """
-    return HttpResponse(json.dumps(dict), mimetype="application/json")
+    return HttpResponse(json.dumps(dict), mimetype="application/json" if mimetype else None)

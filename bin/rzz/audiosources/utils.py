@@ -16,3 +16,10 @@ def process_tags(tags_string):
         append_to_key(output, tag[0] if l > 1 else 'general', tag[1] if l > 1 else tag[0])
     return output
 
+def add_tags_to_model(tags_string, audiomodel):
+    from rzz.audiosources.models import TagCategory, Tag
+    for category, tags in process_tags(tags_string).items():
+        c, _ = TagCategory.objects.get_or_create(name=category)
+        for tag in tags:
+            t, _ = Tag.objects.get_or_create(category=c,name=tag)
+            audiomodel.tags.add(t)

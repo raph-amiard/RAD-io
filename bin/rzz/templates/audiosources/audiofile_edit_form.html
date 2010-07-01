@@ -3,21 +3,8 @@
   <input type="Submit" value="Envoyer" />
   {% if audiofile.tags %}
     <h3> Tags actuels </h3>
-    <table> 
-      <tr><th>Categorie</th><th>tags</th></tr>
-    {% for category,tags in audiofile.tags_by_category.items %}
-      <tr>
-        <td>{{ category }}</td>
-        <td>
-          {% for tag in tags %}
-            <span class='audiofile_tag'> 
-              {{ tag.name }}
-              <a class='audiofile_tag_delete' href="{% url delete-audiomodel-tag audiofile.id tag.id %}">x</a>
-            </span>
-          {% endfor %}
-        </td>
-      </tr>
-    {% endfor %}
-    </table>
   {% endif %}
+  {% with audiofile as audiomodel %}
+      {% include "audiosources/tags_table.html" %}
+  {% endwith %}
 </form>

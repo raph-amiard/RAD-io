@@ -1,7 +1,7 @@
-{% for tag_cat in tag_categories_list %}
-  <p> {{ tag_cat.name }} </p>
+{% for cat_name, tags in categories.items %}
+  <p> {{ cat_name }} </p>
   <ul>
-    {% for tag in tag_cat.tag_set.all %}
+    {% for tag in tags %}
       <li class="unselectable ui-widget-content"> {{ tag.name }} <input type="hidden" value="{{ tag.id}}"/> </li>
     {% endfor %}
   </ul>

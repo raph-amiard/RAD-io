@@ -3,9 +3,11 @@ var AUDIOMODELS = {};
 var AUDIOMODEL = "audiofile_select";
 var AUDIOMODELS_ROUTES = {
     'audiofile_select':{'view_url':'/audiosources/audiofile/list/',
-                 'template_url': '/site_media/js_templates/audiofile_list_element.ejs'},
+                        'template_url': '/site_media/js_templates/audiofile_list_element.ejs',
+                        'tags_url':'/audiosources/audiofile/tag/list/'},
     'audiosource_select':{'view_url':'/audiosources/audiosource/list/',
-                   'template_url':'/site_media/js_templates/audiosource_list_element.ejs'}
+                          'template_url':'/site_media/js_templates/audiosource_list_element.ejs',
+                          'tags_url':'/audiosources/audiosource/tag/list/'}
 };
 
 function audiomodel_route() { return AUDIOMODELS_ROUTES[AUDIOMODEL]; }
@@ -26,7 +28,7 @@ return {
 				// remove the current input
 				terms.pop();
 				// add the selected item
-				terms.push( ui.item.value );
+				terms.push(ui.item.value);
 				// add placeholder to get the comma-and-space at the end
 				terms.push("");
 				this.value = terms.join(", ");
@@ -182,50 +184,73 @@ function add_tracks_to_playlist() {
     });
 }
 
+function submit_playlist (e) {
+    var data = {
+        'title': $('input[name="playlist_title"]').val(),
+        'tags': $('input[name="playlist_tags"]').val()
+    };
+    $.each($('#uploaded_audiofiles li input'), function(i, input) {data[i] = input.value;});
+    $.post(location.href,data, function(response) {
+        alert('post successfull');
+    });
+}
+
+var sel_data = {};
+
+function tag_sel_handler (html) {
+
+
+    $('#tag_selector').html(html);
+    var sel_handler = function(event, ui) {
+        sel_data = {text_filter: sel_data['text_filter']};
+        $.each($('#tag_selector ul li.ui-selected input'), function(i, input) {sel_data['tag_'+i] = input.value});
+        $.getJSON(audiomodel_route().view_url,sel_data,track_selector_update);
+    }
+
+    $('#tag_selector ul').make_selectable({handler:sel_handler}); 
+}
+
+
 // Add upload progress for multipart forms.
 $(function() {
-    $('#uploaded_audiofiles').sortable({ axis: 'y' , containment:$('.playlist_box')});
     var audiofileforms = $('.audiofileform');
     var newform = $('.audiofileform:first').clone();
+
+    $('#uploaded_audiofiles').sortable({ axis: 'y' , containment:$('.playlist_box')});
+
     audiofileforms.each(function(i) {
         var options = gen_ajaxform_options($(this), newform);
         $(this).ajaxForm(options);
     });
-    $('input[name="playlist_submit"]').click(function(e) {
-        var data = {'title' :$('input[name="playlist_title"]').val()};
-        $.each($('#uploaded_audiofiles li input'), function(i, input) {data[i] = input.value;});
-        $.post(location.href,data, function(response) {
-            alert('post successfull');
-            alert(response);
-        });
-    });
+    
+    $('input[name="playlist_submit"]').click(submit_playlist);
 
-    var sel_data = {};
-    $.getJSON(audiomodel_route().view_url, track_selector_update );
+    $.getJSON(audiomodel_route().view_url, track_selector_update);
+    
     $('#text_selector').keyup(function(e) {
         sel_data['text_filter'] = $('#text_selector').val();
         $.getJSON(audiomodel_route().view_url,sel_data, track_selector_update);
     });
-    $.get('/audiosources/tag/list/', function(html) {
 
-        $('#tag_selector').html(html);
-
-        var sel_handler = function(event, ui) {
-            sel_data = {text_filter: sel_data['text_filter']};
-            $.each($('#tag_selector ul li.ui-selected input'), function(i, input) {sel_data['tag_'+i] = input.value});
-            $.getJSON(audiomodel_route().view_url,sel_data,track_selector_update);
-        }
-
-        $('#tag_selector ul').make_selectable({handler:sel_handler}); 
-    });
+    $.get(audiomodel_route().tags_url, tag_sel_handler);
+    
     $('#add_to_playlist_button').click(add_tracks_to_playlist);
+
+    $('#create_playlist_button').click(function(e) {
+        $('#main').load('/audiosources/audiosource/add/');
+        $('input[name="playlist_submit"]').click(submit_playlist);
+    });
+    
     $('#source_type').make_selectable({
         unique_select:true,
         select_class:'choice_selected',
         handler:function(e) {
-            AUDIOMODEL = e.srcElement.id;
-            console.log(AUDIOMODEL);
+            AUDIOMODEL = e.target.id;
+            sel_data = {text_filter: sel_data['text_filter']};
+            $.get(audiomodel_route().tags_url, tag_sel_handler);
             $.getJSON(audiomodel_route().view_url,sel_data,track_selector_update);
+            $('[id$="select_footer"]').hide();
+            $('#' + AUDIOMODEL + '_footer').show();
         }
     });
 });

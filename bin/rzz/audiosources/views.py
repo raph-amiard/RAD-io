@@ -13,7 +13,7 @@ from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, SourceEl
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
-from rzz.audiosources.utils import process_tags
+from rzz.audiosources.utils import add_tags_to_model
 
 @staff_member_required
 def create_audio_source(request):
@@ -34,10 +34,36 @@ def create_audio_source(request):
                 audio_source.length += audiofile.length 
             except ValueError:
                 pass
+
+        add_tags_to_model(request.POST['tags'], audio_source)
         audio_source.save()
-    return direct_to_template(request, 
-                              'audiosources/create_audiosource.html', 
-                              extra_context={'form':AudioFileForm()})
+
+    ctx = {'form':AudioFileForm()}
+    if request.is_ajax():
+        template = 'audiosources/create_audiosource.html'
+    else:
+        template = 'audiosources/main.html'
+        ctx['current_view'] = 'create_audiosource'
+
+    return direct_to_template(request, template, extra_context=ctx)
+
+@staff_member_required
+def edit_audio_source(request, audiosource_id):
+    """
+    """
+    audio_source = get_object_or_404(AudioSource, id=audiosource_id)
+    if request.method == 'POST':
+        pass
+
+    ctx = {'form':AudioFileForm(),
+           'audiosource':audio_source}
+    if request.is_ajax():
+        template = 'audiosources/create_audiosource.html'
+    else:
+        template = 'audiosources/main.html'
+        ctx['current_view'] = 'create_audiosource'
+
+    return direct_to_template(request, template, extra_context=ctx)
 
 @staff_member_required
 def create_audio_file(request):
@@ -56,10 +82,12 @@ def create_audio_file(request):
         if form.is_valid():
             audiofile = form.save()
             return JSONResponse({'audiofile':audiofile.to_dict(),
-                                            'status':'ok'})
+                                            'status':'ok'},
+                                mimetype=False)
         else:
             return JSONResponse(dict(form.errors.items() 
-                                     + [('status', 'error')]))
+                                     + [('status', 'error')]),
+                                mimetype=False)
     return direct_to_template(request,
                               'audiosources/audiofile_form.html',
                               extra_context={'form':AudioFileForm()})
@@ -113,18 +141,18 @@ def edit_audio_file(request, audiofile_id):
                                        'artist':audiofile.artist})
     if request.method =='POST':
         form = EditAudioFileForm(request.POST)
+        
         if form.is_valid():
             artist = form.cleaned_data['artist']
             title = form.cleaned_data['title']
+
             if artist != audiofile.artist or title != audiofile.title:
                 audiofile.title = title
                 audiofile.artist = artist
                 audiofile.save_and_update_file()
-            for category, tags in process_tags(form.cleaned_data['tags']).items():
-                c, _ = TagCategory.objects.get_or_create(name=category)
-                for tag in tags:
-                    t, _ = Tag.objects.get_or_create(category=c,name=tag)
-                    audiofile.tags.add(t)
+
+            add_tags_to_model(form.cleaned_data['tags'], audiofile)
+
             audiofile.save()
             return JSONResponse({'audiofile':audiofile.to_dict(),
                                  'status':'ok'})
@@ -136,3 +164,25 @@ def edit_audio_file(request, audiofile_id):
     return JSONResponse({'html':template.render(ctx),
                          'tag_list':tag_list(),
                          'artist_list':[a.name for a in Artist.objects.all()]})
+
+
+def tags_list(request, audiomodel_klass):
+    tags = Tag.objects.extra(where=[
+        """
+        id IN (SELECT tag_id 
+               FROM audiosources_audiomodel_tags 
+               WHERE audiomodel_id IN (SELECT audiomodel_ptr_id 
+                                       FROM audiosources_%s))
+        """ % ('audiofile' if audiomodel_klass == AudioFile else 'audiosource')
+    ])
+    categories = {}
+    for tag in tags:
+        try:
+            categories[tag.category.name].append(tag)
+        except KeyError:
+            categories[tag.category.name] = [tag]
+
+    return direct_to_template(request, 
+                              'audiosources/tags_list.html',
+                              extra_context={'categories':categories})
+

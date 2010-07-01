@@ -1,0 +1,16 @@
+<table> 
+  <tr><th>Categorie</th><th>tags</th></tr>
+{% for category,tags in audiomodel.tags_by_category.items %}
+  <tr>
+    <td>{{ category }}</td>
+    <td>
+      {% for tag in tags %}
+        <span class='audiofile_tag'> 
+          {{ tag.name }}
+          <a class='audiofile_tag_delete' href="{% url delete-audiomodel-tag audiomodel.id tag.id %}">x</a>
+        </span>
+      {% endfor %}
+    </td>
+  </tr>
+{% endfor %}
+</table>
