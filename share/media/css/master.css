@@ -38,8 +38,7 @@ body {
   position:relative;
 }
 .audiofile_length {
-  position:absolute;
-  right:3px;
+  float:right;
 }
 
 .selector {
@@ -62,18 +61,18 @@ body {
 }
 
 #track_selector_container {
-  padding-top:55px;
-  padding-bottom:55px;
+  padding-top:80px;
+  padding-bottom:80px;
   border-right:1px solid black;
 }
 
 #track_selector_header {
-  height:55px;
+  height:80px;
   background-color:#CCD;
 }
 
 #track_selector_footer {
-  height:55px;
+  height:80px;
   bottom:0;
   position:fixed;
   background-color:#CCD;
@@ -92,6 +91,10 @@ body {
   background-color:#CCD;
 }
 
+.head_and_foot {
+    padding-left:5px;
+}
+
 .selector h4 , .selector p, .selector ul {
   margin-top:4px;
   margin-bottom:4px;
@@ -105,6 +108,7 @@ body {
 #track_selector {
   overflow-y:auto;
   height:100%;
+  width:100%;
 }
 
 #tag_selector ul, #track_selector ul {
@@ -117,7 +121,20 @@ body {
   margin-bottom:3px;
 }
 
+.choice_selector {  
+  font-size:12px;
+  background-color:#A7B;
+  padding:2px;
+  margin:0px, 5px;
+  -moz-border-radius: 5px; 
+  -webkit-border-radius: 5px;
+}
+
+.choice_selected {
+  background-color:#B8D;
+}
+
 body {
   position:absolute;
-  left:400px;
+  left:350px;
 }

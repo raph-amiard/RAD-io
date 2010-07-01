@@ -13,11 +13,24 @@ $(function() {
             }
         });
     });
-    $.extend($.fn.make_selectable = function (handler) {
-        this.children().disableTextSelect();
+    $.extend($.fn.make_selectable = function (opts) {
+        opts = $.extend({
+            handler: undefined,
+            unique_select: false,
+            select_class: 'ui-selected'
+        }, opts);
+        var container = this;
         this.children().click(function(e) {
-            $(this).toggleClass('ui-selected');
-            if(handler) {handler(e);}
+            if(opts.unique_select) {
+                if(!$(this).hasClass(opts.select_class)) {
+                    container.children().removeClass(opts.select_class);
+                    $(this).addClass(opts.select_class);
+                }
+            } else {
+                $(this).toggleClass(opts.select_class);
+            }
+            if(opts.handler) {opts.handler(e);}
         });
+        this.children().disableTextSelect();
     });
 });

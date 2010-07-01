@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404
 from rzz.artists.models import Artist
 from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, SourceElement,Tag, TagCategory, tag_list
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
-from rzz.utils.jsonutils import instance_to_json, instance_to_dict
+from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
 from rzz.audiosources.utils import process_tags
 
@@ -55,11 +55,11 @@ def create_audio_file(request):
         form = AudioFileForm(request.POST, request.FILES)
         if form.is_valid():
             audiofile = form.save()
-            return HttpResponse(json.dumps({'audiofile':audiofile.to_dict(),
-                                            'status':'ok'}))
+            return JSONResponse({'audiofile':audiofile.to_dict(),
+                                            'status':'ok'})
         else:
-            return HttpResponse(json.dumps(dict(form.errors.items() 
-                                                + [('status', 'error')])))
+            return JSONResponse(dict(form.errors.items() 
+                                     + [('status', 'error')]))
     return direct_to_template(request,
                               'audiosources/audiofile_form.html',
                               extra_context={'form':AudioFileForm()})
@@ -91,16 +91,16 @@ def audio_models_list(request,audiomodel_klass, page):
         raise Http404
     audiofiles = audiofiles[bottom:top if top <= cnt else cnt]
 
-    return HttpResponse(json.dumps([af.to_dict() for af in audiofiles]), mimetype='application/json')
+    return JSONResponse([af.to_dict() for af in audiofiles])
 
 def delete_audiomodel_tag(request, audiomodel_id, tag_id):
     audiomodel = get_object_or_404(AudioModel, pk=audiomodel_id);
     tag = get_object_or_404(Tag, pk=tag_id);
     try:
         audiomodel.tags.remove(tag);
-        return HttpResponse(json.dumps({'status':'ok'}), mimetype='application/json')
+        return JSONResponse({'status':'ok'})
     except:
-        return HttpResponse(json.dumps({'status':'errors'}), mimetype='application/json')
+        return JSONResponse({'status':'errors'})
 
 def edit_audio_file(request, audiofile_id):
     """
@@ -126,13 +126,13 @@ def edit_audio_file(request, audiofile_id):
                     t, _ = Tag.objects.get_or_create(category=c,name=tag)
                     audiofile.tags.add(t)
             audiofile.save()
-            return HttpResponse(json.dumps({'audiofile':audiofile.to_dict(),
-                                            'status':'ok'}))
+            return JSONResponse({'audiofile':audiofile.to_dict(),
+                                 'status':'ok'})
         else:
-            return HttpResponse(json.dumps(dict(form.errors.items() 
-                                                + [('status','errors')])))
+            return JSONResponse(dict(form.errors.items() 
+                                     + [('status','errors')]))
     template = loader.get_template('audiosources/audiofile_edit_form.html')
     ctx = Context({'form':form, 'audiofile':audiofile})
-    return HttpResponse(json.dumps({'html':template.render(ctx),
-                                    'tag_list':tag_list(),
-                                    'artist_list':[a.name for a in Artist.objects.all()]}))
+    return JSONResponse({'html':template.render(ctx),
+                         'tag_list':tag_list(),
+                         'artist_list':[a.name for a in Artist.objects.all()]})

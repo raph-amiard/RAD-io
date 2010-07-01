@@ -30,7 +30,6 @@ class TagCategory(models.Model):
 
     def __unicode__(self):
         return self.name
-    
 
 class Tag(models.Model):
     category = models.ForeignKey(TagCategory)
@@ -65,6 +64,9 @@ class AudioModel(models.Model):
             output += ['{0}:{1}'.format(category, tag.name) for tag in tags]
         return output
 
+    def to_dict(self):
+        return instance_to_dict(self)
+
 class AudioFile(AudioModel):
     title = models.CharField('Audiofile title', max_length=400)
     artist = models.CharField('Audiofile artist', max_length=200)
@@ -77,11 +79,6 @@ class AudioFile(AudioModel):
     def form_url(self):
         return reverse('audio-file-edit',args=[self.id])
 
-    def to_dict(self):
-        d = instance_to_dict(self)
-        d.update({'form_url':self.form_url()})
-        return d
-
     def save_and_update_file(self):
         self.save()
         self.update_file()
@@ -91,6 +88,11 @@ class AudioFile(AudioModel):
         move_field_file(self.file, 
                           audio_file_name(self, 
                                           path.split(self.file.name)[1]))
+
+    def to_dict(self):
+        d = super(AudioFile, self).to_dict()
+        d.update({'form_url':self.form_url()})
+        return d
 
 
 class AudioSource(AudioModel):
