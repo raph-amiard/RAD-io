@@ -4,7 +4,7 @@ import logging
 
 CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
-PROJECT_PATH = '/home/raph/Projects/rzz_website_new/'
+PROJECT_PATH = '/home/raph/Projects/django_rzz/'
 
 LOG_FILENAME = os.path.join(PROJECT_PATH, 'log/logging.out')
 logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
