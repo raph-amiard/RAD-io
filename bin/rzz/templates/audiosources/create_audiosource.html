@@ -15,7 +15,7 @@
   <div class="playlist_box">
     <ul id="uploaded_audiofiles">
     {% if audiosource %}
-      {% for audiofile in audiosource.audio_files.all %}
+      {% for audiofile in audiosource.sorted_audiofiles %}
         <li class="ui-state-default">
           <input type="hidden" value="{{ audiofile.id }}"/>
           <p> Titre: {{ audiofile.title }} Artiste: {{ audiofile.artist }} </p>

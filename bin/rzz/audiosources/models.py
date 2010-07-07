@@ -111,6 +111,10 @@ class AudioSource(AudioModel):
         d.update({'form_url':self.form_url()})
         return d
 
+    def sorted_audiofiles(self):
+        return [s.audiofile for s in self.sourceelement_set.order_by('position')]
+        
+
 class SourceElement(models.Model):
     position = models.IntegerField()
     audiofile = models.ForeignKey(AudioFile)

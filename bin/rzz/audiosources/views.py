@@ -22,6 +22,7 @@ def create_audio_source(request):
     """
     if request.method == 'POST':
         audio_source = AudioSource(title=request.POST['title'], length=0)
+        add_tags_to_model(request.POST['tags'], audio_source)
         audio_source.save()
 
         playlist_tuples = [(int(key.split('_')[1]), int(val)) 
@@ -29,9 +30,7 @@ def create_audio_source(request):
                            if key.startswith('audiofile_')]
 
         add_audiofiles_to_audiosource(playlist_tuples, audio_source)
-
-        add_tags_to_model(request.POST['tags'], audio_source)
-        audio_source.save()
+        return JSONResponse({'status':'success'})
 
     ctx = {'form':AudioFileForm()}
     if request.is_ajax():
@@ -48,7 +47,18 @@ def edit_audio_source(request, audiosource_id):
     """
     audio_source = get_object_or_404(AudioSource, id=audiosource_id)
     if request.method == 'POST':
-        audio_source.audio_files.all().delete()
+        audio_source.sourceelement_set.all().delete()
+        audio_source.title = request.POST['title']
+        audio_source.length = 0
+        add_tags_to_model(request.POST['tags'], audio_source)
+        audio_source.save()
+
+        playlist_tuples = [(int(key.split('_')[1]), int(val)) 
+                           for key, val in request.POST.items() 
+                           if key.startswith('audiofile_')]
+        print playlist_tuples
+        add_audiofiles_to_audiosource(playlist_tuples, audio_source)
+        return JSONResponse({'status':'success'})
 
     ctx = {'form':AudioFileForm(),
            'audiosource':audio_source}
