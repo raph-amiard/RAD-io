@@ -22,8 +22,9 @@ def create_audio_source(request):
     """
     if request.method == 'POST':
         audio_source = AudioSource(title=request.POST['title'], length=0)
-        add_tags_to_model(request.POST['tags'], audio_source)
         audio_source.save()
+
+        add_tags_to_model(request.POST['tags'], audio_source)
 
         playlist_tuples = [(int(key.split('_')[1]), int(val)) 
                            for key, val in request.POST.items() 

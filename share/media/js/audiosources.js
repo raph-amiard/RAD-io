@@ -189,7 +189,6 @@ var sel_data = {};
 
 function tag_sel_handler (html) {
 
-
     $('#tag_selector').html(html);
     var sel_handler = function(event, ui) {
         sel_data = {text_filter: sel_data['text_filter']};
@@ -206,7 +205,6 @@ function playlist_edit_handler () {
           e.preventDefault();
           data = {};
           $.each($('#uploaded_audiofiles li input'), function(i, input) {data["audiofile_" + i] = input.value;});
-          console.log(data);
           $(this).ajaxSubmit({
               success: function(response) {
                            alert('post successfull');
@@ -219,15 +217,15 @@ function playlist_edit_handler () {
     $('#audiosource_form', document).submit(submit_playlist);
 }
 
+function audiofileform_handler (i) {
+    var options = gen_ajaxform_options($(this), $(this).clone());
+    $(this).ajaxForm(options);
+}
+
 // Add upload progress for multipart forms.
 $(function() {
-    var audiofileforms = $('.audiofileform');
-    var newform = $('.audiofileform:first').clone();
 
-    audiofileforms.each(function(i) {
-        var options = gen_ajaxform_options($(this), newform);
-        $(this).ajaxForm(options);
-    });
+    $('.audiofileform').each(audiofileform_handler);
     
     playlist_edit_handler();
 
@@ -246,6 +244,7 @@ $(function() {
         $.get('/audiosources/audiosource/add/', function(html) {
             $('#main').html(html);
             playlist_edit_handler();
+            $('.audiofileform').each(audiofileform_handler);
         });
     });
     
