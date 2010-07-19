@@ -5,6 +5,8 @@
       <span class="audiofile_length"> <%= format_length(audiomodel.length) %> </span>
   </p>
   <div class="audiofile_actions">
-    <a href="<%= audiomodel.form_url %>">Edit</a>
+    <a class="audiofile_play" href="<%= audiomodel.file_url %>">Play</a>
+    <a class="audiofile_edit" href="<%= audiomodel.form_url %>">Edit</a>
+    <a class="audiomodel_delete" href="/audiosources/json/delete-audio-file/<%= audiomodel.id %>">Delete</a>
   </div>
 </li>

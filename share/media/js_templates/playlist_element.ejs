@@ -1,10 +1,12 @@
-<li class="unselectable ui-state-default audiomodel-box">
+<li class="unselectable ui-state-default audiomodel-box <% if (fresh) { %>fresh_source_element<% } %>">
   <input type="hidden" value="<%= audiofile.id %>"/> 
   <p> <span id="audiofile_title"> <%= audiofile.title %> </span> - 
       <span id="audiofile_artist"> <%= audiofile.artist %> </span> 
       <div class="audiofile_length"> <%= format_length(audiofile.length) %> </div>
   </p>
   <div class="audiofile_actions">
-    <a href="<%= audiofile.form_url %>">Edit</a>
+    <a class="audiofile_play" href="<%= audiofile.file_url %>">Play</a>
+    <a class="audiofile_edit" href="<%= audiofile.form_url %>">Edit</a>
+    <a class="source_element_delete" href="/audiosources/json/delete-source-element/<%= audiofile.source_element_id %>">Delete</a>
   </div>
 </li>

@@ -5,9 +5,10 @@ from django.core.urlresolvers import reverse
 
 from rzz.utils.str import sanitize_filename, sanitize_filestring
 from rzz.utils.file import move_field_file, set_mp3_metadata
+from rzz.utils.jsonutils import instance_to_dict
+from rzz.utils.collections import dict_union
 from rzz.audiosources.utils import append_to_key
 from rzz.artists.models import Artist
-from rzz.utils.jsonutils import instance_to_dict
 
 def tag_list():
     output = []
@@ -55,7 +56,7 @@ class AudioModel(models.Model):
     def tags_by_category(self):
         output = {}
         for tag in self.tags.all():
-            append_to_key(output, tag.category.name, tag)
+            append_to_key(output, tag.category.name, instance_to_dict(tag))
         return output
 
     def autocomplete_list(self):
@@ -64,8 +65,11 @@ class AudioModel(models.Model):
             output += ['{0}:{1}'.format(category, tag.name) for tag in tags]
         return output
 
-    def to_dict(self):
-        return instance_to_dict(self)
+    def to_dict(self, with_tags=False, **kwargs):
+        d = instance_to_dict(self)
+        if with_tags:
+            d.update({'tags_by_category': self.tags_by_category()})
+        return d
 
 class AudioFile(AudioModel):
     title = models.CharField('Audiofile title', max_length=400)
@@ -89,9 +93,10 @@ class AudioFile(AudioModel):
                           audio_file_name(self, 
                                           path.split(self.file.name)[1]))
 
-    def to_dict(self):
-        d = super(AudioFile, self).to_dict()
-        d.update({'form_url':self.form_url()})
+    def to_dict(self, **kwargs):
+        d = super(AudioFile, self).to_dict(**kwargs)
+        d.update({'form_url':self.form_url(),
+                  'file_url':self.file.url})
         return d
 
 
@@ -106,13 +111,16 @@ class AudioSource(AudioModel):
     def form_url(self):
         return reverse('edit-audio-source',args=[self.id])
 
-    def to_dict(self):
-        d = super(AudioSource, self).to_dict()
+    def to_dict(self, with_audiofiles=False, **kwargs):
+        d = super(AudioSource, self).to_dict(**kwargs)
         d.update({'form_url':self.form_url()})
+        if with_audiofiles:
+            d.update({'sorted_audiofiles':self.sorted_audiofiles()})
         return d
 
     def sorted_audiofiles(self):
-        return [s.audiofile for s in self.sourceelement_set.order_by('position')]
+        return [dict_union(s.audiofile.to_dict(), source_element_id=s.id)
+                for s in self.sourceelement_set.order_by('position')]
         
 
 class SourceElement(models.Model):

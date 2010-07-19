@@ -1,33 +1,21 @@
-body {
-  font-family: arial, helvetica, sans-serif;
-}
-
-.playlist_box {
-  border:1px solid black;
-  width:300px;
-  height:400px;
-  overflow-y:scroll;
-}
-
-#uploaded_audiofiles {
-  margin:0;
-  padding:0;
-  list-style-type:none;
-}
-
-#uploaded_audiofiles li {
-  margin-top:2px;
-  margin-bottom:2px;
-  font-size:12px;
-}
-
-.ui-selected { background: #F39814; color: white; }
-.ui-selecting { background: #FECA40; }
 
 .ui-state-default , .ui-widget-content{
   font-size:11px;
   font-weight:normal;
   color:#000;
+}
+
+.ui-widget-content ,.ui-state-default {
+  background-image:none;
+  background-color:#E0E4CC;
+  border:none;
+}
+
+.ui-selected { background: #F39814; color: white; }
+.ui-selecting { background: #FECA40; }
+
+.ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited {
+  color:#E0803A;
 }
 
 .unselectable {
@@ -41,9 +29,34 @@ body {
   float:right;
 }
 
-.selector {
-  position:fixed;
+#main_menu h2 {
+  margin-top:0;
+}
+
+#main_menu {
+  margin-top:0;
+  z-index:200;
   top:0;
+  left:0;
+  position:fixed;
+  width:100%;
+  height:18px;
+  background-color:#CDD1BB;
+  border-bottom:3px solid #A8AB99;
+}
+
+.audiofileform p {
+  display:inline;
+}
+
+#audiofile_player {
+  float:right;
+}
+
+.selector {
+  z-index:10;
+  position:fixed;
+  top:20px;
 }
 
 .selector_container {
@@ -61,21 +74,23 @@ body {
 }
 
 #track_selector_container {
-  padding-top:80px;
+  padding-top:100px;
   padding-bottom:80px;
-  border-right:1px solid black;
 }
+
 
 #track_selector_header {
   height:80px;
-  background-color:#CCD;
+  background-color:#D7DBC4;
 }
 
 #track_selector_footer {
+z-index:20;
   height:80px;
   bottom:0;
   position:fixed;
-  background-color:#CCD;
+  background-color:#D7DBC4;
+  z-index:20;
 }
 
 #tag_selector_container {
@@ -88,7 +103,7 @@ body {
   height:25px;
   width:129px;
   left:0;
-  background-color:#CCD;
+  background-color:#D7DBC4;
 }
 
 .head_and_foot {
@@ -112,7 +127,6 @@ body {
 }
 
 #tag_selector ul, #track_selector ul {
-  list-style-type:none;
   padding:0;
 }
 
@@ -123,7 +137,7 @@ body {
 
 .choice_selector {  
   font-size:12px;
-  background-color:#A7B;
+  background-color:#A7DBD8;
   padding:2px;
   margin:0px, 5px;
   -moz-border-radius: 5px; 
@@ -131,10 +145,118 @@ body {
 }
 
 .choice_selected {
-  background-color:#B8D;
+  background-color:#A1C4C2;
 }
 
 body {
-  position:absolute;
-  left:350px;
+  background-color:#E9EDD4;
+  list-style-type:none;
+  font-family: arial, helvetica, sans-serif;
+}
+
+.ui-autocomplete {
+    max-height:100px;
+    overflow-y:auto;
+    overflow-x:hidden;
+}
+
+#main_container {
+  z-index:0;
+  box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  -webkit-box-sizing:border-box;
+  position:relative;
+  padding-left:340px;
+  padding-right:10px;
+  padding-top:10px;
+  top:20px;
+  width:100%;
+}
+
+.fresh_source_element {
+  background-color:#F38630;
+  background-image:none;
+}
+
+.fresh_source_element a, .fresh_source_element a:link, .fresh_source_element a:visited {
+  color:#B36B37;
+}
+
+.playlist_box li.to_delete_source_element {
+  display:none;
+}
+
+#messages {
+  position:fixed;
+  left:0;
+  top:20px;
+  z-index:200;
+  width:100%;
+  min-height:20px;
+}
+
+.message {
+  margin:5px;
+  padding:0;
+  background-color:#FA6900;
+  border: 1px dashed #BF621F;
+}
+
+#playlist_edit {
+  display: none;
+  border:4px solid #CDD1BB;
+  width:100%;
+}
+#playlist_edit_content {
+  padding:10px;
+}
+
+.playlist_box {
+  background-color:white;
+  border:4px solid #CDD1BB;
+  width:90%;
+  height:300px;
+  overflow-y:scroll;
+}
+
+#tags_table_container table {
+  background-color:white;
+  border:4px solid #CDD1BB;
+}
+
+#uploaded_audiofiles {
+  margin:0;
+  padding:0;
+  list-style-type:none;
+  height:100%;
+}
+
+#uploaded_audiofiles li {
+  margin-top:2px;
+  margin-bottom:2px;
+  font-size:12px;
+}
+#uploaded_audiofiles li p {
+  margin-top:3px;
+  margin-bottom:3px;
+}
+
+.columns {
+  position:relative;
+}
+
+.columns:after {
+  content:'';
+  display:block;
+  clear:both;
+}
+
+.audiosource_left_column, .audiosource_right_column{
+  float:left;
+  width:50%;
+}
+
+#playlist_edit_title {
+  margin-top:0;
+  padding-top:0;
 }

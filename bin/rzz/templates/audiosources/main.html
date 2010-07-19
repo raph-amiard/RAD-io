@@ -4,9 +4,18 @@
   <script type="text/javascript" src="{{ MEDIA_URL }}js/select.js"></script>
   <script type="text/javascript" src="{{ MEDIA_URL }}js/audiosources.js"></script>
   <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.form.js"></script> 
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/swfobject.js"></script> 
 {% endblock %}
 
 {% block content %}
+  <div id="main_menu">
+    <span> RZZ Admin <span>
+  <object data="{{ MEDIA_URL }}/flash/dewplayer-rect.swf" width="240" height="20" name="dewplayer" id="audiofile_player" type="application/x-shockwave-flash"> 
+    <param name="movie" value="{{ MEDIA_URL }}/flash/dewplayer-rect.swf"/> 
+    <param name="flashvars" value="mp3=http://localhost/site_media/audiofiles/DMX_Krew-You_Cant_Hide_Your_Love.mp3&javascript=on" /> 
+    <param name="wmode" value="transparent" /> 
+  </object> 
+  </div>
   <div id="tag_selector_header" class="selector">
     <div class="head_and_foot">
     <h4> Tags:</h4> 
@@ -39,13 +48,46 @@
     </div>
   </div>
 
-  <div id="main">
-    {% if current_view == "create_audiosource" %}
-      {% include "audiosources/create_audiosource.html" %}
-    {% endif %}
-    {% if not current_view %}
+  <div id="main_container">
+    <div id="main_content">
+      <h1> Radio Zero Zero </h1>
       <p> Bienvenue sur l'interface de gestion des contenus de Radio Zero Zero </p>
-    {% endif %}
+    </div>
+
+    <div id="audiofiles_actions_container"></div>
+
+    <div id="playlist_edit">
+      <div id="playlist_edit_content">
+        <h2 id="playlist_edit_title"></h2>
+        <h3>Envoyer des morceaux:</h3>
+        <div id="audiofile_forms">
+        </div>
+        <form id="audiosource_form" action="" method="POST" accept-charset="utf-8">
+
+          <div class="columns">
+            <div class="audiosource_left_column">
+              <h3>Ordre des morceaux:</h3>
+              <div class="playlist_box">
+                <ul id="uploaded_audiofiles">
+                </ul>
+              </div>
+              <p> Durée de la playlist : <span id="playlist_length"></span> </p>
+            </div>
+            <div class="audiosource_right_column">
+              <h3>Informations:</h3>
+              <p> Nom de la playlist</p>
+              <input type="text" id="playlist_title" name="title" value=""/>
+              <p>Ajouter des tags</p> <input type="text" id="audiosource_tags" name="tags" value=""/> 
+              <p>Tags existants</p>
+              <div id="tags_table_container"></div>
+            </div>
+          </div>
+
+          <input type="submit" value="Créer la playlist"/>
+        </form>
+      </div>
+    </div>
+
   </div>
 
 {% endblock %}

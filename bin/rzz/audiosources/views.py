@@ -13,7 +13,7 @@ from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, SourceEl
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
-from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource
+from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource, remove_tags_from_model
 
 @staff_member_required
 def create_audio_source(request):
@@ -26,21 +26,20 @@ def create_audio_source(request):
 
         add_tags_to_model(request.POST['tags'], audio_source)
 
-        playlist_tuples = [(int(key.split('_')[1]), int(val)) 
-                           for key, val in request.POST.items() 
-                           if key.startswith('audiofile_')]
+        playlist_tuples = [(int(key.split('_')[-1]), int(val))
+                           for key, val in request.POST.items()
+                           if key.startswith('source_element_')]
 
         add_audiofiles_to_audiosource(playlist_tuples, audio_source)
-        return JSONResponse({'status':'success'})
+        return JSONResponse({'status':'success',
+                             'action':'creation',
+                             'audiosource':audio_source.to_dict()})
 
-    ctx = {'form':AudioFileForm()}
-    if request.is_ajax():
-        template = 'audiosources/create_audiosource.html'
-    else:
-        template = 'audiosources/main.html'
-        ctx['current_view'] = 'create_audiosource'
-
-    return direct_to_template(request, template, extra_context=ctx)
+    return JSONResponse({'audiofileform':AudioFileForm().as_p(),
+                         'mode':'creation',
+                         'tag_list':tag_list(),
+                         'title':'Creation d''une nouvelle playlist',
+                         'form_url': reverse('create-audio-source')})
 
 @staff_member_required
 def edit_audio_source(request, audiosource_id):
@@ -52,37 +51,37 @@ def edit_audio_source(request, audiosource_id):
         audio_source.title = request.POST['title']
         audio_source.length = 0
         add_tags_to_model(request.POST['tags'], audio_source)
+        # Save to be able to add audiofiles to source
         audio_source.save()
 
-        playlist_tuples = [(int(key.split('_')[1]), int(val)) 
+        playlist_tuples = [(int(key.split('_')[-1]), int(val)) 
                            for key, val in request.POST.items() 
-                           if key.startswith('audiofile_')]
-        print playlist_tuples
+                           if key.startswith('source_element_')]
+
+        to_delete_tags = [val for key, val in request.POST.items()
+                          if key.startswith('to_delete_tag')]
+
+        remove_tags_from_model(audio_source, to_delete_tags)
         add_audiofiles_to_audiosource(playlist_tuples, audio_source)
-        return JSONResponse({'status':'success'})
+        return JSONResponse({'status':'success',
+                             'action':'edition',
+                             'audiosource':audio_source.to_dict()})
 
-    ctx = {'form':AudioFileForm(),
-           'audiosource':audio_source}
-    if request.is_ajax():
-        template = 'audiosources/create_audiosource.html'
-    else:
-        template = 'audiosources/main.html'
-        ctx['current_view'] = 'create_audiosource'
-
-    return direct_to_template(request, template, extra_context=ctx)
+    return JSONResponse({'audiofileform':AudioFileForm().as_p(),
+                         'mode':'edition',
+                         'tag_list':tag_list(),
+                         'title': "Edition de la playlist %s" % audio_source.title,
+                         'audiosource':audio_source.to_dict(with_audiofiles=True, with_tags=True),
+                         'form_url': reverse('edit-audio-source', args=[audiosource_id])})
 
 @staff_member_required
 def create_audio_file(request):
     """
     AJAX
-    View for creation of audio files 
-    Returns a simple form to be integrated by ajax on GET
-    on POST, returns a json representation of the audiofile
+    POST View for creation of audio files 
+    Returns a json representation of the audiofile
     """
-    # TODO: Do two/three views : 
-    # 1. Music control center view
-    # 2. Form view
-    # 3. Ajax response ?
+    #TODO: Add error handling
     if request.method == 'POST':
         form = AudioFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -94,9 +93,6 @@ def create_audio_file(request):
             return JSONResponse(dict(form.errors.items() 
                                      + [('status', 'error')]),
                                 mimetype=False)
-    return direct_to_template(request,
-                              'audiosources/audiofile_form.html',
-                              extra_context={'form':AudioFileForm()})
 
 def audio_models_list(request,audiomodel_klass, page):
     """
@@ -146,7 +142,13 @@ def edit_audio_file(request, audiofile_id):
     form = EditAudioFileForm(initial= {'title':audiofile.title,
                                        'artist':audiofile.artist})
     if request.method =='POST':
-        form = EditAudioFileForm(request.POST)
+        to_delete_tags = [val for key, val in request.POST.items()
+                          if key.startswith('to_delete_tag')]
+
+        remaining_dict = dict([(k, v) for k, v in request.POST.items()
+                               if not key.startswith('to_delete_tag')])
+
+        form = EditAudioFileForm(remaining_dict)
         
         if form.is_valid():
             artist = form.cleaned_data['artist']
@@ -160,6 +162,7 @@ def edit_audio_file(request, audiofile_id):
             add_tags_to_model(form.cleaned_data['tags'], audiofile)
 
             audiofile.save()
+            remove_tags_from_model(audiofile, to_delete_tags)
             return JSONResponse({'audiofile':audiofile.to_dict(),
                                  'status':'ok'})
         else:
@@ -191,4 +194,3 @@ def tags_list(request, audiomodel_klass):
     return direct_to_template(request, 
                               'audiosources/tags_list.html',
                               extra_context={'categories':categories})
-

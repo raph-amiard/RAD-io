@@ -1,5 +1,5 @@
 <form class="audiofileform" action="{% url create-audio-file %}" enctype="multipart/form-data" method="post">
-  {{ form.as_p }}
+  {{ form.file }}
   <input type="Submit" value="Envoyer" />
   <div class="progress_bar"></div>
 </form>

@@ -1,0 +1,16 @@
+<table> 
+  <tr><th>Categorie</th><th>tags</th></tr>
+<% $.each(audiomodel.tags_by_category, function(category, tags) { %>
+  <tr>
+    <td><%= category %></td>
+    <td>
+      <% $.each(tags, function(i, tag) { %>
+        <span class='audiofile_tag' id="tag_<%= tag.id %>"> 
+          <%= tag.name %>
+          <a class='audiofile_tag_delete' href="">x</a>
+        </span>
+      <% }); %>
+    </td>
+  </tr>
+<% }); %>
+</table>
