@@ -18,9 +18,6 @@ audiomodels_routes: {
 }
 
 audiomodel_route: -> audiomodels_routes[current_audiomodel]
-js_template: (t) -> "/site_media/js_templates/${t}.ejs"
-split: (val) -> val.split /,\s*/
-extractLast: (term) -> split(term).pop()
 update_sources_list: -> $.getJSON audiomodel_route().view_url, sel_data, audiomodel_selector_update
 update_tags_list: -> $.get audiomodel_route().tags_url, tag_sel_handler
 update_playlist_length: -> $('#playlist_length').text format_length(total_playlist_length)
@@ -79,19 +76,19 @@ audiofile_edit_handler: (e) ->
     #TODO : Use another class than ui-state-default
     $pl_element: $(this).parents('.ui-state-default').first()
 
-    on_edit_sucess: (data) ->
+    on_edit_success: (data) ->
         if $pl_element
-            $('#audiofile_title', $pl_element).text form_res.audiofile.title
-            $('#audiofile_artist', $pl_element).text form_res.audiofile.artist
+            $('#audiofile_title', $pl_element).text data.audiofile.title
+            $('#audiofile_artist', $pl_element).text data.audiofile.artist
         $('#audiofiles_actions_container').html ''
         if current_audiomodel == "audiofile_select" then update_sources_list()
-        post_message "Le morceau $form_res.audiofile.artist - $form_res.audiofile.title a été modifié avec succès"
+        post_message "Le morceau $data.audiofile.artist - $data.audiofile.title a été modifié avec succès"
 
     edit_handler: (data) ->
         $('#audiofiles_actions_container').html(data.html)
         $('#id_tags').autocomplete multicomplete_params(data.tag_list)
         $('#id_artist').autocomplete {source: data.artist_list}
-        $('audiofiles_actions_container form').ajaxForm {dataType:'json', success:on_edit_sucess}
+        $('#audiofiles_actions_container form').ajaxForm {dataType:'json', success:on_edit_success}
 
     $.getJSON(@href, edit_handler)
 
@@ -101,7 +98,7 @@ append_to_playlist: (audiofile, fresh, to_replace_element) ->
     $html: $(new EJS({url: js_template 'playlist_element'}).render {audiofile:audiofile, fresh:fresh})
 
     if to_replace_element
-        af_div: replace_el.replaceWith($html)
+        af_div: to_replace_element.replaceWith($html)
     else
         af_div: $('#uploaded_audiofiles').append($html)
 
@@ -164,13 +161,15 @@ audiomodel_selector_update: (audiomodels_list) ->
 
     $('#track_selector').html(html)
     $('#track_selector ul').make_selectable()
-    $('#track_selector ul li').draggable {
-        helper:'clone'
-        appendTo:'body'
-        scroll:no
-        connectToSortable:'ul#uploaded_audiofiles'
-        zIndex:'257'
-    }
+    if current_audiomodel == "audiofile_select"
+        $('#track_selector ul li').draggable {
+            helper:'clone'
+            appendTo:'body'
+            scroll:no
+            connectToSortable:'ul#uploaded_audiofiles'
+            zIndex:'257'
+        }
+    $('#uploaded_audiofiles').sortable('refresh')
     $('.audiomodel_delete').click(handle_audiomodel_delete)
     $('.audiofile_edit').click(audiofile_edit_handler)
     $('.audiosource_edit').click (e) ->
@@ -229,7 +228,7 @@ playlist_edit_handler: ->
         e.preventDefault()
         data: {}
 
-        for li, i in $('#uploaded_audiofiles li') when not $(li).hasclass "to_delete_source_element"
+        for li, i in $('#uploaded_audiofiles li') when not $(li).hasClass "to_delete_source_element"
             data["source_element_$i"] = $(li).children('input').val()
 
         $(this).ajaxSubmit {
@@ -264,12 +263,12 @@ playlist_view: (json) ->
     $('.audiofileform').each audiofileform_handler
 
 
-$(document).ready ->
+$ ->
     playlist_edit_handler()
     update_sources_list()
     update_tags_list()
 
-    $('#text_selector').keyup (e) -> sel_data['text_filter'] = $(this).val()
+    $('#text_selector').keyup (e) -> sel_data['text_filter'] = $(this).val(); update_sources_list()
     $('#add_to_playlist_button').click add_tracks_to_playlist
     $('.audiofile_tag_delete').live 'click', handle_tag_delete
     $('#create_playlist_button').click (e) -> $.get '/audiosources/json/create-audio-source', playlist_view
