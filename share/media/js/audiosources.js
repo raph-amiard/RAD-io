@@ -101,31 +101,33 @@ handle_tag_delete = function(e) {
   return $audiofile_tag.append("<input type=\"hidden\" name=\"to_delete_tag_" + tag_id + "\" value=\"" + tag_id + "\">");
 };
 audiofile_edit_handler = function(e) {
-  var $pl_element, edit_handler, on_edit_success;
+  var $pl_element;
   e.stopPropagation();
   e.preventDefault();
   $pl_element = $(this).parents('.ui-state-default').first();
-  on_edit_success = function(data) {
-    if ($pl_element) {
-      $('#audiofile_title', $pl_element).text(data.audiofile.title);
-      $('#audiofile_artist', $pl_element).text(data.audiofile.artist);
-    }
-    $('#audiofiles_actions_container').html('');
-    current_audiomodel === "audiofile_select" ? update_sources_list() : null;
-    return post_message("Le morceau " + data.audiofile.artist + " - " + data.audiofile.title + " a été modifié avec succès");
-  };
-  edit_handler = function(data) {
-    $('#audiofiles_actions_container').html(data.html);
-    $('#id_tags').autocomplete(multicomplete_params(data.tag_list));
-    $('#id_artist').autocomplete({
-      source: data.artist_list
+  return $.getJSON(this.href, function(data) {
+    return modal_action("Editer un morceau", data.html, function(close_func) {
+      var on_edit_success;
+      on_edit_success = function(data) {
+        close_func();
+        if ($pl_element) {
+          $('#audiofile_title', $pl_element).text(data.audiofile.title);
+          $('#audiofile_artist', $pl_element).text(data.audiofile.artist);
+        }
+        $('#audiofiles_actions_container').html('');
+        current_audiomodel === "audiofile_select" ? update_sources_list() : null;
+        return post_message("Le morceau " + data.audiofile.artist + " - " + data.audiofile.title + " a été modifié avec succès");
+      };
+      $('#id_tags').autocomplete(multicomplete_params(data.tag_list));
+      $('#id_artist').autocomplete({
+        source: data.artist_list
+      });
+      return $('#audiofile_edit_form').ajaxForm({
+        dataType: 'json',
+        success: on_edit_success
+      });
     });
-    return $('#audiofiles_actions_container form').ajaxForm({
-      dataType: 'json',
-      success: on_edit_success
-    });
-  };
-  return $.getJSON(this.href, edit_handler);
+  });
 };
 append_to_playlist = function(audiofile, fresh, to_replace_element) {
   var $html, af_div;
@@ -255,28 +257,32 @@ add_tracks_to_playlist = function() {
   return _a;
 };
 handle_audiomodel_delete = function(e) {
-  var $container, $li;
+  var $li, content;
   e.stopPropagation();
   e.preventDefault();
   $li = $(this).parents('li:first');
-  $container = $('#audiofile_actions_container');
-  $container.html(new EJS({
+  content = new EJS({
     url: js_template('confirm')
   }).render({
     action: "Supprimer cet element",
     confirm_url: e.target.href
-  }));
-  $('.cancel_action').click(function(e) {
-    e.preventDefault();
-    return $container.html('');
   });
-  return $('.confirm_action').click(function(e) {
-    e.preventDefault();
-    return $.getJSON(e.target.href, function(json) {
-      if (json.status === "ok") {
-        $li.remove();
-        return $container.html('');
-      }
+  return modal_action("Supprimer un elément", content, function(clear_func) {
+    $('.cancel_action').click(function(e) {
+      e.preventDefault();
+      return clear_func();
+    });
+    return $('.confirm_action').click(function(e) {
+      e.preventDefault();
+      return $.getJSON(e.target.href, function(json) {
+        var artist;
+        if (json.status === "ok") {
+          clear_func();
+          $li.remove();
+          artist = json.object.artist;
+          return post_message(("L'élément " + ((typeof artist !== "undefined" && artist !== null) ? ("" + artist + " -") : null) + " " + json.object.title + " a bien été supprimé"));
+        }
+      });
     });
   });
 };

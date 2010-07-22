@@ -76,21 +76,22 @@ audiofile_edit_handler: (e) ->
     #TODO : Use another class than ui-state-default
     $pl_element: $(this).parents('.ui-state-default').first()
 
-    on_edit_success: (data) ->
-        if $pl_element
-            $('#audiofile_title', $pl_element).text data.audiofile.title
-            $('#audiofile_artist', $pl_element).text data.audiofile.artist
-        $('#audiofiles_actions_container').html ''
-        if current_audiomodel == "audiofile_select" then update_sources_list()
-        post_message "Le morceau $data.audiofile.artist - $data.audiofile.title a été modifié avec succès"
+    $.getJSON @href, (data) ->
+        modal_action "Editer un morceau", data.html, (close_func) ->
 
-    edit_handler: (data) ->
-        $('#audiofiles_actions_container').html(data.html)
-        $('#id_tags').autocomplete multicomplete_params(data.tag_list)
-        $('#id_artist').autocomplete {source: data.artist_list}
-        $('#audiofiles_actions_container form').ajaxForm {dataType:'json', success:on_edit_success}
+            on_edit_success: (data) ->
+                close_func()
+                if $pl_element
+                    $('#audiofile_title', $pl_element).text data.audiofile.title
+                    $('#audiofile_artist', $pl_element).text data.audiofile.artist
+                $('#audiofiles_actions_container').html ''
+                if current_audiomodel == "audiofile_select" then update_sources_list()
+                post_message "Le morceau $data.audiofile.artist - $data.audiofile.title a été modifié avec succès"
 
-    $.getJSON(@href, edit_handler)
+            $('#id_tags').autocomplete multicomplete_params(data.tag_list)
+            $('#id_artist').autocomplete {source: data.artist_list}
+            $('#audiofile_edit_form').ajaxForm {dataType:'json', success:on_edit_success}
+
 
 
 append_to_playlist: (audiofile, fresh, to_replace_element) ->
@@ -189,17 +190,22 @@ add_tracks_to_playlist: ->
 handle_audiomodel_delete: (e) ->
     e.stopPropagation(); e.preventDefault()
     $li: $(this).parents('li:first')
-    $container: $('#audiofile_actions_container')
 
-    $container.html new EJS({url:js_template('confirm')}).render({
+    content: new EJS({url:js_template('confirm')}).render({
         action:"Supprimer cet element"
         confirm_url: e.target.href
     })
 
-    $('.cancel_action').click (e) -> e.preventDefault(); $container.html ''
-    $('.confirm_action').click (e) ->
-        e.preventDefault()
-        $.getJSON(e.target.href, (json) -> if json.status == "ok" then $li.remove(); $container.html '')
+    modal_action "Supprimer un elément", content, (clear_func) ->
+        $('.cancel_action').click (e) -> e.preventDefault(); clear_func()
+        $('.confirm_action').click (e) ->
+            e.preventDefault()
+            $.getJSON e.target.href, (json) ->
+                if json.status == "ok"
+                    clear_func()
+                    $li.remove()
+                    artist: json.object.artist
+                    post_message "L'élément ${if artist? then "$artist -"} $json.object.title a bien été supprimé"
 
 tag_sel_handler: (html_data) ->
     $('#tag_selector').html html_data

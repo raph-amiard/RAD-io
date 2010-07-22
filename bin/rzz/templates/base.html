@@ -13,6 +13,14 @@
 
   <body>
     <div id="messages"></div>
+    <div id="modal_menu_hider"></div>
+    <div id="modal_menu">
+      <div id="modal_menu_titlebar">
+        <h4 id="modal_menu_title"></h4>
+        <button id="modal_menu_close">X</button>
+      </div>
+      <div id="modal_menu_content"></div>
+    </div>
     <div id="content">
       {% block content %}{% endblock %}
     </div>
