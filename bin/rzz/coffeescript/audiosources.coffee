@@ -279,6 +279,9 @@ $ ->
     $('.audiofile_tag_delete').live 'click', handle_tag_delete
     $('#create_playlist_button').click (e) -> $.get '/audiosources/json/create-audio-source', playlist_view
     $('#uploaded_audiofiles .audiofile_play').live 'click', handle_audiofile_play
+    $('#planning_board').resizable {
+        alsoResize: '#main_planning_board, #grid_container'
+    }
 
     $('#source_type').make_selectable {
         unique_select:yes

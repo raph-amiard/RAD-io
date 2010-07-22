@@ -16,6 +16,7 @@ h5 {
 }
 * {
   font-size:11px;
+  color:black;
 }
 p {
   margin:3px 0px;
@@ -337,4 +338,40 @@ input[type=text] {
 }
 #modal_menu_close {
   display:inline-block;
+}
+#planning_board {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  border:1px solid black;
+  height:600px;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+#planning_board th {
+  height:20px;
+  padding:0;
+}
+#planning_board td {
+  border:1px solid black;
+  margin:0;
+  width:14.286%;
+}
+#main_planning_board {
+  position:relative;
+  background-color:white;
+  height:600px;
+}
+#main_planning_board .grid {
+  margin:0;
+  border-bottom:1px solid black;
+}
+#main_planning_board .header_grid {
+  height:22px;
+  background-color:#C35;
+}
+#main_planning_board #grid_container {
+  height:578px;
+  background-color:#5C8;
 }
