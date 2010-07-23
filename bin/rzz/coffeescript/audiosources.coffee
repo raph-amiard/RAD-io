@@ -268,7 +268,6 @@ playlist_view: (json) ->
 
     $('.audiofileform').each audiofileform_handler
 
-
 $ ->
     playlist_edit_handler()
     update_sources_list()

@@ -57,8 +57,8 @@
 
     <div id="audiofiles_actions_container"></div>
 
-    <div id="playlist_edit">
-      <div id="playlist_edit_content">
+    <div id="playlist_edit" class="edit_div">
+      <div id="playlist_edit_content" class="content_div">
         <h2 id="playlist_edit_title"></h2>
         <h3>Envoyer des morceaux:</h3>
         <div id="audiofile_forms">
@@ -89,11 +89,11 @@
       </div>
     </div>
 
-    <div id="planning_edit">
-      <div id="main_planning_board">
-        <div class="header_grid"></div>
-        <div id="grid_container"></div>
-        <table id="planning_board">
+    <div id="planning_edit" class="edit_div">
+      <div id="planning_header">
+        <div id="planning_edit_content" class="content_div">
+        </div>
+        <table class="planning_table">
           <tr>
             <th>Lundi</th>
             <th>Mardi</th>
@@ -103,6 +103,12 @@
             <th>Samedi</th>
             <th>Dimanche</th>
           </tr>
+        </table> 
+      </div>
+      <div id="main_planning_board">
+        <div class="header_grid"></div>
+        <div id="grid_container"></div>
+        <table id="planning_board" class="planning_table">
           <tr>
             <td></td> 
             <td></td> 

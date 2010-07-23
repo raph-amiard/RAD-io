@@ -235,11 +235,12 @@ body {
   border: 1px dashed #BF621F;
 }
 
-#playlist_edit {
+.edit_div {
   display: none;
   border:4px solid #CDD1BB;
 }
-#playlist_edit_content {
+
+.content_div {
   padding:10px;
 }
 
@@ -339,15 +340,17 @@ input[type=text] {
 #modal_menu_close {
   display:inline-block;
 }
+.planning_table {
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
 #planning_board {
   position:absolute;
   top:0;
   left:0;
-  width:100%;
   border:1px solid black;
   height:600px;
-  border-collapse:collapse;
-  table-layout:fixed;
 }
 #planning_board th {
   height:20px;
@@ -361,6 +364,7 @@ input[type=text] {
 #main_planning_board {
   position:relative;
   background-color:white;
+  padding-top:200px;
   height:600px;
 }
 #main_planning_board .grid {
@@ -374,4 +378,14 @@ input[type=text] {
 #main_planning_board #grid_container {
   height:578px;
   background-color:#5C8;
+}
+#planning_header {
+  position:absolute;
+  z-index:5000;
+  background-color:white;
+  width:100%;
+  height:200px;
+}
+#planning_edit {
+  position:relative;
 }
