@@ -382,9 +382,6 @@ $(function() {
     return $.get('/audiosources/json/create-audio-source', playlist_view);
   });
   $('#uploaded_audiofiles .audiofile_play').live('click', handle_audiofile_play);
-  $('#planning_board').resizable({
-    alsoResize: '#main_planning_board, #grid_container'
-  });
   return $('#source_type').make_selectable({
     unique_select: true,
     select_class: 'choice_selected',
