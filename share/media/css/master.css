@@ -346,46 +346,62 @@ input[type=text] {
   table-layout:fixed;
 }
 #planning_board {
-  position:absolute;
   top:0;
   left:0;
-  border:1px solid black;
-  height:600px;
+  height:1440px;
+  position:absolute;
 }
 #planning_board th {
   height:20px;
   padding:0;
 }
 #planning_board td {
-  border:1px solid black;
   margin:0;
   width:14.286%;
+  border-left:1px solid black;
+}
+#main_planning_board_container {
+  padding-top:140px;
+  height:600px;
+  box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  -webkit-box-sizing:border-box;
 }
 #main_planning_board {
+  height:100%;
+  overflow-y:scroll;
   position:relative;
-  background-color:white;
-  padding-top:200px;
-  height:600px;
+  background-color:#F8F8F8;
 }
 #main_planning_board .grid {
   margin:0;
   border-bottom:1px solid black;
-}
-#main_planning_board .header_grid {
-  height:22px;
-  background-color:#C35;
-}
-#main_planning_board #grid_container {
-  height:578px;
-  background-color:#5C8;
 }
 #planning_header {
   position:absolute;
   z-index:5000;
   background-color:white;
   width:100%;
-  height:200px;
+  height:139px;
+  border-bottom:1px solid gray;
+}
+#planning_board_header {
+    position:absolute;
+    bottom:0;
 }
 #planning_edit {
   position:relative;
+}
+.grid_time {
+    height:1px;
+    margin-top:9px;
+}
+.grid_hour {
+    background-color:#777;
+}
+.grid_half {
+    background-color:#AAA;
+}
+.grid_tenth {
+    background-color:#CCC;
 }

@@ -4,6 +4,7 @@ sel_data: {}
 audiomodels: {}
 audiomodels_by_id: {}
 current_audiomodel: 'audiofile_select'
+current_mode: 'main'
 audiomodels_routes: {
     audiofile_select: {
         view_url:'/audiosources/audiofile/list/'
@@ -151,6 +152,26 @@ gen_ajaxform_options: (target_form, new_form) ->
             setTimeout update_progress_info freq
     }
 
+
+browser_draggable_update: ->
+    if current_mode == "playlist_edit" and current_audiomodel == "audiofile_select"
+        $('#track_selector ul li').draggable {
+            helper:'clone'
+            appendTo:'body'
+            scroll:no
+            connectToSortable:'ul#uploaded_audiofiles'
+            zIndex:'257'
+        }
+    if current_mode == "planning_edit" and current_audiomodel == "audiosource_select"
+        $('#track_selector ul li').draggable {
+            helper:'clone'
+            appendTo:'body'
+            snap: '#planning_board td'
+            scroll:no
+            zIndex:'257'
+            drag: (event, ui) -> console.log event; console.log ui
+        }
+
 audiomodel_selector_update: (audiomodels_list) ->
     audiomodels: audiomodels_list
     for audiomodel in audiomodels_list
@@ -162,14 +183,7 @@ audiomodel_selector_update: (audiomodels_list) ->
 
     $('#track_selector').html(html)
     $('#track_selector ul').make_selectable()
-    if current_audiomodel == "audiofile_select"
-        $('#track_selector ul li').draggable {
-            helper:'clone'
-            appendTo:'body'
-            scroll:no
-            connectToSortable:'ul#uploaded_audiofiles'
-            zIndex:'257'
-        }
+    browser_draggable_update()
     $('#uploaded_audiofiles').sortable('refresh')
     $('.audiomodel_delete').click(handle_audiomodel_delete)
     $('.audiofile_edit').click(audiofile_edit_handler)
@@ -245,12 +259,15 @@ playlist_edit_handler: ->
                 $('#main_content').show()
                 action: if r.action=="edition" then "modifiée" else "ajoutée"
                 post_message "La playlist $r.audiosource.title à été $action avec succès"
+                current_mode:"main"
         }
 
 playlist_view: (json) ->
     audiofileform_handler: (i) -> $(this).ajaxForm(gen_ajaxform_options $(this), $(this).clone())
     $pl_div: $('#playlist_edit')
     total_playlist_length: 0
+
+    current_mode: "playlist_edit"
 
     $pl_div.show()
     $('#main_content').hide()
@@ -267,6 +284,24 @@ playlist_view: (json) ->
         $('#tags_table_container').html new EJS({url: js_template 'tags_table'}).render {audiomodel:json.audiosource}
 
     $('.audiofileform').each audiofileform_handler
+
+
+# ========================================= PLANNINGS PART ======================================== #
+
+show_edit_planning: () ->
+    board: $('#main_planning_board')
+    ct: $('#main_planning_board_container')
+
+    for _ in [0...24]
+        for i in [1..6]
+            board.append "<div class='grid_time ${if i == 3 then "grid_half" else  if i == 6 then "grid_hour" else "grid_tenth"}'></div>"
+
+    $('#main_content').hide()
+    $('#planning_edit').show()
+    ct.height $(document).height() - ct.offset().top - 20
+    current_mode: "planning_edit"
+
+# ========================================= DOCUMENT READY PART ======================================== #
 
 $ ->
     playlist_edit_handler()
@@ -290,4 +325,3 @@ $ ->
             $('[id$="select_footer"]').hide()
             $("#${current_audiomodel}_footer").show()
     }
-
