@@ -1,5 +1,5 @@
 $ ->
-    $.fn.extend {
+    $.fn.extend
         disableTextSelect: ->
             @each ->
                 if $.browser.mozilla then $(@).css 'MozUserSelect', 'none'
@@ -11,13 +11,12 @@ $ ->
                 return @
 
         make_selectable: (opts) ->
-            defaults: {
+            defaults =
                 handler: undefined
                 unique_select: no
                 select_class: 'ui-selected'
-            }
-            opts: $.extend defaults, opts
-            container: @
+            opts = $.extend defaults, opts
+            container = @
             @children().click (e) ->
                 if opts.unique_select
                     if not $(@).hasClass opts.select_class
@@ -29,4 +28,3 @@ $ ->
 
         renderTemplate: (template_name, context) ->
             @html(new EJS({url:js_template(template_name)}).render context)
-    }

@@ -1,9 +1,9 @@
-modal_action: (name, content, handler) ->
-    $menu: $('#modal_menu').show()
-    $menu_content: $('#modal_menu_content').html content
-    $hider: $('#modal_menu_hider').show()
-    $menu_title: $('#modal_menu_title')
-    clear_everything: ->
+modal_action = (name, content, handler) ->
+    $menu = $('#modal_menu').show()
+    $menu_content = $('#modal_menu_content').html content
+    $hider = $('#modal_menu_hider').show()
+    $menu_title = $('#modal_menu_title')
+    clear_everything = ->
         $menu_content.html ''
         $menu_title.text ''
         $menu.hide()

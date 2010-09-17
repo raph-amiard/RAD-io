@@ -165,19 +165,19 @@ z-index:20;
   margin-bottom:3px;
 }
 
-.choice_selector {  
+.audiomodel_selector {  
   font-size:12px;
   background-color:#A7DBD8;
   padding:2px;
-  margin:0px, 5px;
   display:inline-block;
   width:60px;
   text-align:center;
   margin-bottom:2px;
+  margin-left:5px;
   color:#4A6160;
 }
 
-.choice_selected {
+.audiomodel_selected {
   background-color:#A1C4C2;
 }
 
@@ -393,15 +393,18 @@ input[type=text] {
   position:relative;
 }
 .grid_time {
-    height:1px;
-    margin-top:9px;
+    height:9px;
 }
 .grid_hour {
-    background-color:#777;
+    border-bottom:1px solid #777;
 }
 .grid_half {
-    background-color:#AAA;
+    border-bottom:1px solid #AAA;
 }
 .grid_tenth {
-    background-color:#CCC;
+    border-bottom:1px solid #CCC;
+}
+.audiofile_proxy {
+    background-color:yellow;
+    z-index:400;
 }
