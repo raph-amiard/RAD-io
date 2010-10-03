@@ -55,19 +55,14 @@ Audiomodel = function(type, json_model) {
 };
 __extends(Audiomodel, TemplateComponent);
 Audiomodel.prototype.set_title = function(title) {
-  console.log("IN SET TITLE");
   this.title = title;
   return this.ui.find("." + (this.type) + "_title").text(this.title);
 };
 Audiomodel.prototype.set_artist = function(artist) {
-  console.log("IN SET ARTIST");
   if (this.type === "audiofile") {
     this.artist = artist;
     return this.ui.find("." + (this.type) + "_artist").text(this.artist);
   }
-};
-Audiomodel.prototype.test_func = function(lol) {
-  return console.log(lol);
 };
 Audiomodel.prototype.handle_delete = function() {
   var _a, audiomodel, delete_menu, msg;
@@ -96,12 +91,47 @@ Audiomodel.prototype.handle_delete = function() {
     return show_menu(delete_menu);
   };
 };
-Audiomodel.prototype.handle_edit = function() {
-  var audiomodel, handle_tag_delete, show_edit_form, to_delete_tags;
+Audiomodel.prototype.make_audiofile_edit_menu = function(data, to_delete_tags) {
+  var audiomodel;
+  audiomodel = this;
+  return make_xps_menu({
+    name: ("edit_audiomodel_" + (audiomodel.id)),
+    text: data.html,
+    title: "Edition d'un morceau",
+    on_show: function() {
+      $(this).find('.audiofile_tag_delete').click(handle_tag_delete);
+      $(this).find('#id_tags').autocomplete(multicomplete_params(data.tag_list));
+      return $(this).find('#id_artist').autocomplete({
+        source: data.artist_list
+      });
+    },
+    validate_action: function() {
+      return $(this).find('form').ajaxSubmit({
+        dataType: 'json',
+        data: to_delete_tags,
+        success: function(json) {
+          var af;
+          console.log("LOL IM IN TEH SUCCESS");
+          af = json.audiofile;
+          audiomodel.set_title(af.title);
+          audiomodel.set_artist(af.artist);
+          return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été modifié avec succès");
+        }
+      });
+    }
+  });
+};
+Audiomodel.prototype.handle_audiofile_edit = function() {
+  var audiomodel, handle_tag_delete, to_delete_tags;
   to_delete_tags = {};
   audiomodel = this;
   handle_tag_delete = function(e) {
     var $audiofile_tag, tag_id;
+    /*
+        Does the necessary action when a tag is marked for deletion :
+        1. Hides it, and the category if necessary
+        2. Adds an hidden input for when the form is submitted
+    */
     e.preventDefault();
     $audiofile_tag = $(this).parents('.audiofile_tag').first();
     if ($audiofile_tag.siblings().length === 0) {
@@ -110,56 +140,29 @@ Audiomodel.prototype.handle_edit = function() {
       $audiofile_tag.hide();
     }
     tag_id = $audiofile_tag[0].id.split(/_/)[1];
-    return (to_delete_tags[("to_delete_tag_" + (tag_id))] = tag_id);
-  };
-  show_edit_form = function(data) {
-    var menu;
-    menu = make_xps_menu({
-      name: ("edit_audiomodel_" + (audiomodel.id)),
-      text: data.html,
-      title: "Edition d'un morceau",
-      on_show: function() {
-        $(this).find('.audiofile_tag_delete').click(handle_tag_delete);
-        $(this).find('#id_tags').autocomplete(multicomplete_params(data.tag_list));
-        return $(this).find('#id_artist').autocomplete({
-          source: data.artist_list
-        });
-      },
-      validate_action: function() {
-        return $(this).find('form').ajaxSubmit({
-          dataType: 'json',
-          data: to_delete_tags,
-          success: function() {
-            var af;
-            af = data.audiofile;
-            console.log(audiomodel);
-            console.log(af);
-            console.log(data);
-            audiomodel.test_func("MEGALOL");
-            audiomodel.set_title(af.title);
-            audiomodel.set_artist(af.artist);
-            return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été modifié avec succès");
-          }
-        });
-      }
-    });
+    to_delete_tags[("to_delete_tag_" + (tag_id))] = tag_id;
     return show_menu(menu);
   };
   return function(e) {
     e.preventDefault();
-    return $.getJSON(this.href, show_edit_form);
+    return $.getJSON(this.href, function(data) {
+      var menu;
+      menu = audiomodel.make_audiofile_edit_menu(data, to_delete_tags);
+      return show_menu(menu);
+    });
   };
 };
 Audiomodel.prototype.bind_events = function() {
   this.ui.find('.audiomodel_delete').click(this.handle_delete());
   if (this.type === "audiofile") {
-    this.ui.find('.audiofile_edit').click(this.handle_edit());
+    this.ui.find('.audiofile_edit').click(this.handle_audiofile_edit());
     return this.ui.find('.audiofile_play').click(handle_audiofile_play);
-  } else if (this.type = "audiosource") {
+  } else if (this.type === "audiosource") {
     return this.ui.find('.audiosource_edit').click(function(e) {
       e.stopPropagation();
       e.preventDefault();
       return $.get(this.href, function(json) {
+        console.log(json);
         return Application.load('playlist', json);
       });
     });
@@ -221,7 +224,7 @@ Playlist.prototype.replace = function(audiofile, old_element, fresh) {
     this.length += audiofile.length - old_element.audiofile.length;
     this.elements.remove(old_element);
     this.elements.add(new_el);
-    return $(old_element.dom).replaceWith(new_el.dom);
+    return old_element.ui.replaceWith(new_el.dom);
   }
 };
 Playlist.prototype.remove = function(el) {

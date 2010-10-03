@@ -1,4 +1,7 @@
+
 Application =
+    # Main application singleton, regroups global mechanics
+
     views: {}
     current_view: 'main'
 
@@ -26,6 +29,7 @@ Application =
 
 
 class TemplateComponent
+    # Abstract class for elements represented by an EJS template
 
     dom: null
 
@@ -35,6 +39,7 @@ class TemplateComponent
 
 
 class Audiomodel extends TemplateComponent
+    # Represents an audiomodel in the audiomodel list
 
     constructor: (type, json_model) ->
 
@@ -46,17 +51,13 @@ class Audiomodel extends TemplateComponent
             context: {audiomodel:json_model}
 
     set_title: (title) ->
-        console.log "IN SET TITLE"
         @title = title
         @ui.find(".#{@type}_title").text(@title)
 
     set_artist: (artist) ->
-        console.log "IN SET ARTIST"
         if @type == "audiofile"
             @artist = artist
             @ui.find(".#{@type}_artist").text(@artist)
-
-    test_func: (lol) -> console.log lol
 
     handle_delete: ->
         audiomodel = @
@@ -80,16 +81,43 @@ class Audiomodel extends TemplateComponent
             e.preventDefault()
             show_menu delete_menu
 
-    handle_edit: ->
+    make_audiofile_edit_menu : (data, to_delete_tags) ->
+        audiomodel = @
+        make_xps_menu {
+
+            name: "edit_audiomodel_#{audiomodel.id}"
+            text: data.html
+            title: "Edition d'un morceau"
+
+            on_show: ->
+                $(@).find('.audiofile_tag_delete').click handle_tag_delete
+                $(@).find('#id_tags').autocomplete multicomplete_params(data.tag_list)
+                $(@).find('#id_artist').autocomplete source: data.artist_list
+
+            validate_action: ->
+                $(@).find('form').ajaxSubmit
+                    dataType:'json'
+                    data: to_delete_tags
+                    success: (json) ->
+                        console.log "LOL IM IN TEH SUCCESS"
+                        af = json.audiofile
+                        audiomodel.set_title af.title
+                        audiomodel.set_artist af.artist
+                        post_message "Le morceau #{af.artist} - #{af.title} a été modifié avec succès"
+        }
+
+
+    handle_audiofile_edit: ->
 
         to_delete_tags = {}
         audiomodel = @
 
         handle_tag_delete = (e) ->
-
-            # Does the necessary action when a tag is marked for deletion :
-            # 1. Hides it, and the category if necessary
-            # 2. Adds an hidden input for when the form is submitted
+            ###
+                Does the necessary action when a tag is marked for deletion :
+                1. Hides it, and the category if necessary
+                2. Adds an hidden input for when the form is submitted
+            ###
 
             e.preventDefault()
             $audiofile_tag = $(@).parents('.audiofile_tag').first()
@@ -102,50 +130,27 @@ class Audiomodel extends TemplateComponent
             tag_id = $audiofile_tag[0].id.split(/_/)[1]
             to_delete_tags["to_delete_tag_#{tag_id}"]= tag_id
 
-        show_edit_form = (data) ->
-            menu = make_xps_menu {
-
-                name: "edit_audiomodel_#{audiomodel.id}"
-                text: data.html
-                title: "Edition d'un morceau"
-
-                on_show: ->
-                    $(@).find('.audiofile_tag_delete').click handle_tag_delete
-                    $(@).find('#id_tags').autocomplete multicomplete_params(data.tag_list)
-                    $(@).find('#id_artist').autocomplete source: data.artist_list
-
-                validate_action: ->
-                    $(@).find('form').ajaxSubmit
-                        dataType:'json'
-                        data: to_delete_tags
-                        success: ->
-                            af = data.audiofile
-                            console.log audiomodel
-                            console.log af
-                            console.log data
-                            audiomodel.test_func("MEGALOL")
-                            audiomodel.set_title af.title
-                            audiomodel.set_artist af.artist
-                            post_message "Le morceau #{af.artist} - #{af.title} a été modifié avec succès"
-            }
             show_menu menu
 
         return (e) ->
             e.preventDefault()
-            $.getJSON @href, show_edit_form
+            $.getJSON @href, (data) ->
+                menu = audiomodel.make_audiofile_edit_menu(data, to_delete_tags)
+                show_menu menu
 
     bind_events: ->
 
         @ui.find('.audiomodel_delete').click @handle_delete()
 
         if @type == "audiofile"
-            @ui.find('.audiofile_edit').click @handle_edit()
+            @ui.find('.audiofile_edit').click @handle_audiofile_edit()
             @ui.find('.audiofile_play').click handle_audiofile_play
 
-        else if @type = "audiosource"
+        else if @type == "audiosource"
             @ui.find('.audiosource_edit').click (e) ->
                 e.stopPropagation(); e.preventDefault()
                 $.get @href, (json) ->
+                    console.log json
                     Application.load 'playlist', json
 
 
@@ -195,7 +200,7 @@ class Playlist
             @length += audiofile.length - old_element.audiofile.length
             @elements.remove old_element
             @elements.add new_el
-            $(old_element.dom).replaceWith new_el.dom
+            old_element.ui.replaceWith new_el.dom
 
     remove: (el) ->
         if el.fresh then el.ui.remove()
@@ -476,6 +481,7 @@ audiofile_form_options = (target_form, new_form) ->
 
     # Progress bar update function
     # TODO : Use setInterval instead of setTimeout, and dump the recursive tail call
+
     update_progress_info = ->
         $.getJSON '/upload-progress/', {'X-Progress-ID': uuid}, (data, status) ->
             if data
