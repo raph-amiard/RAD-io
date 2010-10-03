@@ -142,7 +142,6 @@ def edit_audio_file(request, audiofile_id):
     form = EditAudioFileForm(initial= {'title':audiofile.title,
                                        'artist':audiofile.artist})
     if request.method =='POST':
-        print request.POST.items()
         to_delete_tags = [val for key, val in request.POST.items()
                           if key.startswith('to_delete_tag')]
 
