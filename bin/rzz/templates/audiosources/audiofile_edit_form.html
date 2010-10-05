@@ -1,10 +1,6 @@
 <form id="audiofile_edit_form" action="{% url audio-file-edit audiofile.id %}" method="post">
   {{ form.as_p }}
-  <input type="Submit" value="Envoyer" />
   {% if audiofile.tags %}
     <h3> Tags actuels </h3>
   {% endif %}
-  {% with audiofile as audiomodel %}
-      {% include "audiosources/tags_table.html" %}
-  {% endwith %}
 </form>

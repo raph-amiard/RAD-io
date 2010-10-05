@@ -35,16 +35,16 @@ template = function(template_name) {
   }));
 };
 tag = function(node, content, attrs) {
-  var _a, attr_name, attr_value, tag;
-  if (!(typeof content === 'string')) {
+  var _a, _b, attr_name, attr_value, tag;
+  if (!(typeof content === 'string') && !(typeof (_a = (typeof content === "undefined" || content === null) ? undefined : content.html) !== "undefined" && _a !== null)) {
     attrs = content;
     content = false;
   }
   tag = $("<" + (node) + "></" + (node) + ">");
-  _a = attrs;
-  for (attr_name in _a) {
-    if (!__hasProp.call(_a, attr_name)) continue;
-    attr_value = _a[attr_name];
+  _b = attrs;
+  for (attr_name in _b) {
+    if (!__hasProp.call(_b, attr_name)) continue;
+    attr_value = _b[attr_name];
     tag.attr(attr_name, attr_value);
   }
   if (content) {
@@ -57,17 +57,17 @@ div = function(content, opts_map) {
 };
 Set = function(tab) {
   var _a, el, i;
+  this.map = {};
   _a = tab;
   for (i in _a) {
     if (!__hasProp.call(_a, i)) continue;
     el = _a[i];
-    this.map[el] = true;
+    this.map[el] = el;
   }
   return this;
 };
-Set.prototype.map = {};
 Set.prototype.add = function(el) {
-  return (this.map[el] = true);
+  return (this.map[el] = el);
 };
 Set.prototype.remove = function(el) {
   return delete this.map[el];
@@ -75,6 +75,16 @@ Set.prototype.remove = function(el) {
 Set.prototype.has = function(el) {
   var _a;
   return (typeof (_a = this.map[el]) !== "undefined" && _a !== null);
+};
+Set.prototype.values = function() {
+  var _a, _b, key, value;
+  _a = []; _b = this.map;
+  for (key in _b) {
+    if (!__hasProp.call(_b, key)) continue;
+    value = _b[key];
+    _a.push(value);
+  }
+  return _a;
 };
 multicomplete_params = function(list) {
   return {
@@ -167,8 +177,8 @@ make_xps_menu = function(opts) {
   if (opts["show_validate"]) {
     val_text = opts["validate_text"];
     val_func = function(e) {
-      $("#" + (id)).dialog("close").remove();
-      return opts["validate_action"].apply($(div), [e]);
+      opts["validate_action"].apply($(div), [e]);
+      return $("#" + (id)).dialog("close").remove();
     };
     opts.actions[val_text] = val_func;
   }

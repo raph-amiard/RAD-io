@@ -31,15 +31,19 @@ def create_audio_source(request):
                            if key.startswith('source_element_')]
 
         add_audiofiles_to_audiosource(playlist_tuples, audio_source)
-        return JSONResponse({'status':'success',
-                             'action':'creation',
-                             'audiosource':audio_source.to_dict()})
+        return JSONResponse({
+            'status':'success', 
+            'action':'creation', 
+            'audiosource':audio_source.to_dict()
+        })
 
-    return JSONResponse({'audiofileform':AudioFileForm().as_p(),
-                         'mode':'creation',
-                         'tag_list':tag_list(),
-                         'title':'Creation d''une nouvelle playlist',
-                         'form_url': reverse('create-audio-source')})
+    return JSONResponse({
+        'audiofileform':AudioFileForm().as_p(), 
+        'mode':'creation', 
+        'tag_list':tag_list(), 
+        'title':'Creation d''une nouvelle playlist', 
+        'form_url': reverse('create-audio-source')
+    })
 
 @staff_member_required
 def edit_audio_source(request, audiosource_id):
@@ -63,16 +67,20 @@ def edit_audio_source(request, audiosource_id):
 
         remove_tags_from_model(audio_source, to_delete_tags)
         add_audiofiles_to_audiosource(playlist_tuples, audio_source)
-        return JSONResponse({'status':'success',
-                             'action':'edition',
-                             'audiosource':audio_source.to_dict()})
+        return JSONResponse({
+            'status':'success', 
+            'action':'edition', 
+            'audiosource':audio_source.to_dict()
+        })
 
-    return JSONResponse({'audiofileform':AudioFileForm().as_p(),
-                         'mode':'edition',
-                         'tag_list':tag_list(),
-                         'title': "Edition de la playlist %s" % audio_source.title,
-                         'audiosource':audio_source.to_dict(with_audiofiles=True, with_tags=True),
-                         'form_url': reverse('edit-audio-source', args=[audiosource_id])})
+    return JSONResponse({
+        'audiofileform':AudioFileForm().as_p(), 
+        'mode':'edition', 
+        'tag_list':tag_list(), 
+        'title': "Edition de la playlist %s" % audio_source.title,
+        'audiosource':audio_source.to_dict(with_audiofiles=True, with_tags=True), 
+        'form_url': reverse('edit-audio-source', args=[audiosource_id])
+    })
 
 @staff_member_required
 def create_audio_file(request):
@@ -86,12 +94,12 @@ def create_audio_file(request):
         form = AudioFileForm(request.POST, request.FILES)
         if form.is_valid():
             audiofile = form.save()
-            return JSONResponse({'audiofile':audiofile.to_dict(),
-                                            'status':'ok'},
-                                mimetype=False)
+            return JSONResponse({
+                'audiofile':audiofile.to_dict(), 
+                'status':'ok'
+                }, mimetype=False)
         else:
-            return JSONResponse(dict(form.errors.items() 
-                                     + [('status', 'error')]),
+            return JSONResponse(dict(form.errors.items() + [('status', 'error')]),
                                 mimetype=False)
 
 def audio_models_list(request,audiomodel_klass, page):
@@ -163,16 +171,22 @@ def edit_audio_file(request, audiofile_id):
 
             audiofile.save()
             remove_tags_from_model(audiofile, to_delete_tags)
-            return JSONResponse({'audiofile':audiofile.to_dict(),
-                                 'status':'ok'})
+            return JSONResponse({
+                'audiofile':audiofile.to_dict(),
+                'status':'ok'
+            })
         else:
             return JSONResponse(dict(form.errors.items() 
                                      + [('status','errors')]))
+
     template = loader.get_template('audiosources/audiofile_edit_form.html')
     ctx = Context({'form':form, 'audiofile':audiofile})
-    return JSONResponse({'html':template.render(ctx),
-                         'tag_list':tag_list(),
-                         'artist_list':[a.name for a in Artist.objects.all()]})
+    return JSONResponse({
+        'html':template.render(ctx),
+        'tag_list':tag_list(),
+        'audiofile': audiofile.to_dict(with_tags=True),
+        'artist_list':[a.name for a in Artist.objects.all()]
+    })
 
 
 def tags_list(request, audiomodel_klass):

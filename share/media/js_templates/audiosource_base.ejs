@@ -1,0 +1,32 @@
+<div id="playlist_edit"> 
+  <div id="playlist_edit_content" class="content_div">
+    <h2 id="playlist_edit_title"><%= title %></h2>
+    <h3>Envoyer des morceaux:</h3>
+    <div id="audiofile_forms">
+    </div>
+    <form id="audiosource_form" action="<%= form_url %>" method="POST" accept-charset="utf-8">
+
+      <div class="columns">
+        <div class="audiosource_left_column">
+          <h3>Ordre des morceaux:</h3>
+          <div class="playlist_box">
+            <ul id="uploaded_audiofiles">
+            </ul>
+          </div>
+          <p> Durée de la playlist : <span id="playlist_length"></span> </p>
+        </div>
+        <div class="audiosource_right_column">
+          <h3>Informations:</h3>
+          <p> Nom de la playlist</p>
+          <input type="text" id="playlist_title" name="title" value=""/>
+          <p>Ajouter des tags</p> <input type="text" id="audiosource_tags" name="tags" value=""/> 
+          <p>Tags existants</p>
+          <div id="tags_table_container"></div>
+        </div>
+      </div>
+
+      <input type="submit" value="Créer la playlist"/>
+    </form>
+  </div>
+</div>
+

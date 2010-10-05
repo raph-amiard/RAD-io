@@ -20,7 +20,7 @@ tag = (node, content, attrs) ->
     # Creates a basic jquery tag object
     # With optional content and class attributes
 
-    if not(typeof content is 'string')
+    if not(typeof content is 'string') and not(content?.html?)
         attrs = content
         content = no
 
@@ -36,13 +36,14 @@ div = (content, opts_map) ->
     tag 'div', content, opts_map
 
 class Set
-    map: {}
     constructor: (tab) ->
+        @map= {}
         for i, el of tab
-            @map[el] = yes
-    add: (el) -> @map[el] = yes
+            @map[el] = el
+    add: (el) -> @map[el] = el
     remove: (el) -> delete @map[el]
     has: (el) -> @map[el]?
+    values: () -> return value for key,value of @map
 
 multicomplete_params = (list) ->
     minLength:0
@@ -112,8 +113,8 @@ make_xps_menu = (opts) ->
     if opts["show_validate"]
         val_text = opts["validate_text"]
         val_func = (e) ->
-            $("##{id}").dialog("close").remove()
             opts["validate_action"].apply($(div), [e])
+            $("##{id}").dialog("close").remove()
         opts.actions[val_text] = val_func
 
     return {
