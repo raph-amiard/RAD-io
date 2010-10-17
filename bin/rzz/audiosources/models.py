@@ -17,6 +17,7 @@ def tag_list():
                    for tag in cat.tag_set.all()]
     return output
 
+
 def audio_file_name(instance, filename):
 	ext = filename.split('.')[-1]
 	if instance.title or instance.artist:
@@ -26,11 +27,13 @@ def audio_file_name(instance, filename):
 	else:
 		return 'audiofiles/{0}'.format(sanitize_filename(filename))
 
+
 class TagCategory(models.Model):
     name = models.CharField('Categorie', max_length=50, unique=True)
 
     def __unicode__(self):
         return self.name
+
 
 class Tag(models.Model):
     category = models.ForeignKey(TagCategory)
@@ -41,9 +44,31 @@ class Tag(models.Model):
     class Meta:
         unique_together = ("category", "name")
 
-class AudioModel(models.Model):
-    length = models.IntegerField(default=0)
+
+class TaggedModel(models.Model):
     tags = models.ManyToManyField(Tag)
+
+    def tags_by_category(self):
+        output = {}
+        for tag in self.tags.all():
+            append_to_key(output, tag.category.name, instance_to_dict(tag))
+        return output
+
+    def to_dict(self, with_tags=False, **kwargs):
+        d = instance_to_dict(self)
+        if with_tags:
+            d.update({'tags_by_category': self.tags_by_category()})
+        return d
+
+    def autocomplete_list(self):
+        output = []
+        for category,tags in self.tags_by_category().items():
+            output += ['{0}:{1}'.format(category, tag.name) for tag in tags]
+        return output
+
+
+class AudioModel(TaggedModel):
+    length = models.IntegerField(default=0)
 
     def formatted_length(self):
         hours = self.length / 3600
@@ -53,23 +78,6 @@ class AudioModel(models.Model):
         output = '{0:0>2}:'.format(hours) + output if hours else output
         return output
 
-    def tags_by_category(self):
-        output = {}
-        for tag in self.tags.all():
-            append_to_key(output, tag.category.name, instance_to_dict(tag))
-        return output
-
-    def autocomplete_list(self):
-        output = []
-        for category,tags in self.tags_by_category().items():
-            output += ['{0}:{1}'.format(category, tag.name) for tag in tags]
-        return output
-
-    def to_dict(self, with_tags=False, **kwargs):
-        d = instance_to_dict(self)
-        if with_tags:
-            d.update({'tags_by_category': self.tags_by_category()})
-        return d
 
 class AudioFile(AudioModel):
     title = models.CharField('Audiofile title', max_length=400)
@@ -127,5 +135,24 @@ class SourceElement(models.Model):
     position = models.IntegerField()
     audiofile = models.ForeignKey(AudioFile)
     audiosource = models.ForeignKey(AudioSource)
+
+
+class Planning(TaggedModel):
+    name = models.CharField('Name of the planning', max_length=100)
+    planning_elements = models.ManyToManyField(AudioSource, through='PlanningElement')
+
+
+class PlanningElement(models.Model):
+    TYPES = (
+        ('single', 'single'),
+        ('continuous', 'continuous')
+    )
+    planning = models.ForeignKey(Planning)
+    source = models.ForeignKey(AudioSource)
+    type = models.CharField(choices=TYPES, max_length=10)
+    time_start = models.TimeField()
+    time_end = models.TimeField(null=True)
+    day = models.IntegerField()
+    random = models.BooleanField()
 
 
