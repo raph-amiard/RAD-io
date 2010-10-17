@@ -39,7 +39,7 @@ def create_audio_source(request):
 
     return JSONResponse({
         'audiofileform':AudioFileForm().as_p(), 
-        'mode':'creation', 
+        'action':'creation', 
         'tag_list':tag_list(), 
         'title':'Creation d''une nouvelle playlist', 
         'form_url': reverse('create-audio-source')
@@ -75,7 +75,7 @@ def edit_audio_source(request, audiosource_id):
 
     return JSONResponse({
         'audiofileform':AudioFileForm().as_p(), 
-        'mode':'edition', 
+        'action':'edition', 
         'tag_list':tag_list(), 
         'title': "Edition de la playlist %s" % audio_source.title,
         'audiosource':audio_source.to_dict(with_audiofiles=True, with_tags=True), 

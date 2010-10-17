@@ -3,8 +3,9 @@ Application =
     # Main application singleton, regroups global mechanics
 
     views_components: (name) ->
-        cmap = 
+        cmap =
             playlist: PlaylistComponent
+            main: MainComponent
         return cmap[name]
 
     current_view: 'main'
@@ -14,7 +15,6 @@ Application =
         @current_component?.close()
         klass = @views_components(name)
         @current_component = new klass(view_params)
-        @current_component.bind_events()
         @current_view = name
 
     view: (view_name) ->
@@ -22,6 +22,174 @@ Application =
             @current_view = view_name
         else
             @current_view
+
+Widgets = {}
+
+Widgets.tags =
+    view_url: -> "/audiosources/#{Widgets.audiomodels.current_model}/tag/list"
+    selected_tags: {}
+    clear: -> @selected_tags = {}
+    load: ->
+        select_handler =  (event, ui) =>
+            @selected_tags = (i.value for i in $ '#tag_selector li.ui-selected input')
+            Widgets.audiomodels.load()
+
+        $.get @view_url(), (html_data) ->
+            $('#tag_selector').html html_data
+            $('#tag_selector ul').make_selectable handler:select_handler
+
+
+Widgets.audiomodel_selector =
+    container: d$ '#source_type'
+    button_class: "audiomodel_selector"
+    selected_class: "audiomodel_selected"
+
+    load: ->
+        for model_name, button_name of Widgets.audiomodels.models
+            dom = tag 'span', button_name, class:@button_class
+            @container.append(dom)
+            $(dom).button()
+            dom.click (e) ->
+                Widgets.audiomodels.current_model = model_name
+                Widgets.tags.clear()
+                Widgets.audiomodels.clear_filter()
+                Widgets.audiomodels.load()
+                Widgets.tags.load()
+                Widgets.footer_actions.update()
+
+        @container.make_selectable
+            unique_select: yes
+            select_class: @selected_class
+
+
+Widgets.text_selector =
+    container: d$ '#text_selector'
+    select_delay: 100
+
+    select: ->
+        =>
+            Widgets.audiomodels.text_filter = @container.val()
+            Widgets.audiomodels.load()
+            @timeout_id = undefined
+
+    reset: -> @container.val(""); Widgets.audiomodels.text_filter = ""
+
+    load: ->
+        @container.keyup (e) =>
+            if @timeout_id
+                clearTimeout(@timeout_id)
+            @timeout_id = setTimeout @select(), @select_delay
+
+
+Widgets.audiomodels =
+    container: d$ '#track_selector'
+    models:
+        audiofile: "Tracks"
+        audiosource: "Playlists"
+        planning: "Plannings"
+    current_model: 'audiofile'
+
+    view_url: -> "/audiosources/#{@current_model}/list/"
+
+    all: []
+    by_id: {}
+
+    text_filter: ""
+    clear_filter: -> Widgets.text_selector.reset()
+
+    filter_to_params: ->
+        map = {}
+        for idx, tag of Widgets.tags.selected_tags
+            map["tag_#{idx}"] = tag
+        if @text_filter then map["text_filter"] = @text_filter
+        return map
+
+    views_actions:
+        playlist: ->
+            tracklist = Application.current_component.tracklist
+            tracklist.container.sortable('refresh')
+            if Widgets.audiomodels.current_model == "audiofile"
+                $('#track_selector ul li').draggable
+                    connectToSortable: tracklist.container
+                    helper:'clone'
+                    appendTo:'body'
+                    scroll:no
+                    zIndex:'257'
+
+    load: ->
+        $.getJSON @view_url(), @filter_to_params() , (audiomodels_list) =>
+
+            @all = []
+            @by_id = {}
+
+            ul = tag 'ul'
+            @container.html ''
+            @container.append ul
+
+            for json_audiomodel in audiomodels_list
+                audiomodel = new ListAudiomodel(@current_model, json_audiomodel)
+                @all.push audiomodel
+                @by_id[audiomodel.id] = audiomodel
+                ul.append audiomodel.ui
+                audiomodel.bind_events()
+
+            ul.make_selectable select_class: 'selected-box'
+
+            $('[id$="select_footer"]').hide()
+            $("##{@current_model}_select_footer").show()
+
+            # View specific actions
+            @views_actions[Application.current_view]?()
+
+Widgets.footer_actions =
+
+    actions:
+        audiofile:
+            selection:
+                "Jouer":
+                    action: ->
+                "Ajouter a la playlist":
+                    predicate: -> Application.current_view == "playlist"
+                    action: ->
+                "Supprimer":
+                    action: ->
+                "Ajouter tags":
+                    action: ->
+            global:
+                "Uploader des tracks":
+                    action: ->
+        audiosource:
+            global:
+                "Créer une playlist":
+                    action: ->
+            selection:
+                "Supprimer":
+                    action: ->
+                "Ajouter tags":
+                    action: ->
+
+    footers: {}
+    container: d$ "#track_selector_footer"
+    active_footer: undefined
+
+    load: ->
+        for model, actions_types of @actions
+            footer = @footers[model] = div "", class:"head_and_foot"
+            for action_type, actions of actions_types
+                for action_name, properties of actions
+                    if properties.predicate and not properties.predicate()
+                        continue
+                    action_button = tag "button", action_name, class:"footer_button"
+                    action_button.click properties.action
+                    footer.append action_button
+        @update()
+
+    update: () ->
+        audiomodel = Widgets.audiomodels.current_model
+        @active_footer?.remove()
+        @active_footer = @footers[audiomodel]
+        @container.append @active_footer
+        @active_footer.find(".footer_button").button()
 
 
 class TemplateComponent
@@ -48,6 +216,9 @@ class Audiomodel extends TemplateComponent
             @artist = artist
             @ui.find(".#{@type}_artist").text(@artist)
 
+    post_message: (af) ->
+        post_message "Le morceau #{af.artist} - #{af.title} a été modifié avec succès"
+
     make_audiofile_edit_menu : (data) ->
         tags_table = new TagsTable(data.audiofile.tags_by_category)
         form = $(data.html).append(tags_table.ui)
@@ -71,7 +242,7 @@ class Audiomodel extends TemplateComponent
                         af = json.audiofile
                         audiomodel.set_title af.title
                         audiomodel.set_artist af.artist
-                        post_message "Le morceau #{af.artist} - #{af.title} a été modifié avec succès"
+                        audiomodel.post_message af
         }
 
 
@@ -79,10 +250,10 @@ class Audiomodel extends TemplateComponent
         audiomodel = @
         return (e) ->
             e.preventDefault()
+            e.stopPropagation()
             $.getJSON @href, (data) ->
                 menu = audiomodel.make_audiofile_edit_menu(data)
                 show_menu menu
-
 
 
 class ListAudiomodel extends Audiomodel
@@ -100,24 +271,25 @@ class ListAudiomodel extends Audiomodel
     handle_delete: ->
         audiomodel = @
         msg = "L'élément #{if @artist? then "#{@artist} -"} #{@title} a bien été supprimé"
-        delete_menu = make_xps_menu {
-            name: "delete_audiomodel_#{@id}"
-            text: "Etes vous sur de vouloir supprimer ce#{if @type=="audiofile" then " morceau" else "tte playlist"} ?"
-            title: "Suppression d'un#{if @type=="audiofile" then " morceau" else "e playlist"}"
-            show_validate:no
-            actions:
-                "Oui": ->
-                    $.getJSON e.target.href, (json) =>
-                        post_message msg
-                        audiomodel.ui.remove()
+        delete_menu = (delete_link) ->
+            make_xps_menu {
+                name: "delete_audiomodel_#{@id}"
+                text: "Etes vous sur de vouloir supprimer ce#{if @type=="audiofile" then " morceau" else "tte playlist"} ?"
+                title: "Suppression d'un#{if @type=="audiofile" then " morceau" else "e playlist"}"
+                show_validate:no
+                actions:
+                    "Oui": ->
+                        $.getJSON delete_link, (json) =>
+                            post_message msg
+                            audiomodel.ui.remove()
+                            $(@).dialog('close').remove()
+                    "Non": ->
                         $(@).dialog('close').remove()
-                "Non": ->
-                    $(@).dialog('close').remove()
-
-        }
+            }
         return (e) ->
             e.preventDefault()
-            show_menu delete_menu
+            e.stopPropagation()
+            show_menu delete_menu(e.target.href)
 
     bind_events: ->
 
@@ -158,7 +330,8 @@ class TagsTable
             for ctag in tags
 
                 # Build the tag column
-                tag_span = tag "span", "#{ctag.name} ", class:"audiofile_tag", id:"tag_#{ctag.id}"
+                tag_span = tag "span", "#{ctag.name} ",
+                    class:"audiofile_tag", id:"tag_#{ctag.id}"
                 delete_link = tag "a", "x ", class:"audiofile_tag_delete", href:""
                 tag_span.append delete_link
                 tags_td.append tag_span
@@ -180,6 +353,50 @@ class TagsTable
 
 
 class AudioFileForm extends TemplateComponent
+    # Form for audio file upload
+    # TODO: Make that shit work with a multiple file input
+
+    progress_url: "/upload-progress/"
+    update_freq: 1000
+
+    constructor: (opts) ->
+        @uuid = gen_uuid()
+        super template:'audiofile_form', context: {uuid: @uuid}
+
+        @progress_bar = if opts.progress_bar then opts.progress_bar
+        else @ui.find '.progress_bar'
+
+        @ui.ajaxForm
+            dataType: 'json'
+            target: @ui
+            beforeSubmit: @
+            success: @success
+
+            beforeSubmit: (arr, form, options) =>
+                opts.beforeSubmit?()
+                @progress_bar.progressbar progress: 0
+                @interval_id = setInterval @update_progress_info(), @update_freq
+                return true
+
+            success: (response, status_text, form) =>
+                clearInterval @interval_id
+                @progress_bar.hide()
+                @ui.remove()
+                opts.success?(response.audiofile)
+                if response.status == "error"
+                    alert("Error with the file uploaded")
+                else
+                    @success_message response.audiofile
+
+    update_progress_info: ->
+        =>
+            $.getJSON @progress_url, {"X-Progress-ID": @uuid}, (data, status) =>
+                if data
+                    progress = parseInt(data.received) / parseInt(data.size)
+                    @progress_bar.progressbar "option", "value", progress * 100
+
+    success_message: (af) ->
+        post_message "Le morceau #{af.artist} - #{af.title} a été ajouté avec succès"
 
 
 class PlaylistElement extends Audiomodel
@@ -190,6 +407,7 @@ class PlaylistElement extends Audiomodel
         @fresh = if fresh then fresh else false
         @audiofile = audiofile
         super template:'playlist_element', context: {fresh:@fresh, audiofile:audiofile}
+        @bind_events()
 
     bind_events: ->
         @ui.find('.audiofile_edit').click @handle_audiofile_edit()
@@ -202,12 +420,12 @@ class PlaylistElement extends Audiomodel
 
     toString: () -> "playlist_element_#{gen_uuid()}"
 
+
 class TrackList
 
     constructor: ->
         @length = 0
         @elements = new Set()
-        @binded_elements = new Set()
         @container = $ "#uploaded_audiofiles"
         @outer_container = $ ".playlist_box"
         @length_container = $ "#playlist_length"
@@ -222,7 +440,6 @@ class TrackList
                     audiomodel = Widgets.audiomodels.by_id[ui.item.children('input').val()]
                     new_el = new PlaylistElement(audiomodel, this, yes)
                     ui.item.replaceWith new_el.ui
-                    new_el.bind_events()
 
                     tracklist.elements.add(new_el)
                     tracklist.length += audiomodel.length
@@ -243,106 +460,17 @@ class TrackList
         @length -= el.audiofile.length
         @update_length()
 
-    bind_events: () ->
-        for el in @elements.values()
-            if not(@binded_elements.has el)
-                @binded_elements.add(el)
-                el.bind_events()
+    get_tracks_map: () ->
+        # Adds the playlist tracks to the data to be submitted, if they're not marked for deletion
 
-Widgets =
+        data = {}
+        lis = @container.find("li")
 
-    tags:
-        view_url: -> "/audiosources/#{Widgets.audiomodels.current_model}/tag/list"
-        selected_tags: {}
-        clear: -> @selected_tags = {}
-        load: ->
-            select_handler =  (event, ui) =>
-                @selected_tags = (i.value for i in $ '#tag_selector li.ui-selected input')
-                Widgets.audiomodels.load()
+        for li, i in lis when not $(li).hasClass "to_delete_source_element"
+            data["source_element_#{i}"] = $(li).children('input').val()
 
-            $.get @view_url(), (html_data) ->
-                $('#tag_selector').html html_data
-                $('#tag_selector ul').make_selectable handler:select_handler
+        return data
 
-
-    audiomodel_selector:
-        container: d$ '#source_type'
-        button_class: "audiomodel_selector"
-        selected_class: "audiomodel_selected"
-
-        load: ->
-            for model_name, button_name of Widgets.audiomodels.models
-                dom = tag 'span', button_name, class:@button_class
-                @container.append(dom)
-                $(dom).button()
-                dom.click (e) ->
-                    Widgets.audiomodels.current_model = model_name
-                    Widgets.tags.clear()
-                    Widgets.audiomodels.clear_filter()
-                    Widgets.audiomodels.load()
-                    Widgets.tags.load()
-
-            @container.make_selectable
-                unique_select: yes
-                select_class: @selected_class
-
-
-    audiomodels:
-        container: d$ '#track_selector'
-        models:
-            audiofile: "Tracks"
-            audiosource: "Playlists"
-        current_model: 'audiofile'
-
-        view_url: -> "/audiosources/#{@current_model}/list/"
-
-        all: []
-        by_id: {}
-
-        text_filter: ""
-        clear_filter: -> @text_filter = ""
-
-        filter_to_params: ->
-            map = {}
-            for idx, tag of Widgets.tags.selected_tags
-                map["tag_#{idx}"] = tag
-            if @text_filter then map["text"] = @text_filter
-            return map
-
-        views_actions:
-            playlist: ->
-                tracklist = Application.current_component.tracklist
-                tracklist.container.sortable('refresh')
-                if Widgets.audiomodels.current_model == "audiofile"
-                    $('#track_selector ul li').draggable
-                        connectToSortable: tracklist.container
-                        helper:'clone'
-                        appendTo:'body'
-                        scroll:no
-                        zIndex:'257'
-
-        load: ->
-            $.getJSON @view_url(), @filter_to_params() , (audiomodels_list) =>
-
-                @all = []
-                @by_id = {}
-
-                ul = tag 'ul'
-                @container.html ''
-                @container.append ul
-
-                for json_audiomodel in audiomodels_list
-                    audiomodel = new ListAudiomodel(@current_model, json_audiomodel)
-                    @all.push audiomodel
-                    @by_id[audiomodel.id] = audiomodel
-                    ul.append audiomodel.ui
-                    audiomodel.bind_events()
-
-                $('[id$="select_footer"]').hide()
-                $("##{@current_model}_select_footer").show()
-
-                # View specific actions
-                @views_actions[Application.current_view]?()
 
 class AppComponent extends TemplateComponent
     main_content_holder: d$ "#main_container"
@@ -352,6 +480,13 @@ class AppComponent extends TemplateComponent
         @main_content_holder.append(@ui)
     close: () ->
         @ui.remove()
+
+
+class MainComponent extends AppComponent
+
+    constructor: () ->
+        super template:"main_component"
+
 
 class PlaylistComponent extends AppComponent
 
@@ -367,60 +502,50 @@ class PlaylistComponent extends AppComponent
             tags: $ '#tags_table_container'
             file_forms: $ '#audiofile_forms'
         @form = $ '#audiosource_form'
+        @submit_button = $ "#audiosource_form_submit"
 
     constructor: (json) ->
         super template: "audiosource_base", context: json
         @init_components()
 
-        # Add a form for audio file upload, and add the upload handler
-        @fields.file_forms.html(render_template  'audiofile_form', json)
-        $('.audiofileform').each ->
-            $(@).ajaxForm(audiofile_form_options $(@), $(@).clone())
+        @action = json.action
 
-        @inputs.tags.autocomplete(multicomplete_params json.tag_list).unbind 'blur.autocomplete'
+        # Add a form for audio file upload
+        audiofile_form = new AudioFileForm {
+            success: (audiofile) =>
+                @tracklist.append audiofile, yes
+        }
+
+        @fields.file_forms.append audiofile_form.ui
+
+        @inputs.tags.autocomplete(multicomplete_params json.tag_list)
+        @inputs.tags.unbind 'blur.autocomplete'
 
         # Add Necessary information for playlist, if in edition mode
-        if json.mode == "edition"
-            @inputs.title.val(if json.mode  == "edition" then json.audiosource.title)
+        if @action == "edition"
+
+            @tags_table = new TagsTable(json.audiosource.tags_by_category)
+            @fields.tags.append(@tags_table.ui)
+
             for audiofile in json.audiosource.sorted_audiofiles
                 @tracklist.append(audiofile, no)
-            tags_table = new TagsTable(json.audiosource.tags_by_category)
-            @fields.tags.append(tags_table.ui)
 
-    bind_events: () ->
-        @tracklist.bind_events()
+        @submit_button.button()
+        @submit_button.click (e) =>
+            e.preventDefault();@submit()
 
-playlist_edit_handler = ->
-
-    # When the edit form is submitted
-    $('#audiosource_form', document).submit (e) ->
-        e.preventDefault()
-        data = {}
-
-        # Adds the playlist tracks to the data to be submitted, if they're not marked for deletion
-        for li, i in $('#uploaded_audiofiles li') when not $(li).hasClass "to_delete_source_element"
-            data["source_element_#{i}"] = $(li).children('input').val()
-
-        $(@).ajaxSubmit
+    submit: () ->
+        data = @tags_table.to_delete_tags
+        $.extend data, @tracklist.get_tracks_map()
+        @form.ajaxSubmit
             data: data
             success: (r) ->
-                # On success, hides  the playlist, and show the message and main content
-
-                if current_audiomodel == "audiosource_select" then update_sources_list()
-                $('#playlist_edit').hide()
-                $('#main_content').show()
-                action: if r.action=="edition" then "modifiée" else "ajoutée"
-
+                if Widgets.audiomodels.current_model == "audiosource"
+                    Widgets.audiomodels.load()
+                Application.load "main"
+                action = if @action=="edition" then "modifiée" else "ajoutée"
                 post_message "La playlist #{r.audiosource.title} à été #{action} avec succès"
-                current_mode = "main"
 
-populate_form_errors = (errors, form) ->
-
-    for error in errors
-        if error != 'status'
-            $ul = $("input[name=#{error}]", form).parent().before '<ul> </ul>'
-            for msg in error
-                $ul.before "<li>#{msg}</li>"
 
 handle_audiofile_play = (e) ->
     # Plays an audiofile on the flash player 
@@ -430,55 +555,8 @@ handle_audiofile_play = (e) ->
     if player then player.dewset e.target.href
 
 
-audiofile_form_options = (target_form, new_form) ->
+# ================================ PLANNINGS PART ================================= #
 
-    # Options for dynamic file upload
-    # Displays a progress bar for the upload
-    # TODO : Use a better form duplication mechanism
-    #        First just get rid of this shitty second param
-    #        Maybe store the form as an EJS template ?
-
-    # Progress bar update function
-    # TODO : Use setInterval instead of setTimeout, and dump the recursive tail call
-
-    update_progress_info = ->
-        $.getJSON '/upload-progress/', {'X-Progress-ID': uuid}, (data, status) ->
-            if data
-                progress = parseInt(data.received) / parseInt(data.size)
-                prg_bar.progressbar "option", "value", progress * 100
-                setTimeout update_progress_info, UPDATE_FREQ
-
-    UPDATE_FREQ = 1000
-    uuid = gen_uuid()
-    prg_bar = $ '.progress_bar', target_form
-
-    # Add the unique id to the form action
-    target_form[0].action += "?X-Progress-ID=#{uuid}"
-
-    # Option map
-    dataType:'json'
-    target: target_form
-    success: (response, statusText, form) ->
-        if response.status
-          prg_bar.hide()
-          if response.status == "error" then populate_form_errors(response, form)
-          else
-              post_message "Le morceau #{response.audiofile.artist} - #{response.audiofile.title} a été ajouté avec succès"
-              form.hide()
-              append_to_playlist response.audiofile, true
-        else
-          form.html(response)
-    beforeSubmit: (arr, $form, options) ->
-        # Appends a new form after the first one, for multiuploads
-        $newform = $(new_form)
-        $form.after($newform)
-
-        # Recursive call to handle the new form upload
-        $newform.ajaxForm(audiofile_form_options $newform, $newform.clone())
-        prg_bar.progressbar {progress: 0}
-        setTimeout update_progress_info UPDATE_FREQ
-
-# ========================================= PLANNINGS PART ======================================== #
 
 show_edit_planning = () ->
     board = $('#main_planning_board')
@@ -548,19 +626,11 @@ step = (num, step) -> num - (num % step)
 # ========================================= DOCUMENT READY PART ======================================== #
 
 $ ->
-    # Configure the playlist handling once and for all
-
-    for cname, component of Widgets
+    # Load every widget
+    for cname, widget of Widgets
         console.log "Loading component #{cname}"
-        component.load()
+        widget.load()
 
-    # Configure all sources filters, except for the Tag filter which is handled in update_tags_list
-    # Text selector filter
-    $('#text_selector').keyup (e) -> sel_data['text_filter'] = $(@).val(); update_sources_list()
+    # Load main component
 
-    # Global click event handlers
-
-    $('#create_playlist_button').click (e) -> $.get '/audiosources/json/create-audio-source', playlist_view
-    $('#uploaded_audiofiles .audiofile_play').live 'click', handle_audiofile_play
-
-    #show_edit_planning()
+    Application.load "main"

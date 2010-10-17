@@ -1,19 +1,20 @@
-var AppComponent, Application, AudioFileForm, Audiomodel, ListAudiomodel, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, audiofile_form_options, closest, el_pos_on_pboard, handle_audiofile_play, playlist_edit_handler, populate_form_errors, pos_on_pboard, show_edit_planning, step;
-var __extends = function(child, parent) {
+var AppComponent, Application, AudioFileForm, Audiomodel, ListAudiomodel, MainComponent, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, closest, el_pos_on_pboard, handle_audiofile_play, pos_on_pboard, show_edit_planning, step;
+var __bind = function(func, context) {
+    return function(){ return func.apply(context, arguments); };
+  }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     var ctor = function(){};
     ctor.prototype = parent.prototype;
     child.prototype = new ctor();
     child.prototype.constructor = child;
     if (typeof parent.extended === "function") parent.extended(child);
     child.__super__ = parent.prototype;
-  }, __bind = function(func, context) {
-    return function(){ return func.apply(context, arguments); };
-  }, __hasProp = Object.prototype.hasOwnProperty;
+  };
 Application = {
   views_components: function(name) {
     var cmap;
     cmap = {
-      playlist: PlaylistComponent
+      playlist: PlaylistComponent,
+      main: MainComponent
     };
     return cmap[name];
   },
@@ -24,11 +25,253 @@ Application = {
     this.current_component == null ? undefined : this.current_component.close();
     klass = this.views_components(name);
     this.current_component = new klass(view_params);
-    this.current_component.bind_events();
     return (this.current_view = name);
   },
   view: function(view_name) {
     return (typeof view_name !== "undefined" && view_name !== null) ? (this.current_view = view_name) : this.current_view;
+  }
+};
+Widgets = {};
+Widgets.tags = {
+  view_url: function() {
+    return "/audiosources/" + (Widgets.audiomodels.current_model) + "/tag/list";
+  },
+  selected_tags: {},
+  clear: function() {
+    return (this.selected_tags = {});
+  },
+  load: function() {
+    var select_handler;
+    select_handler = __bind(function(event, ui) {
+      var _a, _b, _c, _d, i;
+      this.selected_tags = (function() {
+        _a = []; _c = $('#tag_selector li.ui-selected input');
+        for (_b = 0, _d = _c.length; _b < _d; _b++) {
+          i = _c[_b];
+          _a.push(i.value);
+        }
+        return _a;
+      })();
+      return Widgets.audiomodels.load();
+    }, this);
+    return $.get(this.view_url(), function(html_data) {
+      $('#tag_selector').html(html_data);
+      return $('#tag_selector ul').make_selectable({
+        handler: select_handler
+      });
+    });
+  }
+};
+Widgets.audiomodel_selector = {
+  container: d$('#source_type'),
+  button_class: "audiomodel_selector",
+  selected_class: "audiomodel_selected",
+  load: function() {
+    var _a, _b, model_name;
+    _b = Widgets.audiomodels.models;
+    for (_a in _b) {
+      if (!__hasProp.call(_b, _a)) continue;
+      (function() {
+        var dom;
+        var model_name = _a;
+        var button_name = _b[_a];
+        dom = tag('span', button_name, {
+          "class": this.button_class
+        });
+        this.container.append(dom);
+        $(dom).button();
+        return dom.click(function(e) {
+          Widgets.audiomodels.current_model = model_name;
+          Widgets.tags.clear();
+          Widgets.audiomodels.clear_filter();
+          Widgets.audiomodels.load();
+          Widgets.tags.load();
+          return Widgets.footer_actions.update();
+        });
+      }).call(this);
+    }
+    return this.container.make_selectable({
+      unique_select: true,
+      select_class: this.selected_class
+    });
+  }
+};
+Widgets.text_selector = {
+  container: d$('#text_selector'),
+  select_delay: 100,
+  select: function() {
+    return __bind(function() {
+      Widgets.audiomodels.text_filter = this.container.val();
+      Widgets.audiomodels.load();
+      return (this.timeout_id = undefined);
+    }, this);
+  },
+  reset: function() {
+    this.container.val("");
+    return (Widgets.audiomodels.text_filter = "");
+  },
+  load: function() {
+    return this.container.keyup(__bind(function(e) {
+      if (this.timeout_id) {
+        clearTimeout(this.timeout_id);
+      }
+      return (this.timeout_id = setTimeout(this.select(), this.select_delay));
+    }, this));
+  }
+};
+Widgets.audiomodels = {
+  container: d$('#track_selector'),
+  models: {
+    audiofile: "Tracks",
+    audiosource: "Playlists",
+    planning: "Plannings"
+  },
+  current_model: 'audiofile',
+  view_url: function() {
+    return "/audiosources/" + (this.current_model) + "/list/";
+  },
+  all: [],
+  by_id: {},
+  text_filter: "",
+  clear_filter: function() {
+    return Widgets.text_selector.reset();
+  },
+  filter_to_params: function() {
+    var _a, idx, map, tag;
+    map = {};
+    _a = Widgets.tags.selected_tags;
+    for (idx in _a) {
+      if (!__hasProp.call(_a, idx)) continue;
+      tag = _a[idx];
+      map[("tag_" + (idx))] = tag;
+    }
+    if (this.text_filter) {
+      map["text_filter"] = this.text_filter;
+    }
+    return map;
+  },
+  views_actions: {
+    playlist: function() {
+      var tracklist;
+      tracklist = Application.current_component.tracklist;
+      tracklist.container.sortable('refresh');
+      return Widgets.audiomodels.current_model === "audiofile" ? $('#track_selector ul li').draggable({
+        connectToSortable: tracklist.container,
+        helper: 'clone',
+        appendTo: 'body',
+        scroll: false,
+        zIndex: '257'
+      }) : null;
+    }
+  },
+  load: function() {
+    return $.getJSON(this.view_url(), this.filter_to_params(), __bind(function(audiomodels_list) {
+      var _a, _b, _c, _d, audiomodel, json_audiomodel, ul;
+      this.all = [];
+      this.by_id = {};
+      ul = tag('ul');
+      this.container.html('');
+      this.container.append(ul);
+      _b = audiomodels_list;
+      for (_a = 0, _c = _b.length; _a < _c; _a++) {
+        json_audiomodel = _b[_a];
+        audiomodel = new ListAudiomodel(this.current_model, json_audiomodel);
+        this.all.push(audiomodel);
+        this.by_id[audiomodel.id] = audiomodel;
+        ul.append(audiomodel.ui);
+        audiomodel.bind_events();
+      }
+      ul.make_selectable({
+        select_class: 'selected-box'
+      });
+      $('[id$="select_footer"]').hide();
+      $("#" + (this.current_model) + "_select_footer").show();
+      return (typeof (_d = this.views_actions[Application.current_view]) === "function" ? _d() : undefined);
+    }, this));
+  }
+};
+Widgets.footer_actions = {
+  actions: {
+    audiofile: {
+      selection: {
+        "Jouer": {
+          action: function() {}
+        },
+        "Ajouter a la playlist": {
+          predicate: function() {
+            return Application.current_view === "playlist";
+          },
+          action: function() {}
+        },
+        "Supprimer": {
+          action: function() {}
+        },
+        "Ajouter tags": {
+          action: function() {}
+        }
+      },
+      global: {
+        "Uploader des tracks": {
+          action: function() {}
+        }
+      }
+    },
+    audiosource: {
+      global: {
+        "Créer une playlist": {
+          action: function() {}
+        }
+      },
+      selection: {
+        "Supprimer": {
+          action: function() {}
+        },
+        "Ajouter tags": {
+          action: function() {}
+        }
+      }
+    }
+  },
+  footers: {},
+  container: d$("#track_selector_footer"),
+  active_footer: undefined,
+  load: function() {
+    var _a, _b, _c, action_button, action_name, action_type, actions, actions_types, footer, model, properties;
+    _a = this.actions;
+    for (model in _a) {
+      if (!__hasProp.call(_a, model)) continue;
+      actions_types = _a[model];
+      footer = (this.footers[model] = div("", {
+        "class": "head_and_foot"
+      }));
+      _b = actions_types;
+      for (action_type in _b) {
+        if (!__hasProp.call(_b, action_type)) continue;
+        actions = _b[action_type];
+        _c = actions;
+        for (action_name in _c) {
+          if (!__hasProp.call(_c, action_name)) continue;
+          properties = _c[action_name];
+          if (properties.predicate && !properties.predicate()) {
+            continue;
+          }
+          action_button = tag("button", action_name, {
+            "class": "footer_button"
+          });
+          action_button.click(properties.action);
+          footer.append(action_button);
+        }
+      }
+    }
+    return this.update();
+  },
+  update: function() {
+    var audiomodel;
+    audiomodel = Widgets.audiomodels.current_model;
+    this.active_footer == null ? undefined : this.active_footer.remove();
+    this.active_footer = this.footers[audiomodel];
+    this.container.append(this.active_footer);
+    return this.active_footer.find(".footer_button").button();
   }
 };
 TemplateComponent = function(opts) {
@@ -51,6 +294,9 @@ Audiomodel.prototype.set_artist = function(artist) {
     this.artist = artist;
     return this.ui.find("." + (this.type) + "_artist").text(this.artist);
   }
+};
+Audiomodel.prototype.post_message = function(af) {
+  return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été modifié avec succès");
 };
 Audiomodel.prototype.make_audiofile_edit_menu = function(data) {
   var audiomodel, form, tags_table;
@@ -76,7 +322,7 @@ Audiomodel.prototype.make_audiofile_edit_menu = function(data) {
           af = json.audiofile;
           audiomodel.set_title(af.title);
           audiomodel.set_artist(af.artist);
-          return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été modifié avec succès");
+          return audiomodel.post_message(af);
         }
       });
     }
@@ -87,6 +333,7 @@ Audiomodel.prototype.handle_audiofile_edit = function() {
   audiomodel = this;
   return function(e) {
     e.preventDefault();
+    e.stopPropagation();
     return $.getJSON(this.href, function(data) {
       var menu;
       menu = audiomodel.make_audiofile_edit_menu(data);
@@ -110,27 +357,30 @@ ListAudiomodel.prototype.handle_delete = function() {
   var _a, audiomodel, delete_menu, msg;
   audiomodel = this;
   msg = ("L'élément " + ((typeof (_a = this.artist) !== "undefined" && _a !== null) ? ("" + (this.artist) + " -") : null) + " " + (this.title) + " a bien été supprimé");
-  delete_menu = make_xps_menu({
-    name: ("delete_audiomodel_" + (this.id)),
-    text: ("Etes vous sur de vouloir supprimer ce" + (this.type === "audiofile" ? " morceau" : "tte playlist") + " ?"),
-    title: ("Suppression d'un" + (this.type === "audiofile" ? " morceau" : "e playlist")),
-    show_validate: false,
-    actions: {
-      "Oui": function() {
-        return $.getJSON(e.target.href, __bind(function(json) {
-          post_message(msg);
-          audiomodel.ui.remove();
+  delete_menu = function(delete_link) {
+    return make_xps_menu({
+      name: ("delete_audiomodel_" + (this.id)),
+      text: ("Etes vous sur de vouloir supprimer ce" + (this.type === "audiofile" ? " morceau" : "tte playlist") + " ?"),
+      title: ("Suppression d'un" + (this.type === "audiofile" ? " morceau" : "e playlist")),
+      show_validate: false,
+      actions: {
+        "Oui": function() {
+          return $.getJSON(delete_link, __bind(function(json) {
+            post_message(msg);
+            audiomodel.ui.remove();
+            return $(this).dialog('close').remove();
+          }, this));
+        },
+        "Non": function() {
           return $(this).dialog('close').remove();
-        }, this));
-      },
-      "Non": function() {
-        return $(this).dialog('close').remove();
+        }
       }
-    }
-  });
+    });
+  };
   return function(e) {
     e.preventDefault();
-    return show_menu(delete_menu);
+    e.stopPropagation();
+    return show_menu(delete_menu(e.target.href));
   };
 };
 ListAudiomodel.prototype.bind_events = function() {
@@ -204,10 +454,59 @@ TagsTable.prototype.make_table = function() {
   }
   return _a;
 };
-AudioFileForm = function() {
-  return TemplateComponent.apply(this, arguments);
+AudioFileForm = function(opts) {
+  this.uuid = gen_uuid();
+  AudioFileForm.__super__.constructor.call(this, {
+    template: 'audiofile_form',
+    context: {
+      uuid: this.uuid
+    }
+  });
+  this.progress_bar = opts.progress_bar ? opts.progress_bar : this.ui.find('.progress_bar');
+  this.ui.ajaxForm({
+    dataType: 'json',
+    target: this.ui,
+    beforeSubmit: this,
+    success: this.success,
+    beforeSubmit: __bind(function(arr, form, options) {
+      var _a;
+      (typeof (_a = opts.beforeSubmit) === "function" ? _a() : undefined);
+      this.progress_bar.progressbar({
+        progress: 0
+      });
+      this.interval_id = setInterval(this.update_progress_info(), this.update_freq);
+      return true;
+    }, this),
+    success: __bind(function(response, status_text, form) {
+      var _a;
+      clearInterval(this.interval_id);
+      this.progress_bar.hide();
+      this.ui.remove();
+      (typeof (_a = opts.success) === "function" ? _a(response.audiofile) : undefined);
+      return response.status === "error" ? alert("Error with the file uploaded") : this.success_message(response.audiofile);
+    }, this)
+  });
+  return this;
 };
 __extends(AudioFileForm, TemplateComponent);
+AudioFileForm.prototype.progress_url = "/upload-progress/";
+AudioFileForm.prototype.update_freq = 1000;
+AudioFileForm.prototype.update_progress_info = function() {
+  return __bind(function() {
+    return $.getJSON(this.progress_url, {
+      "X-Progress-ID": this.uuid
+    }, __bind(function(data, status) {
+      var progress;
+      if (data) {
+        progress = parseInt(data.received) / parseInt(data.size);
+        return this.progress_bar.progressbar("option", "value", progress * 100);
+      }
+    }, this));
+  }, this);
+};
+AudioFileForm.prototype.success_message = function(af) {
+  return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été ajouté avec succès");
+};
 PlaylistElement = function(audiofile, container, fresh) {
   this.container = container;
   this.type = "audiofile";
@@ -220,6 +519,7 @@ PlaylistElement = function(audiofile, container, fresh) {
       audiofile: audiofile
     }
   });
+  this.bind_events();
   return this;
 };
 __extends(PlaylistElement, Audiomodel);
@@ -243,7 +543,6 @@ TrackList = function() {
   var tracklist;
   this.length = 0;
   this.elements = new Set();
-  this.binded_elements = new Set();
   this.container = $("#uploaded_audiofiles");
   this.outer_container = $(".playlist_box");
   this.length_container = $("#playlist_length");
@@ -260,7 +559,6 @@ TrackList = function() {
         audiomodel = Widgets.audiomodels.by_id[ui.item.children('input').val()];
         new_el = new PlaylistElement(audiomodel, this, true);
         ui.item.replaceWith(new_el.ui);
-        new_el.bind_events();
         tracklist.elements.add(new_el);
         tracklist.length += audiomodel.length;
         return tracklist.update_length();
@@ -285,151 +583,18 @@ TrackList.prototype.remove = function(el) {
   this.length -= el.audiofile.length;
   return this.update_length();
 };
-TrackList.prototype.bind_events = function() {
-  var _a, _b, _c, _d, el;
-  _a = []; _c = this.elements.values();
-  for (_b = 0, _d = _c.length; _b < _d; _b++) {
-    el = _c[_b];
-    _a.push((function() {
-      if (!(this.binded_elements.has(el))) {
-        this.binded_elements.add(el);
-        return el.bind_events();
-      }
-    }).call(this));
-  }
-  return _a;
-};
-Widgets = {
-  tags: {
-    view_url: function() {
-      return "/audiosources/" + (Widgets.audiomodels.current_model) + "/tag/list";
-    },
-    selected_tags: {},
-    clear: function() {
-      return (this.selected_tags = {});
-    },
-    load: function() {
-      var select_handler;
-      select_handler = __bind(function(event, ui) {
-        var _a, _b, _c, _d, i;
-        this.selected_tags = (function() {
-          _a = []; _c = $('#tag_selector li.ui-selected input');
-          for (_b = 0, _d = _c.length; _b < _d; _b++) {
-            i = _c[_b];
-            _a.push(i.value);
-          }
-          return _a;
-        })();
-        return Widgets.audiomodels.load();
-      }, this);
-      return $.get(this.view_url(), function(html_data) {
-        $('#tag_selector').html(html_data);
-        return $('#tag_selector ul').make_selectable({
-          handler: select_handler
-        });
-      });
-    }
-  },
-  audiomodel_selector: {
-    container: d$('#source_type'),
-    button_class: "audiomodel_selector",
-    selected_class: "audiomodel_selected",
-    load: function() {
-      var _a, _b, model_name;
-      _b = Widgets.audiomodels.models;
-      for (_a in _b) {
-        if (!__hasProp.call(_b, _a)) continue;
-        (function() {
-          var dom;
-          var model_name = _a;
-          var button_name = _b[_a];
-          dom = tag('span', button_name, {
-            "class": this.button_class
-          });
-          this.container.append(dom);
-          $(dom).button();
-          return dom.click(function(e) {
-            Widgets.audiomodels.current_model = model_name;
-            Widgets.tags.clear();
-            Widgets.audiomodels.clear_filter();
-            Widgets.audiomodels.load();
-            return Widgets.tags.load();
-          });
-        }).call(this);
-      }
-      return this.container.make_selectable({
-        unique_select: true,
-        select_class: this.selected_class
-      });
-    }
-  },
-  audiomodels: {
-    container: d$('#track_selector'),
-    models: {
-      audiofile: "Tracks",
-      audiosource: "Playlists"
-    },
-    current_model: 'audiofile',
-    view_url: function() {
-      return "/audiosources/" + (this.current_model) + "/list/";
-    },
-    all: [],
-    by_id: {},
-    text_filter: "",
-    clear_filter: function() {
-      return (this.text_filter = "");
-    },
-    filter_to_params: function() {
-      var _a, idx, map, tag;
-      map = {};
-      _a = Widgets.tags.selected_tags;
-      for (idx in _a) {
-        if (!__hasProp.call(_a, idx)) continue;
-        tag = _a[idx];
-        map[("tag_" + (idx))] = tag;
-      }
-      if (this.text_filter) {
-        map["text"] = this.text_filter;
-      }
-      return map;
-    },
-    views_actions: {
-      playlist: function() {
-        var tracklist;
-        tracklist = Application.current_component.tracklist;
-        tracklist.container.sortable('refresh');
-        return Widgets.audiomodels.current_model === "audiofile" ? $('#track_selector ul li').draggable({
-          connectToSortable: tracklist.container,
-          helper: 'clone',
-          appendTo: 'body',
-          scroll: false,
-          zIndex: '257'
-        }) : null;
-      }
-    },
-    load: function() {
-      return $.getJSON(this.view_url(), this.filter_to_params(), __bind(function(audiomodels_list) {
-        var _a, _b, _c, _d, audiomodel, json_audiomodel, ul;
-        this.all = [];
-        this.by_id = {};
-        ul = tag('ul');
-        this.container.html('');
-        this.container.append(ul);
-        _b = audiomodels_list;
-        for (_a = 0, _c = _b.length; _a < _c; _a++) {
-          json_audiomodel = _b[_a];
-          audiomodel = new ListAudiomodel(this.current_model, json_audiomodel);
-          this.all.push(audiomodel);
-          this.by_id[audiomodel.id] = audiomodel;
-          ul.append(audiomodel.ui);
-          audiomodel.bind_events();
-        }
-        $('[id$="select_footer"]').hide();
-        $("#" + (this.current_model) + "_select_footer").show();
-        return (typeof (_d = this.views_actions[Application.current_view]) === "function" ? _d() : undefined);
-      }, this));
+TrackList.prototype.get_tracks_map = function() {
+  var _a, _b, data, i, li, lis;
+  data = {};
+  lis = this.container.find("li");
+  _a = lis;
+  for (i = 0, _b = _a.length; i < _b; i++) {
+    li = _a[i];
+    if (!$(li).hasClass("to_delete_source_element")) {
+      data[("source_element_" + (i))] = $(li).children('input').val();
     }
   }
+  return data;
 };
 AppComponent = function(opts) {
   AppComponent.__super__.constructor.call(this, opts);
@@ -442,28 +607,43 @@ AppComponent.prototype.bind_events = function() {};
 AppComponent.prototype.close = function() {
   return this.ui.remove();
 };
+MainComponent = function() {
+  MainComponent.__super__.constructor.call(this, {
+    template: "main_component"
+  });
+  return this;
+};
+__extends(MainComponent, AppComponent);
 PlaylistComponent = function(json) {
-  var _a, _b, _c, audiofile, tags_table;
+  var _a, _b, _c, audiofile, audiofile_form;
   PlaylistComponent.__super__.constructor.call(this, {
     template: "audiosource_base",
     context: json
   });
   this.init_components();
-  this.fields.file_forms.html(render_template('audiofile_form', json));
-  $('.audiofileform').each(function() {
-    return $(this).ajaxForm(audiofile_form_options($(this), $(this).clone()));
+  this.action = json.action;
+  audiofile_form = new AudioFileForm({
+    success: __bind(function(audiofile) {
+      return this.tracklist.append(audiofile, true);
+    }, this)
   });
-  this.inputs.tags.autocomplete(multicomplete_params(json.tag_list)).unbind('blur.autocomplete');
-  if (json.mode === "edition") {
-    this.inputs.title.val(json.mode === "edition" ? json.audiosource.title : null);
+  this.fields.file_forms.append(audiofile_form.ui);
+  this.inputs.tags.autocomplete(multicomplete_params(json.tag_list));
+  this.inputs.tags.unbind('blur.autocomplete');
+  if (this.action === "edition") {
+    this.tags_table = new TagsTable(json.audiosource.tags_by_category);
+    this.fields.tags.append(this.tags_table.ui);
     _b = json.audiosource.sorted_audiofiles;
     for (_a = 0, _c = _b.length; _a < _c; _a++) {
       audiofile = _b[_a];
       this.tracklist.append(audiofile, false);
     }
-    tags_table = new TagsTable(json.audiosource.tags_by_category);
-    this.fields.tags.append(tags_table.ui);
   }
+  this.submit_button.button();
+  this.submit_button.click(__bind(function(e) {
+    e.preventDefault();
+    return this.submit();
+  }, this));
   return this;
 };
 __extends(PlaylistComponent, AppComponent);
@@ -480,59 +660,25 @@ PlaylistComponent.prototype.init_components = function() {
     tags: $('#tags_table_container'),
     file_forms: $('#audiofile_forms')
   };
-  return (this.form = $('#audiosource_form'));
+  this.form = $('#audiosource_form');
+  return (this.submit_button = $("#audiosource_form_submit"));
 };
-PlaylistComponent.prototype.bind_events = function() {
-  return this.tracklist.bind_events();
-};
-playlist_edit_handler = function() {
-  return $('#audiosource_form', document).submit(function(e) {
-    var _a, _b, data, i, li;
-    e.preventDefault();
-    data = {};
-    _a = $('#uploaded_audiofiles li');
-    for (i = 0, _b = _a.length; i < _b; i++) {
-      li = _a[i];
-      if (!$(li).hasClass("to_delete_source_element")) {
-        data[("source_element_" + (i))] = $(li).children('input').val();
+PlaylistComponent.prototype.submit = function() {
+  var data;
+  data = this.tags_table.to_delete_tags;
+  $.extend(data, this.tracklist.get_tracks_map());
+  return this.form.ajaxSubmit({
+    data: data,
+    success: function(r) {
+      var action;
+      if (Widgets.audiomodels.current_model === "audiosource") {
+        Widgets.audiomodels.load();
       }
+      Application.load("main");
+      action = this.action === "edition" ? "modifiée" : "ajoutée";
+      return post_message("La playlist " + (r.audiosource.title) + " à été " + (action) + " avec succès");
     }
-    return $(this).ajaxSubmit({
-      data: data,
-      success: function(r) {
-        var current_mode;
-        if (current_audiomodel === "audiosource_select") {
-          update_sources_list();
-        }
-        $('#playlist_edit').hide();
-        $('#main_content').show();
-        ({
-          action: r.action === "edition" ? "modifiée" : "ajoutée"
-        });
-        post_message("La playlist " + (r.audiosource.title) + " à été " + (action) + " avec succès");
-        return (current_mode = "main");
-      }
-    });
   });
-};
-populate_form_errors = function(errors, form) {
-  var $ul, _a, _b, _c, _d, _e, _f, _g, _h, error, msg;
-  _a = []; _c = errors;
-  for (_b = 0, _d = _c.length; _b < _d; _b++) {
-    error = _c[_b];
-    _a.push((function() {
-      if (error !== 'status') {
-        $ul = $("input[name=" + (error) + "]", form).parent().before('<ul> </ul>');
-        _e = []; _g = error;
-        for (_f = 0, _h = _g.length; _f < _h; _f++) {
-          msg = _g[_f];
-          _e.push($ul.before("<li>" + (msg) + "</li>"));
-        }
-        return _e;
-      }
-    })());
-  }
-  return _a;
 };
 handle_audiofile_play = function(e) {
   var player;
@@ -540,53 +686,6 @@ handle_audiofile_play = function(e) {
   e.stopPropagation();
   player = document.getElementById('audiofile_player');
   return player ? player.dewset(e.target.href) : null;
-};
-audiofile_form_options = function(target_form, new_form) {
-  var UPDATE_FREQ, prg_bar, update_progress_info, uuid;
-  update_progress_info = function() {
-    return $.getJSON('/upload-progress/', {
-      'X-Progress-ID': uuid
-    }, function(data, status) {
-      var progress;
-      if (data) {
-        progress = parseInt(data.received) / parseInt(data.size);
-        prg_bar.progressbar("option", "value", progress * 100);
-        return setTimeout(update_progress_info, UPDATE_FREQ);
-      }
-    });
-  };
-  UPDATE_FREQ = 1000;
-  uuid = gen_uuid();
-  prg_bar = $('.progress_bar', target_form);
-  target_form[0].action += ("?X-Progress-ID=" + (uuid));
-  return {
-    dataType: 'json',
-    target: target_form,
-    success: function(response, statusText, form) {
-      if (response.status) {
-        prg_bar.hide();
-        if (response.status === "error") {
-          return populate_form_errors(response, form);
-        } else {
-          post_message("Le morceau " + (response.audiofile.artist) + " - " + (response.audiofile.title) + " a été ajouté avec succès");
-          form.hide();
-          return append_to_playlist(response.audiofile, true);
-        }
-      } else {
-        return form.html(response);
-      }
-    },
-    beforeSubmit: function(arr, $form, options) {
-      var $newform;
-      $newform = $(new_form);
-      $form.after($newform);
-      $newform.ajaxForm(audiofile_form_options($newform, $newform.clone()));
-      prg_bar.progressbar({
-        progress: 0
-      });
-      return setTimeout(update_progress_info(UPDATE_FREQ));
-    }
-  };
 };
 show_edit_planning = function() {
   var _, board, ct, current_mode, div_class, i;
@@ -650,20 +749,13 @@ step = function(num, step) {
   return num - (num % step);
 };
 $(function() {
-  var _a, cname, component;
+  var _a, cname, widget;
   _a = Widgets;
   for (cname in _a) {
     if (!__hasProp.call(_a, cname)) continue;
-    component = _a[cname];
+    widget = _a[cname];
     console.log("Loading component " + (cname));
-    component.load();
+    widget.load();
   }
-  $('#text_selector').keyup(function(e) {
-    sel_data['text_filter'] = $(this).val();
-    return update_sources_list();
-  });
-  $('#create_playlist_button').click(function(e) {
-    return $.get('/audiosources/json/create-audio-source', playlist_view);
-  });
-  return $('#uploaded_audiofiles .audiofile_play').live('click', handle_audiofile_play);
+  return Application.load("main");
 });

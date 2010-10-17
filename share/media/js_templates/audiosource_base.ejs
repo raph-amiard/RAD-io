@@ -1,6 +1,6 @@
 <div id="playlist_edit"> 
   <div id="playlist_edit_content" class="content_div">
-    <h2 id="playlist_edit_title"><%= title %></h2>
+    <h2><%= title %></h2>
     <h3>Envoyer des morceaux:</h3>
     <div id="audiofile_forms">
     </div>
@@ -18,15 +18,14 @@
         <div class="audiosource_right_column">
           <h3>Informations:</h3>
           <p> Nom de la playlist</p>
-          <input type="text" id="playlist_title" name="title" value=""/>
+          <input type="text" id="playlist_title" name="title" value="<%= audiosource.title %>"/>
           <p>Ajouter des tags</p> <input type="text" id="audiosource_tags" name="tags" value=""/> 
           <p>Tags existants</p>
           <div id="tags_table_container"></div>
         </div>
       </div>
-
-      <input type="submit" value="Créer la playlist"/>
     </form>
+    <button id="audiosource_form_submit" type="button">Créer la playlist</button>
   </div>
 </div>
 
