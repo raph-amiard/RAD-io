@@ -29,7 +29,6 @@ p {
 
 .ui-widget-content ,.ui-state-default {
   background-image:none;
-  background-color:#E0E4CC;
   border:none;
 }
 
@@ -48,6 +47,14 @@ p {
 
 .unselectable {
   cursor:default;
+}
+
+.audiomodel-box, .tag-box {
+  background-color:#E0E4CC;
+}
+
+.selected-box {
+  background: #F39814;
 }
 
 .audiomodel-box {
@@ -104,7 +111,7 @@ p {
 
 #track_selector_container {
   padding-top:100px;
-  padding-bottom:80px;
+  padding-bottom:90px;
 }
 
 
@@ -115,7 +122,7 @@ p {
 
 #track_selector_footer {
 z-index:20;
-  height:80px;
+  height:90px;
   bottom:0;
   position:fixed;
   background-color:#D7DBC4;
