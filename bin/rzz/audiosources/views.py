@@ -9,7 +9,7 @@ from django.template import Context, loader
 from django.shortcuts import get_object_or_404
 
 from rzz.artists.models import Artist
-from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, SourceElement,Tag, TagCategory, tag_list
+from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
@@ -118,18 +118,18 @@ def audio_models_list(request,audiomodel_klass, page):
         if audiomodel_klass == AudioFile:
             search_clauses += ['artist']
         search_dict = dict([(sc + '__icontains', text_filter) for sc in search_clauses])
-        audiofiles = audiomodel_klass.objects.filter(Q_or(**search_dict))
+        audiomodels = audiomodel_klass.objects.filter(Q_or(**search_dict))
     else:
-        audiofiles = audiomodel_klass.objects.all()
+        audiomodels = audiomodel_klass.objects.all()
     for tag in tags:
-        audiofiles = audiofiles.filter(tags=tag)
+        audiomodels = audiomodels.filter(tags=tag)
 
-    cnt = audiofiles.count()
+    cnt = audiomodels.count()
     if bottom > cnt:
         raise Http404
-    audiofiles = audiofiles[bottom:top if top <= cnt else cnt]
+    audiomodels = audiomodels[bottom:top if top <= cnt else cnt]
 
-    return JSONResponse([af.to_dict() for af in audiofiles])
+    return JSONResponse([af.to_dict() for af in audiomodels])
 
 def delete_audiomodel_tag(request, audiomodel_id, tag_id):
     audiomodel = get_object_or_404(AudioModel, pk=audiomodel_id);
@@ -193,10 +193,17 @@ def tags_list(request, audiomodel_klass):
     tags = Tag.objects.extra(where=[
         """
         id IN (SELECT tag_id 
-               FROM audiosources_audiomodel_tags 
-               WHERE audiomodel_id IN (SELECT audiomodel_ptr_id 
-                                       FROM audiosources_%s))
-        """ % ('audiofile' if audiomodel_klass == AudioFile else 'audiosource')
+               FROM audiosources_taggedmodel_tags 
+               WHERE taggedmodel_id IN (SELECT %s_ptr_id 
+                                        FROM audiosources_%s))
+        """ % (
+            "taggedmodel" if audiomodel_klass == Planning else "audiomodel",
+            {
+                AudioFile:'audiofile',
+                AudioSource:'audiosource',
+                Planning:"planning"
+            }[audiomodel_klass]
+        )
     ])
     categories = {}
     for tag in tags:

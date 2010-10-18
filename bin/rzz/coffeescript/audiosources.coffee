@@ -6,6 +6,7 @@ Application =
         cmap =
             playlist: PlaylistComponent
             main: MainComponent
+            planning: PlanningComponent
         return cmap[name]
 
     current_view: 'main'
@@ -104,17 +105,7 @@ Widgets.audiomodels =
         if @text_filter then map["text_filter"] = @text_filter
         return map
 
-    views_actions:
-        playlist: ->
-            tracklist = Application.current_component.tracklist
-            tracklist.container.sortable('refresh')
-            if Widgets.audiomodels.current_model == "audiofile"
-                $('#track_selector ul li').draggable
-                    connectToSortable: tracklist.container
-                    helper:'clone'
-                    appendTo:'body'
-                    scroll:no
-                    zIndex:'257'
+    elements: -> @container.find("li")
 
     load: ->
         $.getJSON @view_url(), @filter_to_params() , (audiomodels_list) =>
@@ -138,9 +129,6 @@ Widgets.audiomodels =
             $('[id$="select_footer"]').hide()
             $("##{@current_model}_select_footer").show()
 
-            # View specific actions
-            @views_actions[Application.current_view]?()
-
 Widgets.footer_actions =
 
     actions:
@@ -162,11 +150,20 @@ Widgets.footer_actions =
             global:
                 "Créer une playlist":
                     action: ->
+                        $.getJSON "/audiosources/json/create-audio-source", (data) ->
+                            Application.load "playlist", data
             selection:
                 "Supprimer":
                     action: ->
                 "Ajouter tags":
                     action: ->
+        planning:
+            global:
+                "Creer un planning":
+                    action: ->
+                        console.log "LOLDUDE"
+                        Application.load "planning"
+            selection: null
 
     footers: {}
     container: d$ "#track_selector_footer"
@@ -259,6 +256,48 @@ class Audiomodel extends TemplateComponent
 class ListAudiomodel extends Audiomodel
     # Represents an audiomodel in the audiomodel list
 
+    view_events:
+        playlist: ->
+            tracklist = Application.current_component.tracklist
+            tracklist.container.sortable('refresh')
+            if @type == "audiofile"
+                @ui.draggable
+                    connectToSortable: tracklist.container
+                    helper:'clone'
+                    appendTo:'body'
+                    scroll:no
+                    zIndex:'257'
+
+        planning: ->
+            if @type == "audiosource"
+
+                td_positions = []
+                planning = Application.current_component
+                proxy = null
+
+                @ui.bind 'dragstart', (e, dd) =>
+                    console.log @
+                    height = @length / 60
+                    width = planning.board.width()
+                    proxy = div @title, class:'audiofile_proxy'
+                    proxy.css top:dd.offsetY, left:dd.offsetX, position:'absolute'
+                    $('body').append proxy
+                    proxy.width(width).height(height)
+                    td_positions = Math.round($(el).position().left) for el in planning.tds
+
+                @ui.bind 'drag', (e, dd) =>
+                    el = $ proxy
+                    rel_pos = planning.el_pos(el)
+                    proxy_in_board = (rel_pos.top + (el.height() / 2) > 0 and rel_pos.left + (el.width() / 2) > 0
+                    if proxy_in_board
+                        rel_cpos = planning.pos top:dd.offsetY, left:dd.offsetX
+                        planning.el_pos el,
+                            top: step(rel_cpos.top, 10)
+                            left: closest(rel_cpos.left, td_positions)+1
+                    else
+                        el.css top:dd.offsetY, left:dd.offsetX
+
+
     constructor: (type, json_model) ->
 
         @type = type
@@ -267,6 +306,8 @@ class ListAudiomodel extends Audiomodel
         super
             template: "#{@type}_list_element"
             context: {audiomodel:json_model}
+
+        @view_events[Application.current_view]?.apply(@, [])
 
     handle_delete: ->
         audiomodel = @
@@ -416,7 +457,6 @@ class PlaylistElement extends Audiomodel
             e.preventDefault()
             if @fresh then @ui.remove()
             else @ui.addClass 'to_delete_source_element'
-            @container.remove(@)
 
     toString: () -> "playlist_element_#{gen_uuid()}"
 
@@ -535,7 +575,7 @@ class PlaylistComponent extends AppComponent
             e.preventDefault();@submit()
 
     submit: () ->
-        data = @tags_table.to_delete_tags
+        data = if @action == "edition" then @tags_table.to_delete_tags else {}
         $.extend data, @tracklist.get_tracks_map()
         @form.ajaxSubmit
             data: data
@@ -556,6 +596,28 @@ handle_audiofile_play = (e) ->
 
 
 # ================================ PLANNINGS PART ================================= #
+
+class PlanningComponent extends AppComponent
+
+    init_components: ->
+        @board = $ '#main_planning_board'
+        @container = $ '#main_planning_board_container'
+        @tds = $ '#planning_board td'
+
+    update_height: ->
+        @container.height $(document).height() - @container.offset().top - 20
+
+    add_grid: ->
+        for _ in [0...24]
+            for i in [1..6]
+                div_class = {3:'half',6:'hour'}[i] or 'tenth'
+                @board.append(div class:"grid_time grid_#{div_class}")
+
+    constructor: (init_data) ->
+        super template: "planning"
+        @init_components()
+        @update_height()
+        @add_grid()
 
 
 show_edit_planning = () ->
