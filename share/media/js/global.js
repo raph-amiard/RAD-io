@@ -1,4 +1,4 @@
-var Set, d$, debug, div, extractLast, format_length, format_number, gen_uuid, js_template, make_xps_menu, multicomplete_params, print, render_template, show_menu, split, tag, template;
+var Set, d$, debug, div, extractLast, format_length, format_number, gen_uuid, js_template, make_xps_menu, multicomplete_params, object_with_keys, print, render_template, show_menu, split, tag, template;
 var __hasProp = Object.prototype.hasOwnProperty;
 debug = true;
 print = debug && (typeof console !== "undefined" && console !== null) ? console.log : function() {
@@ -201,4 +201,13 @@ show_menu = function(xps_menu, opts) {
   $('body').append(xps_menu.div);
   $(xps_menu.div).dialog(opts);
   return xps_menu.on_show.apply($(xps_menu.div));
+};
+object_with_keys = function(obj, keys) {
+  var _i, _len, key, new_obj;
+  new_obj = {};
+  for (_i = 0, _len = keys.length; _i < _len; _i++) {
+    key = keys[_i];
+    new_obj[key] = obj[key];
+  }
+  return new_obj;
 };

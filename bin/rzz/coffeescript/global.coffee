@@ -137,3 +137,9 @@ show_menu = (xps_menu, opts) ->
     $(xps_menu.div).dialog(opts)
     xps_menu.on_show.apply($(xps_menu.div))
 
+
+object_with_keys = (obj, keys) ->
+    new_obj = {}
+    for key in keys
+        new_obj[key] = obj[key]
+    new_obj

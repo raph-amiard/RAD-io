@@ -621,6 +621,9 @@ class PlanningComponent extends AppComponent
         @container = $ '#main_planning_board_container'
         @tds = $ '#planning_board td'
         @board_table = $ '#planning_board'
+        @submit_button = $ '#planning_submit'
+        @title_input = $ '#planning_title'
+        @tags_input = $ '#planning_tags'
 
     update_height: ->
         @container.height $(document).height() - @container.offset().top - 20
@@ -635,10 +638,12 @@ class PlanningComponent extends AppComponent
 
     constructor: (init_data) ->
         super template: "planning"
+        @planning_elements = new Set()
         @init_components()
         @update_height()
         $(window).resize () => @update_height()
         @add_grid()
+        @submit_button.button()
 
     pos: (el_pos) ->
 
@@ -668,6 +673,14 @@ class PlanningComponent extends AppComponent
             el_off.left -= pboard_off.left
             return el_off
 
+    to_json: ->
+        pl_els = el.serialize() for el in @planning_elements.values()
+        return JSON.stringify
+            planning_elements: pl_els
+            title: @title_input.val()
+            tags: @tags_input.val()
+
+
 class PlanningElement extends Audiomodel
 
     bind_events: ->
@@ -688,9 +701,9 @@ class PlanningElement extends Audiomodel
             top = if top > 0 then top else 0
             [column] = td_positions.closest(rel_cpos.left)
             if column != @day
-                @set_day(column)
+                @set_day column
                 @ui.width @column.width()
-            @ui.css top:top
+            @set_time top
 
         @ui.bind 'drop', (e, dd) =>
             @ui.css 'background-color':color
@@ -701,24 +714,33 @@ class PlanningElement extends Audiomodel
         @column = $(Application.current_component.tds[day])
         @column.append @ui
 
+    set_time: (top_pos) ->
+        @hour = parseInt top_pos / 60
+        @minute = top_pos % 60
+        @ui.css top:top_pos
+
     constructor: (json_model, position, day) ->
         super template: "planning_element", context: json_model
+        $.extend this, json_model
 
-        @hour = parseInt position.top / 60
-        @minute = position.top % 60
-
+        @set_time(position.top)
         @set_day(day)
-        @ui.css top:position.top
+
         @ui.height json_model.length / 60
         @ui.width @column.width()
         $(window).resize => @ui.width @column.width()
 
-
         @bind_events()
-        console.log @formatted_time()
+        Application.current_component.planning_elements.add @
+        console.log Application.current_component.planning_elements.values()
 
-    formatted_time: ->
-        return "#{format_number @hour, 2}h#{format_number @minute, 2}"
+    serialize : ->
+        return object_with_keys @, ['day', 'hour', 'minute', 'id']
+
+    formatted_time: -> "#{format_number @hour, 2}h#{format_number @minute, 2}"
+
+    toString: -> "planning_element_#{gen_uuid()}"
+
 
 class GridPositionner
 

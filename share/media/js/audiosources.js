@@ -790,12 +790,14 @@ PlanningComponent = (function() {
     PlanningComponent.__super__.constructor.call(this, {
       template: "planning"
     });
+    this.planning_elements = new Set();
     this.init_components();
     this.update_height();
     $(window).resize(__bind(function() {
       return this.update_height();
     }, this));
     this.add_grid();
+    this.submit_button.button();
     return this;
   };
   return PlanningComponent;
@@ -805,7 +807,10 @@ PlanningComponent.prototype.init_components = function() {
   this.board = $('#main_planning_board');
   this.container = $('#main_planning_board_container');
   this.tds = $('#planning_board td');
-  return (this.board_table = $('#planning_board'));
+  this.board_table = $('#planning_board');
+  this.submit_button = $('#planning_submit');
+  this.title_input = $('#planning_title');
+  return (this.tags_input = $('#planning_tags'));
 };
 PlanningComponent.prototype.update_height = function() {
   return this.container.height($(document).height() - this.container.offset().top - 20);
@@ -856,25 +861,39 @@ PlanningComponent.prototype.el_pos = function(el, pos) {
     return el_off;
   }
 };
+PlanningComponent.prototype.to_json = function() {
+  var _i, _len, _ref, _result, el, pl_els;
+  pl_els = (function() {
+    _result = [];
+    for (_i = 0, _len = (_ref = this.planning_elements.values()).length; _i < _len; _i++) {
+      el = _ref[_i];
+      _result.push(el.serialize());
+    }
+    return _result;
+  }).call(this);
+  return JSON.stringify({
+    planning_elements: pl_els,
+    title: this.title_input.val(),
+    tags: this.tags_input.val()
+  });
+};
 PlanningElement = (function() {
   function PlanningElement(json_model, position, day) {
     PlanningElement.__super__.constructor.call(this, {
       template: "planning_element",
       context: json_model
     });
-    this.hour = parseInt(position.top / 60);
-    this.minute = position.top % 60;
+    $.extend(this, json_model);
+    this.set_time(position.top);
     this.set_day(day);
-    this.ui.css({
-      top: position.top
-    });
     this.ui.height(json_model.length / 60);
     this.ui.width(this.column.width());
     $(window).resize(__bind(function() {
       return this.ui.width(this.column.width());
     }, this));
     this.bind_events();
-    console.log(this.formatted_time());
+    Application.current_component.planning_elements.add(this);
+    console.log(Application.current_component.planning_elements.values());
     return this;
   };
   return PlanningElement;
@@ -910,9 +929,7 @@ PlanningElement.prototype.bind_events = function() {
       this.set_day(column);
       this.ui.width(this.column.width());
     }
-    return this.ui.css({
-      top: top
-    });
+    return this.set_time(top);
   }, this));
   return this.ui.bind('drop', __bind(function(e, dd) {
     this.ui.css({
@@ -928,8 +945,21 @@ PlanningElement.prototype.set_day = function(day) {
   this.column = $(Application.current_component.tds[day]);
   return this.column.append(this.ui);
 };
+PlanningElement.prototype.set_time = function(top_pos) {
+  this.hour = parseInt(top_pos / 60);
+  this.minute = top_pos % 60;
+  return this.ui.css({
+    top: top_pos
+  });
+};
+PlanningElement.prototype.serialize = function() {
+  return object_with_keys(this, ['day', 'hour', 'minute', 'id']);
+};
 PlanningElement.prototype.formatted_time = function() {
-  return ("" + (format_number(this.hour, 2)) + "h" + (format_number(this.minute, 2)));
+  return "" + (format_number(this.hour, 2)) + "h" + (format_number(this.minute, 2));
+};
+PlanningElement.prototype.toString = function() {
+  return "planning_element_" + (gen_uuid());
 };
 GridPositionner = (function() {
   function GridPositionner(tds) {
