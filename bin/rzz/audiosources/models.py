@@ -141,6 +141,20 @@ class Planning(TaggedModel):
     name = models.CharField('Name of the planning', max_length=100)
     planning_elements = models.ManyToManyField(AudioSource, through='PlanningElement')
 
+    def add_elements(self, elements):
+        from datetime import time as Time
+        for element in elements:
+            planning_element = PlanningElement(
+                planning = self,
+                source = AudioSource.objects.get(id=element["id"]),
+                type = 'single',
+                time_start = Time(element["hour"], element["minute"]),
+                day = element["day"],
+                random = False
+            )
+            planning_element.save()
+
+
 
 class PlanningElement(models.Model):
     TYPES = (

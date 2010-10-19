@@ -616,6 +616,13 @@ handle_audiofile_play = (e) ->
 
 class PlanningComponent extends AppComponent
 
+    create_link:"/audiosources/json/create-planning"
+
+    bind_events: ->
+        @submit_button.click =>
+            $.post @create_link, {planning_data:@to_json()}, (response) =>
+                console.log response
+
     init_components: ->
         @board = $ '#main_planning_board'
         @container = $ '#main_planning_board_container'
@@ -644,6 +651,7 @@ class PlanningComponent extends AppComponent
         $(window).resize () => @update_height()
         @add_grid()
         @submit_button.button()
+        @bind_events()
 
     pos: (el_pos) ->
 

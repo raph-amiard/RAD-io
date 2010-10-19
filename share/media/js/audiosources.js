@@ -798,11 +798,22 @@ PlanningComponent = (function() {
     }, this));
     this.add_grid();
     this.submit_button.button();
+    this.bind_events();
     return this;
   };
   return PlanningComponent;
 })();
 __extends(PlanningComponent, AppComponent);
+PlanningComponent.prototype.create_link = "/audiosources/json/create-planning";
+PlanningComponent.prototype.bind_events = function() {
+  return this.submit_button.click(__bind(function() {
+    return $.post(this.create_link, {
+      planning_data: this.to_json()
+    }, __bind(function(response) {
+      return console.log(response);
+    }, this));
+  }, this));
+};
 PlanningComponent.prototype.init_components = function() {
   this.board = $('#main_planning_board');
   this.container = $('#main_planning_board_container');

@@ -9,11 +9,23 @@ from django.template import Context, loader
 from django.shortcuts import get_object_or_404
 
 from rzz.artists.models import Artist
-from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list
+from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list, Planning
 from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
 from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource, remove_tags_from_model
+
+@staff_member_required
+def create_planning(request):
+    """
+    View for dynamic creation of a planning
+    """
+    planning_data = json.loads(request.POST['planning_data'])
+    planning = Planning(name=planning_data['title'])
+    planning.save()
+    planning.add_elements(planning_data['planning_elements'])
+    
+    return HttpResponse()
 
 @staff_member_required
 def create_audio_source(request):
@@ -38,10 +50,10 @@ def create_audio_source(request):
         })
 
     return JSONResponse({
-        'audiofileform':AudioFileForm().as_p(), 
-        'action':'creation', 
-        'tag_list':tag_list(), 
-        'title':'Creation d''une nouvelle playlist', 
+        'audiofileform': AudioFileForm().as_p(), 
+        'action': 'creation', 
+        'tag_list': tag_list(), 
+        'title': 'Creation d''une nouvelle playlist', 
         'form_url': reverse('create-audio-source')
     })
 
