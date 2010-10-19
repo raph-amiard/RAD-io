@@ -365,7 +365,10 @@ input[type=text] {
   padding:0;
 }
 #planning_board td {
+  position: relative;
+  vertical-align:top;
   margin:0;
+  padding:0;
   width:14.286%;
   border-left:1px solid black;
 }
@@ -415,5 +418,14 @@ input[type=text] {
 }
 .audiofile_proxy {
     background-color:yellow;
+    z-index:400;
+}
+.planning_element {
+    position:absolute;
+    background-color:#C7A;
+    border: 3px solid #B69;
+    box-sizing:border-box;
+    -moz-box-sizing:border-box;
+    -webkit-box-sizing:border-box;
     z-index:400;
 }

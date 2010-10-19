@@ -269,39 +269,56 @@ class ListAudiomodel extends Audiomodel
                     zIndex:'257'
 
         planning: ->
+
             if @type == "audiosource"
 
                 td_positions = []
                 planning = Application.current_component
                 proxy = null
+                previous_top = 0; previous_left = 0; column=0
 
                 @ui.bind 'dragstart', (e, dd) =>
-                    console.log @
+
                     height = @length / 60
-                    width = planning.board.width()
+                    width = planning.tds.first().width()
                     proxy = div @title, class:'audiofile_proxy'
+
                     proxy.css top:dd.offsetY, left:dd.offsetX, position:'absolute'
                     $('body').append proxy
                     proxy.width(width).height(height)
-                    td_positions = Math.round($(el).position().left) for el in planning.tds
+                    td_positions = new GridPositionner(planning.tds)
 
                 @ui.bind 'drag', (e, dd) =>
+
                     el = $ proxy
                     rel_pos = planning.el_pos(el)
-                    proxy_in_board = (rel_pos.top + (el.height() / 2) > 0 and rel_pos.left + (el.width() / 2) > 0
+                    proxy_in_board = (rel_pos.top + (el.height() / 2) > 0 and rel_pos.left + (el.width() / 2) > 0)
+
                     if proxy_in_board
                         rel_cpos = planning.pos top:dd.offsetY, left:dd.offsetX
-                        planning.el_pos el,
-                            top: step(rel_cpos.top, 10)
-                            left: closest(rel_cpos.left, td_positions)+1
+                        top = step(rel_cpos.top, 10)
+                        [column, left] = td_positions.closest(rel_cpos.left)
+                        left += 1
+
+                        if top != previous_top or left != previous_left
+                            planning.el_pos el, top: top, left: left
+                            col_width = $(planning.tds[column]).width()
+                            el.width(col_width)
+                            previous_top = top; previous_left = left
                     else
                         el.css top:dd.offsetY, left:dd.offsetX
+
+                @ui.bind 'drop', (e, dd) =>
+                    el = $ proxy
+                    el.remove()
+                    p_el = new PlanningElement(@audiomodel_base, {top:previous_top, left:previous_left} , column)
 
 
     constructor: (type, json_model) ->
 
         @type = type
         $.extend this, json_model
+        @audiomodel_base = json_model
 
         super
             template: "#{@type}_list_element"
@@ -603,85 +620,135 @@ class PlanningComponent extends AppComponent
         @board = $ '#main_planning_board'
         @container = $ '#main_planning_board_container'
         @tds = $ '#planning_board td'
+        @board_table = $ '#planning_board'
 
     update_height: ->
         @container.height $(document).height() - @container.offset().top - 20
 
     add_grid: ->
-        for _ in [0...24]
+        for h in [0...24]
             for i in [1..6]
                 div_class = {3:'half',6:'hour'}[i] or 'tenth'
-                @board.append(div class:"grid_time grid_#{div_class}")
+                content = if i == 1 then "#{format_number h, 2}h00" else ""
+                gridiv = div content, class:"grid_time grid_#{div_class}"
+                @board.append(gridiv)
 
     constructor: (init_data) ->
         super template: "planning"
         @init_components()
         @update_height()
+        $(window).resize () => @update_height()
         @add_grid()
 
+    pos: (el_pos) ->
 
-show_edit_planning = () ->
-    board = $('#main_planning_board')
-    ct = $('#main_planning_board_container')
+        # Takes a coordinates object as input -> {left:int, top:int}
+        # Returns a coordinate object relative to the planning board
 
-    for _ in [0...24]
-        for i in [1..6]
-            div_class = {3:'half',6:'hour'}[i] or 'tenth'
-            board.append(div class:"grid_time grid_#{div_class}")
+        pboard_off = @board_table.offset()
+        el_pos.top -= pboard_off.top
+        el_pos.left -= pboard_off.left
+        return el_pos
 
-    $('#main_content').hide()
-    $('#planning_edit').show()
-    ct.height $(document).height() - ct.offset().top - 20
+    el_pos: (el, pos) ->
 
-    $('#main_planning_board').droppable
-        over: (e, ui) ->
-            dropped_el = ui.helper
+        # If only el is given, returns the position of el on the planning board
+        # If pos is given as pos = {top:int, left:int},
+        # then place el at the given pos relative to the board
 
-        drop: (e, ui) ->
-        tolerance:'fit'
+        pboard_off = @board_table.offset()
+        el_off = el.offset()
 
-    current_mode = "planning_edit"
+        if pos
+            el.css
+                top: pboard_off.top + pos.top
+                left: pboard_off.left + pos.left
+        else
+            el_off.top -= pboard_off.top
+            el_off.left -= pboard_off.left
+            return el_off
 
-pos_on_pboard = (el_pos) ->
+class PlanningElement extends Audiomodel
 
-    # Takes a coordinates object as input -> {left:int, top:int}
-    # Returns a coordinate object relative to the planning board
+    bind_events: ->
+        color = null; z_index=null
+        planning = Application.current_component
+        td_positions = []
 
-    pboard_off = $('#planning_board').offset()
-    el_pos.top -= pboard_off.top
-    el_pos.left -= pboard_off.left
-    return el_pos
+        @ui.bind 'dragstart', (e, dd) =>
+            color = @ui.css 'background-color'
+            z_index = @ui.css 'z-index'
+            @ui.css 'background-color':'#EBC'
+            @ui.css 'z-index': z_index + 10
+            td_positions = new GridPositionner(planning.tds)
 
-el_pos_on_pboard = (el, pos) ->
+        @ui.bind 'drag', (e, dd) =>
+            rel_cpos = planning.pos top:dd.offsetY, left:dd.offsetX
+            top = step(rel_cpos.top, 10)
+            top = if top > 0 then top else 0
+            [column] = td_positions.closest(rel_cpos.left)
+            if column != @day
+                @set_day(column)
+                @ui.width @column.width()
+            @ui.css top:top
 
-    # If only el is given, returns the position of el on the planning board
-    # If pos is given as pos = {top:int, left:int},
-    # then place el at the given pos relative to the board
+        @ui.bind 'drop', (e, dd) =>
+            @ui.css 'background-color':color
+            @ui.css "z-index": z_index
 
-    pboard_off = $('#planning_board').offset()
-    el_off = el.offset()
-    if pos
-        el.css
-            top: pboard_off.top + pos.top
-            left: pboard_off.left + pos.left
-    else
-        el_off.top -= pboard_off.top
-        el_off.left -= pboard_off.left
-        return el_off
+    set_day: (day) ->
+        @day = day
+        @column = $(Application.current_component.tds[day])
+        @column.append @ui
 
-closest = (num, steps) ->
+    constructor: (json_model, position, day) ->
+        super template: "planning_element", context: json_model
 
-    # num: int, steps: [int]
-    # Returns the step that is the closest to num
+        @hour = parseInt position.top / 60
+        @minute = position.top % 60
 
-    ret = null
-    $.each steps, (i) ->
-        if steps[i] < num < steps[i +1]
-            if num - steps[i] < steps[i + 1] - num
-                ret = steps[i]
+        @set_day(day)
+        @ui.css top:position.top
+        @ui.height json_model.length / 60
+        @ui.width @column.width()
+        $(window).resize => @ui.width @column.width()
+
+
+        @bind_events()
+        console.log @formatted_time()
+
+    formatted_time: ->
+        return "#{format_number @hour, 2}h#{format_number @minute, 2}"
+
+class GridPositionner
+
+    constructor: (tds) ->
+        @steps = Math.round($(el).position().left) for el in tds
+
+    closest: (num) ->
+
+        ret = null; col = null
+
+        $.each @steps, (i) =>
+            if @steps[i] <= num < @steps[i +1]
+                if num - @steps[i] < @steps[i + 1] - num
+                    ret = @steps[i]
+                    col = i
+                else
+                    ret = @steps[i + 1]
+                    col = i + 1
+
+        if col == null
+            last_i = @steps.length - 1
+
+            if num > @steps[last_i]
+                ret = @steps[last_i]
+                col = last_i
             else
-                ret = steps[i + 1]
-    return ret
+                ret = 0
+                col = 0
+
+        return [col, ret]
 
 step = (num, step) -> num - (num % step)
 

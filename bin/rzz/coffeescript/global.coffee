@@ -59,13 +59,14 @@ multicomplete_params = (list) ->
         @value = terms.join ", "
         false
 
-format_length = (l) ->
-    format_number = (num, length) ->
-        strnum = num + ''
-        len = strnum.length
-        zeroes = if length > len then length - len else 0
-        strnum = ("0" for _ in [0...zeroes]).join('') + strnum
+format_number = (num, length) ->
+    strnum = num + ''
+    len = strnum.length
+    zeroes = if length > len then length - len else 0
+    strnum = ("0" for _ in [0...zeroes]).join('') + strnum
 
+
+format_length = (l) ->
     fnum = (num) -> format_number num, 2
     num_hours = Math.floor l / 3600
     hours = fnum num_hours

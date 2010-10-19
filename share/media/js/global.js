@@ -1,21 +1,21 @@
-var Set, d$, debug, div, extractLast, format_length, gen_uuid, js_template, make_xps_menu, multicomplete_params, print, render_template, show_menu, split, tag, template;
+var Set, d$, debug, div, extractLast, format_length, format_number, gen_uuid, js_template, make_xps_menu, multicomplete_params, print, render_template, show_menu, split, tag, template;
 var __hasProp = Object.prototype.hasOwnProperty;
 debug = true;
 print = debug && (typeof console !== "undefined" && console !== null) ? console.log : function() {
   return false;
 };
 gen_uuid = function() {
-  var _, _a;
+  var _, _result;
   return (function() {
-    _a = [];
+    _result = [];
     for (_ = 0; _ < 32; _++) {
-      _a.push(Math.floor(Math.random() * 16).toString(16));
+      _result.push(Math.floor(Math.random() * 16).toString(16));
     }
-    return _a;
+    return _result;
   })().join('');
 };
 js_template = function(t) {
-  return "/site_media/js_templates/" + (t) + ".ejs";
+  return "/site_media/js_templates/" + t + ".ejs";
 };
 split = function(val) {
   return val.split(/,\s*/);
@@ -27,24 +27,23 @@ render_template = function(template_name, context) {
   return template(template_name).render(context);
 };
 template = function(template_name) {
-  var cache;
-  this.cache = (typeof this.cache !== "undefined" && this.cache !== null) ? this.cache : {};
+  var _ref, cache;
+  ((_ref = this.cache) != null) ? _ref : (this.cache = {});
   cache = this.cache[template_name];
   return cache ? cache : (this.cache[template_name] = new EJS({
     url: js_template(template_name)
   }));
 };
 tag = function(node, content, attrs) {
-  var _a, _b, attr_name, attr_value, tag;
-  if (!(typeof content === 'string') && !(typeof (_a = (typeof content === "undefined" || content === null) ? undefined : content.html) !== "undefined" && _a !== null)) {
+  var attr_name, attr_value, tag;
+  if (!(typeof content === 'string') && !(((content != null) ? content.html : undefined) != null)) {
     attrs = content;
     content = false;
   }
-  tag = $("<" + (node) + "></" + (node) + ">");
-  _b = attrs;
-  for (attr_name in _b) {
-    if (!__hasProp.call(_b, attr_name)) continue;
-    attr_value = _b[attr_name];
+  tag = $("<" + node + "></" + node + ">");
+  for (attr_name in attrs) {
+    if (!__hasProp.call(attrs, attr_name)) continue;
+    attr_value = attrs[attr_name];
     tag.attr(attr_name, attr_value);
   }
   if (content) {
@@ -55,17 +54,19 @@ tag = function(node, content, attrs) {
 div = function(content, opts_map) {
   return tag('div', content, opts_map);
 };
-Set = function(tab) {
-  var _a, el, i;
-  this.map = {};
-  _a = tab;
-  for (i in _a) {
-    if (!__hasProp.call(_a, i)) continue;
-    el = _a[i];
-    this.map[el] = el;
-  }
-  return this;
-};
+Set = (function() {
+  function Set(tab) {
+    var el, i;
+    this.map = {};
+    for (i in tab) {
+      if (!__hasProp.call(tab, i)) continue;
+      el = tab[i];
+      this.map[el] = el;
+    }
+    return this;
+  };
+  return Set;
+})();
 Set.prototype.add = function(el) {
   return (this.map[el] = el);
 };
@@ -73,18 +74,17 @@ Set.prototype.remove = function(el) {
   return delete this.map[el];
 };
 Set.prototype.has = function(el) {
-  var _a;
-  return (typeof (_a = this.map[el]) !== "undefined" && _a !== null);
+  return (this.map[el] != null);
 };
 Set.prototype.values = function() {
-  var _a, _b, key, value;
-  _a = []; _b = this.map;
-  for (key in _b) {
-    if (!__hasProp.call(_b, key)) continue;
-    value = _b[key];
-    _a.push(value);
+  var _ref, _result, key, value;
+  _result = [];
+  for (key in _ref = this.map) {
+    if (!__hasProp.call(_ref, key)) continue;
+    value = _ref[key];
+    _result.push(value);
   }
-  return _a;
+  return _result;
 };
 multicomplete_params = function(list) {
   return {
@@ -106,21 +106,21 @@ multicomplete_params = function(list) {
     }
   };
 };
+format_number = function(num, length) {
+  var _, _result, len, strnum, zeroes;
+  strnum = num + '';
+  len = strnum.length;
+  zeroes = length > len ? length - len : 0;
+  return (strnum = (function() {
+    _result = [];
+    for (_ = 0; (0 <= zeroes ? _ < zeroes : _ > zeroes); (0 <= zeroes ? _ += 1 : _ -= 1)) {
+      _result.push("0");
+    }
+    return _result;
+  })().join('') + strnum);
+};
 format_length = function(l) {
-  var fnum, format_number, hours, minutes, num_hours, seconds;
-  format_number = function(num, length) {
-    var _, _a, len, strnum, zeroes;
-    strnum = num + '';
-    len = strnum.length;
-    zeroes = length > len ? length - len : 0;
-    return (strnum = (function() {
-      _a = [];
-      for (_ = 0; (0 <= zeroes ? _ < zeroes : _ > zeroes); (0 <= zeroes ? _ += 1 : _ -= 1)) {
-        _a.push("0");
-      }
-      return _a;
-    })().join('') + strnum);
-  };
+  var fnum, hours, minutes, num_hours, seconds;
   fnum = function(num) {
     return format_number(num, 2);
   };
@@ -128,7 +128,7 @@ format_length = function(l) {
   hours = fnum(num_hours);
   minutes = fnum(Math.floor((l % 3600) / 60));
   seconds = fnum(Math.floor(l % 60));
-  return num_hours ? ("" + (hours) + "h" + (minutes) + "m" + (seconds)) : ("" + (minutes) + "m" + (seconds));
+  return num_hours ? ("" + hours + "h" + minutes + "m" + seconds) : ("" + minutes + "m" + seconds);
 };
 d$ = function(selector) {
   var obj;
@@ -142,7 +142,7 @@ d$ = function(selector) {
   return obj;
 };
 make_xps_menu = function(opts) {
-  var _a, _b, _c, _d, defaults, id, p, text, title, txt, val_func, val_text;
+  var _i, _len, _result, defaults, id, p, text, title, txt, val_func, val_text;
   /*
   Creates a menu div from an opts object
   The menu div is meant to be dialogified with jquery.ui and the show_menu function
@@ -160,12 +160,12 @@ make_xps_menu = function(opts) {
   txt = opts["text"];
   if ($.isArray(txt)) {
     txt = (function() {
-      _a = []; _c = txt;
-      for (_b = 0, _d = _c.length; _b < _d; _b++) {
-        p = _c[_b];
-        _a.push($("<p></p>").html(p)[0]);
+      _result = [];
+      for (_i = 0, _len = txt.length; _i < _len; _i++) {
+        p = txt[_i];
+        _result.push($("<p></p>").html(p)[0]);
       }
-      return _a;
+      return _result;
     })();
   }
   text = tag("div", txt);
@@ -178,7 +178,7 @@ make_xps_menu = function(opts) {
     val_text = opts["validate_text"];
     val_func = function(e) {
       opts["validate_action"].apply($(div), [e]);
-      return $("#" + (id)).dialog("close").remove();
+      return $("#" + id).dialog("close").remove();
     };
     opts.actions[val_text] = val_func;
   }

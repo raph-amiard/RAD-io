@@ -1,2 +1,2 @@
 #!/bin/bash
-coffee -c -w --no-wrap -o ../../../share/media/js/ *.coffee
+coffee -c -w --bare -o ../../../share/media/js/ *.coffee

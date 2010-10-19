@@ -1,14 +1,13 @@
-var AppComponent, Application, AudioFileForm, Audiomodel, ListAudiomodel, MainComponent, PlanningComponent, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, closest, el_pos_on_pboard, handle_audiofile_play, pos_on_pboard, show_edit_planning, step;
+var AppComponent, Application, AudioFileForm, Audiomodel, GridPositionner, ListAudiomodel, MainComponent, PlanningComponent, PlanningElement, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, handle_audiofile_play, step;
 var __bind = function(func, context) {
-    return function(){ return func.apply(context, arguments); };
-  }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
-    var ctor = function(){};
-    ctor.prototype = parent.prototype;
-    child.prototype = new ctor();
-    child.prototype.constructor = child;
-    if (typeof parent.extended === "function") parent.extended(child);
-    child.__super__ = parent.prototype;
-  };
+  return function() { return func.apply(context, arguments); };
+}, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+  function ctor() { this.constructor = child; }
+  ctor.prototype = parent.prototype;
+  child.prototype = new ctor;
+  if (typeof parent.extended === "function") parent.extended(child);
+  child.__super__ = parent.prototype;
+};
 Application = {
   views_components: function(name) {
     var cmap;
@@ -22,14 +21,14 @@ Application = {
   current_view: 'main',
   current_component: undefined,
   load: function(name, view_params) {
-    var klass;
-    this.current_component == null ? undefined : this.current_component.close();
+    var _ref, klass;
+    (((_ref = this.current_component) != null) ? _ref.close() : undefined);
     klass = this.views_components(name);
     this.current_component = new klass(view_params);
     return (this.current_view = name);
   },
   view: function(view_name) {
-    return (typeof view_name !== "undefined" && view_name !== null) ? (this.current_view = view_name) : this.current_view;
+    return (view_name != null) ? (this.current_view = view_name) : this.current_view;
   }
 };
 Widgets = {};
@@ -44,14 +43,14 @@ Widgets.tags = {
   load: function() {
     var select_handler;
     select_handler = __bind(function(event, ui) {
-      var _a, _b, _c, _d, i;
+      var _i, _len, _ref, _result, i;
       this.selected_tags = (function() {
-        _a = []; _c = $('#tag_selector li.ui-selected input');
-        for (_b = 0, _d = _c.length; _b < _d; _b++) {
-          i = _c[_b];
-          _a.push(i.value);
+        _result = [];
+        for (_i = 0, _len = (_ref = $('#tag_selector li.ui-selected input')).length; _i < _len; _i++) {
+          i = _ref[_i];
+          _result.push(i.value);
         }
-        return _a;
+        return _result;
       })();
       return Widgets.audiomodels.load();
     }, this);
@@ -68,14 +67,13 @@ Widgets.audiomodel_selector = {
   button_class: "audiomodel_selector",
   selected_class: "audiomodel_selected",
   load: function() {
-    var _a, _b, model_name;
-    _b = Widgets.audiomodels.models;
-    for (_a in _b) {
-      if (!__hasProp.call(_b, _a)) continue;
+    var _i, _ref, model_name;
+    for (_i in _ref = Widgets.audiomodels.models) {
+      if (!__hasProp.call(_ref, _i)) continue;
       (function() {
         var dom;
-        var model_name = _a;
-        var button_name = _b[_a];
+        var model_name = _i;
+        var button_name = _ref[_i];
         dom = tag('span', button_name, {
           "class": this.button_class
         });
@@ -138,13 +136,12 @@ Widgets.audiomodels = {
     return Widgets.text_selector.reset();
   },
   filter_to_params: function() {
-    var _a, idx, map, tag;
+    var _ref, idx, map, tag;
     map = {};
-    _a = Widgets.tags.selected_tags;
-    for (idx in _a) {
-      if (!__hasProp.call(_a, idx)) continue;
-      tag = _a[idx];
-      map[("tag_" + (idx))] = tag;
+    for (idx in _ref = Widgets.tags.selected_tags) {
+      if (!__hasProp.call(_ref, idx)) continue;
+      tag = _ref[idx];
+      map[("tag_" + idx)] = tag;
     }
     if (this.text_filter) {
       map["text_filter"] = this.text_filter;
@@ -156,15 +153,14 @@ Widgets.audiomodels = {
   },
   load: function() {
     return $.getJSON(this.view_url(), this.filter_to_params(), __bind(function(audiomodels_list) {
-      var _a, _b, _c, audiomodel, json_audiomodel, ul;
+      var _i, _len, audiomodel, json_audiomodel, ul;
       this.all = [];
       this.by_id = {};
       ul = tag('ul');
       this.container.html('');
       this.container.append(ul);
-      _b = audiomodels_list;
-      for (_a = 0, _c = _b.length; _a < _c; _a++) {
-        json_audiomodel = _b[_a];
+      for (_i = 0, _len = audiomodels_list.length; _i < _len; _i++) {
+        json_audiomodel = audiomodels_list[_i];
         audiomodel = new ListAudiomodel(this.current_model, json_audiomodel);
         this.all.push(audiomodel);
         this.by_id[audiomodel.id] = audiomodel;
@@ -240,22 +236,19 @@ Widgets.footer_actions = {
   container: d$("#track_selector_footer"),
   active_footer: undefined,
   load: function() {
-    var _a, _b, _c, action_button, action_name, action_type, actions, actions_types, footer, model, properties;
-    _a = this.actions;
-    for (model in _a) {
-      if (!__hasProp.call(_a, model)) continue;
-      actions_types = _a[model];
+    var _ref, action_button, action_name, action_type, actions, actions_types, footer, model, properties;
+    for (model in _ref = this.actions) {
+      if (!__hasProp.call(_ref, model)) continue;
+      actions_types = _ref[model];
       footer = (this.footers[model] = div("", {
         "class": "head_and_foot"
       }));
-      _b = actions_types;
-      for (action_type in _b) {
-        if (!__hasProp.call(_b, action_type)) continue;
-        actions = _b[action_type];
-        _c = actions;
-        for (action_name in _c) {
-          if (!__hasProp.call(_c, action_name)) continue;
-          properties = _c[action_name];
+      for (action_type in actions_types) {
+        if (!__hasProp.call(actions_types, action_type)) continue;
+        actions = actions_types[action_type];
+        for (action_name in actions) {
+          if (!__hasProp.call(actions, action_name)) continue;
+          properties = actions[action_name];
           if (properties.predicate && !properties.predicate()) {
             continue;
           }
@@ -270,24 +263,30 @@ Widgets.footer_actions = {
     return this.update();
   },
   update: function() {
-    var audiomodel;
+    var _ref, audiomodel;
     audiomodel = Widgets.audiomodels.current_model;
-    this.active_footer == null ? undefined : this.active_footer.remove();
+    (((_ref = this.active_footer) != null) ? _ref.remove() : undefined);
     this.active_footer = this.footers[audiomodel];
     this.container.append(this.active_footer);
     return this.active_footer.find(".footer_button").button();
   }
 };
-TemplateComponent = function(opts) {
-  this.dom = render_template(opts.template, opts.context);
-  this.ui = $(this.dom);
-  return this;
-};
+TemplateComponent = (function() {
+  function TemplateComponent(opts) {
+    this.dom = render_template(opts.template, opts.context);
+    this.ui = $(this.dom);
+    return this;
+  };
+  return TemplateComponent;
+})();
 TemplateComponent.prototype.dom = null;
-Audiomodel = function(opts) {
-  Audiomodel.__super__.constructor.call(this, opts);
-  return this;
-};
+Audiomodel = (function() {
+  function Audiomodel(opts) {
+    Audiomodel.__super__.constructor.call(this, opts);
+    return this;
+  };
+  return Audiomodel;
+})();
 __extends(Audiomodel, TemplateComponent);
 Audiomodel.prototype.set_title = function(title) {
   this.title = title;
@@ -345,18 +344,23 @@ Audiomodel.prototype.handle_audiofile_edit = function() {
     });
   };
 };
-ListAudiomodel = function(type, json_model) {
-  this.type = type;
-  $.extend(this, json_model);
-  ListAudiomodel.__super__.constructor.call(this, {
-    template: ("" + (this.type) + "_list_element"),
-    context: {
-      audiomodel: json_model
-    }
-  });
-  this.view_events[Application.current_view] == null ? undefined : this.view_events[Application.current_view].apply(this, []);
-  return this;
-};
+ListAudiomodel = (function() {
+  function ListAudiomodel(type, json_model) {
+    var _ref;
+    this.type = type;
+    $.extend(this, json_model);
+    this.audiomodel_base = json_model;
+    ListAudiomodel.__super__.constructor.call(this, {
+      template: ("" + (this.type) + "_list_element"),
+      context: {
+        audiomodel: json_model
+      }
+    });
+    (((_ref = this.view_events[Application.current_view]) != null) ? _ref.apply(this, []) : undefined);
+    return this;
+  };
+  return ListAudiomodel;
+})();
 __extends(ListAudiomodel, Audiomodel);
 ListAudiomodel.prototype.view_events = {
   playlist: function() {
@@ -369,17 +373,21 @@ ListAudiomodel.prototype.view_events = {
       appendTo: 'body',
       scroll: false,
       zIndex: '257'
-    }) : null;
+    }) : undefined;
   },
   planning: function() {
-    var td_positions;
+    var column, planning, previous_left, previous_top, proxy, td_positions;
     if (this.type === "audiosource") {
       td_positions = [];
-      return this.ui.bind('dragstart', __bind(function(e, dd) {
-        var height, proxy, width;
-        console.log(this);
+      planning = Application.current_component;
+      proxy = null;
+      previous_top = 0;
+      previous_left = 0;
+      column = 0;
+      this.ui.bind('dragstart', __bind(function(e, dd) {
+        var height, width;
         height = this.length / 60;
-        width = Application.current_component.board.width();
+        width = planning.tds.first().width();
         proxy = div(this.title, {
           "class": 'audiofile_proxy'
         });
@@ -389,15 +397,55 @@ ListAudiomodel.prototype.view_events = {
           position: 'absolute'
         });
         $('body').append(proxy);
-        return proxy.width(width).height(height);
+        proxy.width(width).height(height);
+        return (td_positions = new GridPositionner(planning.tds));
+      }, this));
+      this.ui.bind('drag', __bind(function(e, dd) {
+        var _ref, col_width, el, left, proxy_in_board, rel_cpos, rel_pos, top;
+        el = $(proxy);
+        rel_pos = planning.el_pos(el);
+        proxy_in_board = (rel_pos.top + (el.height() / 2) > 0 && rel_pos.left + (el.width() / 2) > 0);
+        if (proxy_in_board) {
+          rel_cpos = planning.pos({
+            top: dd.offsetY,
+            left: dd.offsetX
+          });
+          top = step(rel_cpos.top, 10);
+          _ref = td_positions.closest(rel_cpos.left), column = _ref[0], left = _ref[1];
+          left += 1;
+          if (top !== previous_top || left !== previous_left) {
+            planning.el_pos(el, {
+              top: top,
+              left: left
+            });
+            col_width = $(planning.tds[column]).width();
+            el.width(col_width);
+            previous_top = top;
+            return (previous_left = left);
+          }
+        } else {
+          return el.css({
+            top: dd.offsetY,
+            left: dd.offsetX
+          });
+        }
+      }, this));
+      return this.ui.bind('drop', __bind(function(e, dd) {
+        var el, p_el;
+        el = $(proxy);
+        el.remove();
+        return (p_el = new PlanningElement(this.audiomodel_base, {
+          top: previous_top,
+          left: previous_left
+        }, column));
       }, this));
     }
   }
 };
 ListAudiomodel.prototype.handle_delete = function() {
-  var _a, audiomodel, delete_menu, msg;
+  var audiomodel, delete_menu, msg;
   audiomodel = this;
-  msg = ("L'élément " + ((typeof (_a = this.artist) !== "undefined" && _a !== null) ? ("" + (this.artist) + " -") : null) + " " + (this.title) + " a bien été supprimé");
+  msg = ("L'élément " + ((this.artist != null) ? ("" + (this.artist) + " -") : undefined) + " " + (this.title) + " a bien été supprimé");
   delete_menu = function(delete_link) {
     return make_xps_menu({
       name: ("delete_audiomodel_" + (this.id)),
@@ -429,43 +477,43 @@ ListAudiomodel.prototype.bind_events = function() {
   if (this.type === "audiofile") {
     this.ui.find('.audiofile_edit').click(this.handle_audiofile_edit());
     return this.ui.find('.audiofile_play').click(handle_audiofile_play);
-  } else if (this.type === "audiosource") {
-    return this.ui.find('.audiosource_edit').click(function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      return $.get(this.href, function(json) {
-        return Application.load('playlist', json);
-      });
+  } else   return this.type === "audiosource" ? this.ui.find('.audiosource_edit').click(function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    return $.get(this.href, function(json) {
+      return Application.load('playlist', json);
     });
-  }
+  }) : undefined;
 };
-TagsTable = function(tags_by_category) {
-  this.tags_by_category = tags_by_category;
-  this.to_delete_tags = {};
-  this.make_table();
-  this.ui = this.table;
-  this.dom = this.table[0];
-  return this;
-};
+TagsTable = (function() {
+  function TagsTable(tags_by_category) {
+    this.tags_by_category = tags_by_category;
+    this.to_delete_tags = {};
+    this.make_table();
+    this.ui = this.table;
+    this.dom = this.table[0];
+    return this;
+  };
+  return TagsTable;
+})();
 TagsTable.prototype.make_table = function() {
-  var _a, _b, _c, category;
+  var _i, _ref, _result, category;
   this.table = $(render_template("tags_table"));
-  _a = []; _c = this.tags_by_category;
-  for (_b in _c) {
-    if (!__hasProp.call(_c, _b)) continue;
+  _result = [];
+  for (_i in _ref = this.tags_by_category) {
+    if (!__hasProp.call(_ref, _i)) continue;
     (function() {
-      var _d, _e, _f, category_tr, tags_td;
-      var category = _b;
-      var tags = _c[_b];
-      return _a.push((function() {
+      var _j, _len, _ref2, category_tr, tags_td;
+      var category = _i;
+      var tags = _ref[_i];
+      return _result.push((function() {
         category_tr = tag("tr");
         tags_td = tag("td");
         tags.remaining = 0;
-        _e = tags;
-        for (_d = 0, _f = _e.length; _d < _f; _d++) {
+        for (_j = 0, _len = (_ref2 = tags).length; _j < _len; _j++) {
           (function() {
             var delete_link, tag_span;
-            var ctag = _e[_d];
+            var ctag = _ref2[_j];
             tag_span = tag("span", "" + (ctag.name) + " ", {
               "class": "audiofile_tag",
               id: ("tag_" + (ctag.id))
@@ -493,42 +541,43 @@ TagsTable.prototype.make_table = function() {
       }).call(this));
     }).call(this);
   }
-  return _a;
+  return _result;
 };
-AudioFileForm = function(opts) {
-  this.uuid = gen_uuid();
-  AudioFileForm.__super__.constructor.call(this, {
-    template: 'audiofile_form',
-    context: {
-      uuid: this.uuid
-    }
-  });
-  this.progress_bar = opts.progress_bar ? opts.progress_bar : this.ui.find('.progress_bar');
-  this.ui.ajaxForm({
-    dataType: 'json',
-    target: this.ui,
-    beforeSubmit: this,
-    success: this.success,
-    beforeSubmit: __bind(function(arr, form, options) {
-      var _a;
-      (typeof (_a = opts.beforeSubmit) === "function" ? _a() : undefined);
-      this.progress_bar.progressbar({
-        progress: 0
-      });
-      this.interval_id = setInterval(this.update_progress_info(), this.update_freq);
-      return true;
-    }, this),
-    success: __bind(function(response, status_text, form) {
-      var _a;
-      clearInterval(this.interval_id);
-      this.progress_bar.hide();
-      this.ui.remove();
-      (typeof (_a = opts.success) === "function" ? _a(response.audiofile) : undefined);
-      return response.status === "error" ? alert("Error with the file uploaded") : this.success_message(response.audiofile);
-    }, this)
-  });
-  return this;
-};
+AudioFileForm = (function() {
+  function AudioFileForm(opts) {
+    this.uuid = gen_uuid();
+    AudioFileForm.__super__.constructor.call(this, {
+      template: 'audiofile_form',
+      context: {
+        uuid: this.uuid
+      }
+    });
+    this.progress_bar = opts.progress_bar ? opts.progress_bar : this.ui.find('.progress_bar');
+    this.ui.ajaxForm({
+      dataType: 'json',
+      target: this.ui,
+      beforeSubmit: this,
+      success: this.success,
+      beforeSubmit: __bind(function(arr, form, options) {
+        (typeof opts.beforeSubmit === "function" ? opts.beforeSubmit() : undefined);
+        this.progress_bar.progressbar({
+          progress: 0
+        });
+        this.interval_id = setInterval(this.update_progress_info(), this.update_freq);
+        return true;
+      }, this),
+      success: __bind(function(response, status_text, form) {
+        clearInterval(this.interval_id);
+        this.progress_bar.hide();
+        this.ui.remove();
+        (typeof opts.success === "function" ? opts.success(response.audiofile) : undefined);
+        return response.status === "error" ? alert("Error with the file uploaded") : this.success_message(response.audiofile);
+      }, this)
+    });
+    return this;
+  };
+  return AudioFileForm;
+})();
 __extends(AudioFileForm, TemplateComponent);
 AudioFileForm.prototype.progress_url = "/upload-progress/";
 AudioFileForm.prototype.update_freq = 1000;
@@ -548,21 +597,24 @@ AudioFileForm.prototype.update_progress_info = function() {
 AudioFileForm.prototype.success_message = function(af) {
   return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été ajouté avec succès");
 };
-PlaylistElement = function(audiofile, container, fresh) {
-  this.container = container;
-  this.type = "audiofile";
-  this.fresh = fresh ? fresh : false;
-  this.audiofile = audiofile;
-  PlaylistElement.__super__.constructor.call(this, {
-    template: 'playlist_element',
-    context: {
-      fresh: this.fresh,
-      audiofile: audiofile
-    }
-  });
-  this.bind_events();
-  return this;
-};
+PlaylistElement = (function() {
+  function PlaylistElement(audiofile, container, fresh) {
+    this.container = container;
+    this.type = "audiofile";
+    this.fresh = fresh ? fresh : false;
+    this.audiofile = audiofile;
+    PlaylistElement.__super__.constructor.call(this, {
+      template: 'playlist_element',
+      context: {
+        fresh: this.fresh,
+        audiofile: audiofile
+      }
+    });
+    this.bind_events();
+    return this;
+  };
+  return PlaylistElement;
+})();
 __extends(PlaylistElement, Audiomodel);
 PlaylistElement.prototype.bind_events = function() {
   this.ui.find('.audiofile_edit').click(this.handle_audiofile_edit());
@@ -575,34 +627,37 @@ PlaylistElement.prototype.bind_events = function() {
 PlaylistElement.prototype.toString = function() {
   return "playlist_element_" + (gen_uuid());
 };
-TrackList = function() {
-  var tracklist;
-  this.length = 0;
-  this.elements = new Set();
-  this.container = $("#uploaded_audiofiles");
-  this.outer_container = $(".playlist_box");
-  this.length_container = $("#playlist_length");
-  tracklist = this;
-  this.container.find('li').disableTextSelect();
-  this.container.sortable({
-    axis: 'y',
-    containment: this.outer_container,
-    connectWith: '#track_selector ul li',
-    cursor: "crosshair",
-    stop: function(e, ui) {
-      var audiomodel, new_el;
-      if (ui.item.hasClass('ui-draggable')) {
-        audiomodel = Widgets.audiomodels.by_id[ui.item.children('input').val()];
-        new_el = new PlaylistElement(audiomodel, this, true);
-        ui.item.replaceWith(new_el.ui);
-        tracklist.elements.add(new_el);
-        tracklist.length += audiomodel.length;
-        return tracklist.update_length();
+TrackList = (function() {
+  function TrackList() {
+    var tracklist;
+    this.length = 0;
+    this.elements = new Set();
+    this.container = $("#uploaded_audiofiles");
+    this.outer_container = $(".playlist_box");
+    this.length_container = $("#playlist_length");
+    tracklist = this;
+    this.container.find('li').disableTextSelect();
+    this.container.sortable({
+      axis: 'y',
+      containment: this.outer_container,
+      connectWith: '#track_selector ul li',
+      cursor: "crosshair",
+      stop: function(e, ui) {
+        var audiomodel, new_el;
+        if (ui.item.hasClass('ui-draggable')) {
+          audiomodel = Widgets.audiomodels.by_id[ui.item.children('input').val()];
+          new_el = new PlaylistElement(audiomodel, this, true);
+          ui.item.replaceWith(new_el.ui);
+          tracklist.elements.add(new_el);
+          tracklist.length += audiomodel.length;
+          return tracklist.update_length();
+        }
       }
-    }
-  });
-  return this;
-};
+    });
+    return this;
+  };
+  return TrackList;
+})();
 TrackList.prototype.update_length = function() {
   return this.length_container.text(format_length(this.length));
 };
@@ -620,68 +675,75 @@ TrackList.prototype.remove = function(el) {
   return this.update_length();
 };
 TrackList.prototype.get_tracks_map = function() {
-  var _a, _b, data, i, li, lis;
+  var _len, data, i, li, lis;
   data = {};
   lis = this.container.find("li");
-  _a = lis;
-  for (i = 0, _b = _a.length; i < _b; i++) {
-    li = _a[i];
+  for (i = 0, _len = lis.length; i < _len; i++) {
+    li = lis[i];
     if (!$(li).hasClass("to_delete_source_element")) {
-      data[("source_element_" + (i))] = $(li).children('input').val();
+      data[("source_element_" + i)] = $(li).children('input').val();
     }
   }
   return data;
 };
-AppComponent = function(opts) {
-  AppComponent.__super__.constructor.call(this, opts);
-  this.main_content_holder.append(this.ui);
-  return this;
-};
+AppComponent = (function() {
+  function AppComponent(opts) {
+    AppComponent.__super__.constructor.call(this, opts);
+    this.main_content_holder.append(this.ui);
+    return this;
+  };
+  return AppComponent;
+})();
 __extends(AppComponent, TemplateComponent);
 AppComponent.prototype.main_content_holder = d$("#main_container");
 AppComponent.prototype.bind_events = function() {};
 AppComponent.prototype.close = function() {
   return this.ui.remove();
 };
-MainComponent = function() {
-  MainComponent.__super__.constructor.call(this, {
-    template: "main_component"
-  });
-  return this;
-};
+MainComponent = (function() {
+  function MainComponent() {
+    MainComponent.__super__.constructor.call(this, {
+      template: "main_component"
+    });
+    return this;
+  };
+  return MainComponent;
+})();
 __extends(MainComponent, AppComponent);
-PlaylistComponent = function(json) {
-  var _a, _b, _c, audiofile, audiofile_form;
-  PlaylistComponent.__super__.constructor.call(this, {
-    template: "audiosource_base",
-    context: json
-  });
-  this.init_components();
-  this.action = json.action;
-  audiofile_form = new AudioFileForm({
-    success: __bind(function(audiofile) {
-      return this.tracklist.append(audiofile, true);
-    }, this)
-  });
-  this.fields.file_forms.append(audiofile_form.ui);
-  this.inputs.tags.autocomplete(multicomplete_params(json.tag_list));
-  this.inputs.tags.unbind('blur.autocomplete');
-  if (this.action === "edition") {
-    this.tags_table = new TagsTable(json.audiosource.tags_by_category);
-    this.fields.tags.append(this.tags_table.ui);
-    _b = json.audiosource.sorted_audiofiles;
-    for (_a = 0, _c = _b.length; _a < _c; _a++) {
-      audiofile = _b[_a];
-      this.tracklist.append(audiofile, false);
+PlaylistComponent = (function() {
+  function PlaylistComponent(json) {
+    var _i, _len, _ref, audiofile, audiofile_form;
+    PlaylistComponent.__super__.constructor.call(this, {
+      template: "audiosource_base",
+      context: json
+    });
+    this.init_components();
+    this.action = json.action;
+    audiofile_form = new AudioFileForm({
+      success: __bind(function(audiofile) {
+        return this.tracklist.append(audiofile, true);
+      }, this)
+    });
+    this.fields.file_forms.append(audiofile_form.ui);
+    this.inputs.tags.autocomplete(multicomplete_params(json.tag_list));
+    this.inputs.tags.unbind('blur.autocomplete');
+    if (this.action === "edition") {
+      this.tags_table = new TagsTable(json.audiosource.tags_by_category);
+      this.fields.tags.append(this.tags_table.ui);
+      for (_i = 0, _len = (_ref = json.audiosource.sorted_audiofiles).length; _i < _len; _i++) {
+        audiofile = _ref[_i];
+        this.tracklist.append(audiofile, false);
+      }
     }
-  }
-  this.submit_button.button();
-  this.submit_button.click(__bind(function(e) {
-    e.preventDefault();
-    return this.submit();
-  }, this));
-  return this;
-};
+    this.submit_button.button();
+    this.submit_button.click(__bind(function(e) {
+      e.preventDefault();
+      return this.submit();
+    }, this));
+    return this;
+  };
+  return PlaylistComponent;
+})();
 __extends(PlaylistComponent, AppComponent);
 PlaylistComponent.prototype.init_components = function() {
   this.tracklist = new TrackList();
@@ -712,7 +774,7 @@ PlaylistComponent.prototype.submit = function() {
       }
       Application.load("main");
       action = this.action === "edition" ? "modifiée" : "ajoutée";
-      return post_message("La playlist " + (r.audiosource.title) + " à été " + (action) + " avec succès");
+      return post_message("La playlist " + (r.audiosource.title) + " à été " + action + " avec succès");
     }
   });
 };
@@ -721,85 +783,67 @@ handle_audiofile_play = function(e) {
   e.preventDefault();
   e.stopPropagation();
   player = document.getElementById('audiofile_player');
-  return player ? player.dewset(e.target.href) : null;
+  return player ? player.dewset(e.target.href) : undefined;
 };
-PlanningComponent = function(init_data) {
-  PlanningComponent.__super__.constructor.call(this, {
-    template: "planning"
-  });
-  this.init_components();
-  this.update_height();
-  this.add_grid();
-  return this;
-};
+PlanningComponent = (function() {
+  function PlanningComponent(init_data) {
+    PlanningComponent.__super__.constructor.call(this, {
+      template: "planning"
+    });
+    this.init_components();
+    this.update_height();
+    $(window).resize(__bind(function() {
+      return this.update_height();
+    }, this));
+    this.add_grid();
+    return this;
+  };
+  return PlanningComponent;
+})();
 __extends(PlanningComponent, AppComponent);
 PlanningComponent.prototype.init_components = function() {
   this.board = $('#main_planning_board');
-  return (this.container = $('#main_planning_board_container'));
+  this.container = $('#main_planning_board_container');
+  this.tds = $('#planning_board td');
+  return (this.board_table = $('#planning_board'));
 };
 PlanningComponent.prototype.update_height = function() {
   return this.container.height($(document).height() - this.container.offset().top - 20);
 };
 PlanningComponent.prototype.add_grid = function() {
-  var _, _a, _b, div_class, i;
-  _a = [];
-  for (_ = 0; _ < 24; _++) {
-    _a.push((function() {
-      _b = [];
+  var _result, _result2, content, div_class, gridiv, h, i;
+  _result = [];
+  for (h = 0; h < 24; h++) {
+    _result.push((function() {
+      _result2 = [];
       for (i = 1; i <= 6; i++) {
-        _b.push((function() {
-          div_class = (({
+        _result2.push((function() {
+          div_class = {
             3: 'half',
             6: 'hour'
-          })[i]) || 'tenth';
-          return this.board.append(div({
-            "class": ("grid_time grid_" + (div_class))
-          }));
+          }[i] || 'tenth';
+          content = i === 1 ? ("" + (format_number(h, 2)) + "h00") : "";
+          gridiv = div(content, {
+            "class": ("grid_time grid_" + div_class)
+          });
+          return this.board.append(gridiv);
         }).call(this));
       }
-      return _b;
+      return _result2;
     }).call(this));
   }
-  return _a;
+  return _result;
 };
-show_edit_planning = function() {
-  var _, board, ct, current_mode, div_class, i;
-  board = $('#main_planning_board');
-  ct = $('#main_planning_board_container');
-  for (_ = 0; _ < 24; _++) {
-    for (i = 1; i <= 6; i++) {
-      div_class = (({
-        3: 'half',
-        6: 'hour'
-      })[i]) || 'tenth';
-      board.append(div({
-        "class": ("grid_time grid_" + (div_class))
-      }));
-    }
-  }
-  $('#main_content').hide();
-  $('#planning_edit').show();
-  ct.height($(document).height() - ct.offset().top - 20);
-  $('#main_planning_board').droppable({
-    over: function(e, ui) {
-      var dropped_el;
-      return (dropped_el = ui.helper);
-    },
-    drop: function(e, ui) {},
-    tolerance: 'fit'
-  });
-  return (current_mode = "planning_edit");
-};
-pos_on_pboard = function(el_pos) {
+PlanningComponent.prototype.pos = function(el_pos) {
   var pboard_off;
-  pboard_off = $('#planning_board').offset();
+  pboard_off = this.board_table.offset();
   el_pos.top -= pboard_off.top;
   el_pos.left -= pboard_off.left;
   return el_pos;
 };
-el_pos_on_pboard = function(el, pos) {
+PlanningComponent.prototype.el_pos = function(el, pos) {
   var el_off, pboard_off;
-  pboard_off = $('#planning_board').offset();
+  pboard_off = this.board_table.offset();
   el_off = el.offset();
   if (pos) {
     return el.css({
@@ -812,24 +856,132 @@ el_pos_on_pboard = function(el, pos) {
     return el_off;
   }
 };
-closest = function(num, steps) {
-  var ret;
+PlanningElement = (function() {
+  function PlanningElement(json_model, position, day) {
+    PlanningElement.__super__.constructor.call(this, {
+      template: "planning_element",
+      context: json_model
+    });
+    this.hour = parseInt(position.top / 60);
+    this.minute = position.top % 60;
+    this.set_day(day);
+    this.ui.css({
+      top: position.top
+    });
+    this.ui.height(json_model.length / 60);
+    this.ui.width(this.column.width());
+    $(window).resize(__bind(function() {
+      return this.ui.width(this.column.width());
+    }, this));
+    this.bind_events();
+    console.log(this.formatted_time());
+    return this;
+  };
+  return PlanningElement;
+})();
+__extends(PlanningElement, Audiomodel);
+PlanningElement.prototype.bind_events = function() {
+  var color, planning, td_positions, z_index;
+  color = null;
+  z_index = null;
+  planning = Application.current_component;
+  td_positions = [];
+  this.ui.bind('dragstart', __bind(function(e, dd) {
+    color = this.ui.css('background-color');
+    z_index = this.ui.css('z-index');
+    this.ui.css({
+      'background-color': '#EBC'
+    });
+    this.ui.css({
+      'z-index': z_index + 10
+    });
+    return (td_positions = new GridPositionner(planning.tds));
+  }, this));
+  this.ui.bind('drag', __bind(function(e, dd) {
+    var column, rel_cpos, top;
+    rel_cpos = planning.pos({
+      top: dd.offsetY,
+      left: dd.offsetX
+    });
+    top = step(rel_cpos.top, 10);
+    top = top > 0 ? top : 0;
+    column = td_positions.closest(rel_cpos.left)[0];
+    if (column !== this.day) {
+      this.set_day(column);
+      this.ui.width(this.column.width());
+    }
+    return this.ui.css({
+      top: top
+    });
+  }, this));
+  return this.ui.bind('drop', __bind(function(e, dd) {
+    this.ui.css({
+      'background-color': color
+    });
+    return this.ui.css({
+      "z-index": z_index
+    });
+  }, this));
+};
+PlanningElement.prototype.set_day = function(day) {
+  this.day = day;
+  this.column = $(Application.current_component.tds[day]);
+  return this.column.append(this.ui);
+};
+PlanningElement.prototype.formatted_time = function() {
+  return ("" + (format_number(this.hour, 2)) + "h" + (format_number(this.minute, 2)));
+};
+GridPositionner = (function() {
+  function GridPositionner(tds) {
+    var _i, _len, _result, el;
+    this.steps = (function() {
+      _result = [];
+      for (_i = 0, _len = tds.length; _i < _len; _i++) {
+        el = tds[_i];
+        _result.push(Math.round($(el).position().left));
+      }
+      return _result;
+    })();
+    return this;
+  };
+  return GridPositionner;
+})();
+GridPositionner.prototype.closest = function(num) {
+  var col, last_i, ret;
   ret = null;
-  $.each(steps, function(i) {
-    return (steps[i] < num) && (num < steps[i + 1]) ? (num - steps[i] < steps[i + 1] - num ? (ret = steps[i]) : (ret = steps[i + 1])) : null;
-  });
-  return ret;
+  col = null;
+  $.each(this.steps, __bind(function(i) {
+    if ((this.steps[i] <= num) && (num < this.steps[i + 1])) {
+      if (num - this.steps[i] < this.steps[i + 1] - num) {
+        ret = this.steps[i];
+        return (col = i);
+      } else {
+        ret = this.steps[i + 1];
+        return (col = i + 1);
+      }
+    }
+  }, this));
+  if (col === null) {
+    last_i = this.steps.length - 1;
+    if (num > this.steps[last_i]) {
+      ret = this.steps[last_i];
+      col = last_i;
+    } else {
+      ret = 0;
+      col = 0;
+    }
+  }
+  return [col, ret];
 };
 step = function(num, step) {
   return num - (num % step);
 };
 $(function() {
-  var _a, cname, widget;
-  _a = Widgets;
-  for (cname in _a) {
-    if (!__hasProp.call(_a, cname)) continue;
-    widget = _a[cname];
-    console.log("Loading component " + (cname));
+  var _ref, cname, widget;
+  for (cname in _ref = Widgets) {
+    if (!__hasProp.call(_ref, cname)) continue;
+    widget = _ref[cname];
+    console.log("Loading component " + cname);
     widget.load();
   }
   return Application.load("main");

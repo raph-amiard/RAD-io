@@ -39,7 +39,7 @@ $(function() {
         } else {
           $(this).toggleClass(opts.select_class);
         }
-        return opts.handler ? opts.handler(e) : null;
+        return opts.handler ? opts.handler(e) : undefined;
       });
       return this.children().disableTextSelect();
     },
