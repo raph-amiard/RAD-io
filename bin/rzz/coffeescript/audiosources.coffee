@@ -150,6 +150,7 @@ Widgets.footer_actions =
             global:
                 "Créer une playlist":
                     action: ->
+                        console.log "INTO ACTION Créer une playlist"
                         $.getJSON "/audiosources/json/create-audio-source", (data) ->
                             Application.load "playlist", data
             selection:
@@ -161,6 +162,7 @@ Widgets.footer_actions =
             global:
                 "Creer un planning":
                     action: ->
+                        console.log "INTO ACTION Créer une playlist"
                         Application.load "planning"
             selection: null
 
@@ -178,13 +180,18 @@ Widgets.footer_actions =
                     action_button = tag "button", action_name, class:"footer_button"
                     action_button.click properties.action
                     footer.append action_button
+
+        for footer_model, footer of @footers
+            @container.append footer
+            footer.hide()
+
         @update()
 
     update: () ->
         audiomodel = Widgets.audiomodels.current_model
-        @active_footer?.remove()
+        @active_footer?.hide()
         @active_footer = @footers[audiomodel]
-        @container.append @active_footer
+        @active_footer.show()
         @active_footer.find(".footer_button").button()
 
 
@@ -632,13 +639,28 @@ class PlanningComponent extends AppComponent
     edit_link:"/audiosources/json/edit-planning"
 
     bind_events: ->
+
         @submit_button.click =>
+            success_function = => =>
+                name = @title_input.val()
+                Application.load "main"
+                post_message "Le planning #{name} a été #{if @mode=="creation" then "créé" else "édité"} avec succes"
+
             if @mode == "creation"
-                $.post @create_link, {planning_data:@to_json()}, (response) =>
-                    console.log response
+                $.post @create_link, {planning_data:@to_json()}, success_function()
             else if @mode == "edition"
-                $.post "#{@edit_link}/#{@id}", {planning_data:@to_json()}, (response) =>
-                    console.log response
+                $.post "#{@edit_link}/#{@id}", {planning_data:@to_json()}, success_function()
+
+        show_hide = (element_type) => (e) =>
+            checked = e.target.checked
+            ui_method = if checked then "show" else "hide"
+            for planning_element in @planning_elements.values()
+                if planning_element.type == element_type
+                    planning_element.ui[ui_method]()
+
+        @show_single_checkbox.click show_hide "single"
+        @show_continuous_checkbox.click show_hide "continuous"
+
 
         $(window).resize () => @update_height()
 
@@ -651,6 +673,10 @@ class PlanningComponent extends AppComponent
         @title_input = $ '#planning_title'
         @tags_input = $ '#planning_tags'
         @tags_table_container = $ '#planning_edit_content .tags_table_container'
+        @show_choices = $ '#planning_show_choices'
+        @show_single_checkbox = $ '#planning_show_single'
+        @show_continuous_checkbox = $ '#planning_show_continuous'
+        @show_choices.buttonset()
         @submit_button.button()
         @update_height()
 
@@ -740,26 +766,57 @@ class PlanningElement extends Audiomodel
         @type = "single"
         $.extend this, json_model
 
+        @init_components()
+        if @time_end == null then @time_end = {}
+
         @set_column_from_day()
         @set_pos_from_time()
-
-        @ui.height @audiosource.length / 60
         @ui.width @column.width()
-        $(window).resize => @ui.width @column.width()
+
+        if @type == "single"
+            @ui.height @audiosource.length / 60
+            @make_single()
+        else
+            console.log @time_end.hour
+            if @time_end.hour == 0 then @time_end.hour = 24
+            console.log @time_end.hour
+            @set_height_from_time_end()
+            @make_continuous()
 
         @bind_events()
+
+    init_components: ->
+        @ui_head = @ui.find('.planning_element_head')
+        @ui_foot = @ui.find('.planning_element_foot')
+        @switch_button = @ui.find('.type_button')
+        @switch_button.button()
 
     edit_properties: -> =>
         form = div ""
 
-    make_resizable: ->
-        @ui.resizable({grid:10})
+    make_continuous: ->
+        @ui_head.show(); @ui_foot.show()
+        @type = "continuous"
+        @set_time_end_from_height step(@ui.height(), 10)
+        @ui.css opacity:0.75
+        @ui.css 'z-index': 200
+
+    make_single: ->
+        @ui_head.hide(); @ui_foot.hide()
+        @type = "single"
+        @time_end = {}
+        @ui.css opacity:0.9
+        @ui.css 'z-index':400
+        @ui.height @audiosource.length / 60
 
     bind_events: ->
         color = null; z_index=null
         td_positions = []
 
+        $(window).resize => @ui.width @column.width()
+
         @ui.bind 'dragstart', (e, dd) =>
+            e.stopPropagation();e.preventDefault()
             color = @ui.css 'background-color'
             z_index = @ui.css 'z-index'
             @ui.css 'background-color':'#EBC'
@@ -767,6 +824,7 @@ class PlanningElement extends Audiomodel
             td_positions = new GridPositionner(@planning.tds)
 
         @ui.bind 'drag', (e, dd) =>
+            e.stopPropagation();e.preventDefault()
             rel_cpos = @planning.pos top:dd.offsetY, left:dd.offsetX
             top = step(rel_cpos.top, 10)
             top = if top > 0 then top else 0
@@ -775,13 +833,40 @@ class PlanningElement extends Audiomodel
                 @set_day_from_column column
                 @ui.width @column.width()
             @set_time_from_pos top
+            if @type == "continuous" then @refresh_time_end()
 
-        @ui.bind 'drop', (e, dd) =>
+        @ui.bind 'dragend', (e, dd) =>
+            e.stopPropagation();e.preventDefault()
             @ui.css 'background-color':color
             @ui.css "z-index": z_index
 
-        @ui.bind 'hover', (e) =>
-            console.log e
+        orig_height = null; orig_top = null
+
+        @ui_head.bind 'dragstart', (e, dd) =>
+            e.stopPropagation();e.preventDefault()
+            orig_height = @ui.height()
+            orig_top = @top
+
+        @ui_head.bind 'drag', (e, dd) =>
+            e.stopPropagation();e.preventDefault()
+            difference = step(dd.deltaY, 10)
+            @set_time_from_pos(orig_top + difference)
+            @set_time_end_from_height orig_height - difference
+
+        @ui_foot.bind 'dragstart', (e, dd) =>
+            e.stopPropagation();e.preventDefault()
+            orig_height = @ui.height()
+
+        @ui_foot.bind 'drag', (e, dd) =>
+            e.stopPropagation();e.preventDefault()
+            difference = step(dd.deltaY, 10)
+            @set_time_end_from_height orig_height + difference
+
+        @switch_button.click (e) =>
+            if @type == "single"
+                @make_continuous()
+            else
+                @make_single()
 
     set_day_from_column: (column) ->
         @day = column
@@ -797,10 +882,25 @@ class PlanningElement extends Audiomodel
         @set_pos_from_time()
 
     set_pos_from_time: ->
-        @ui.css top: @time_start.minute + @time_start.hour * 60
+        @top = @time_start.minute + @time_start.hour * 60
+        @ui.css top: @top
+
+    set_time_end_from_height: (height) ->
+        hour = parseInt height / 60
+        minute = height % 60
+        @time_end.hour = @time_start.hour + hour
+        @time_end.minute = @time_start.minute + minute
+        @ui.height height
+
+    set_height_from_time_end: ->
+        height = (@time_end.hour - @time_start.hour) * 60
+        height += @time_end.minute - @time_start.minute
+        @ui.height height
+
+    refresh_time_end: -> @set_time_end_from_height @ui.height()
 
     serialize : ->
-        o = object_with_keys @, ['day', 'time_start']
+        o = object_with_keys @, ['day', 'time_start', 'time_end', 'type']
         o.audiosource_id = @audiosource.id
         return o
 

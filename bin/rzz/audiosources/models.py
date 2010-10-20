@@ -151,8 +151,10 @@ class Planning(TaggedModel):
 
     def add_elements(self, elements):
         from datetime import time as Time
+
         for element in elements:
             time_start = element["time_start"]
+            type = element["type"]
             planning_element = PlanningElement(
                 planning = self,
                 source = AudioSource.objects.get(id=element["audiosource_id"]),
@@ -161,6 +163,14 @@ class Planning(TaggedModel):
                 day = element["day"],
                 random = False
             )
+
+            if type == "continuous":
+                time_end = element["time_end"]
+                time_end["hour"] = time_end["hour"] % 24
+                planning_element.random = True
+                planning_element.time_end = Time(time_end["hour"], time_end["minute"])
+                planning_element.type = 'continuous'
+
             planning_element.save()
 
 

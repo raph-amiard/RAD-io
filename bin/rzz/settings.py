@@ -6,7 +6,8 @@ CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
 PROJECT_PATH = '/home/raph/Projects/rzz_website_new/'
 
-LOG_FILENAME = os.path.join(PROJECT_PATH, 'log/logging.out')
+LOG_PATH = os.path.join(PROJECT_PATH, 'log/')
+LOG_FILENAME = os.path.join(PROJECT_PATH, 'logging.out')
 logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
 DEBUG = True
@@ -95,4 +96,13 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-    )
+)
+
+ICECAST_HOST = "localhost"
+ICECAST_PORT = 8100
+ICECAST_PWD = "zero"
+
+LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
+LIQUIDSOAP_QUEUE_NAME = "main_queue"
+LIQUIDSOAP_SECURITY_AUDIOFILE = os.path.join(PROJECT_PATH, "share/media/audiofiles/security.mp3")
+

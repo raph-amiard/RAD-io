@@ -422,11 +422,60 @@ input[type=text] {
 .planning_element {
     position:absolute;
     background-color:#C7A;
-    border-top: 3px solid #B69;
-    border-bottom: 3px solid #B69;
     box-sizing:border-box;
     -moz-box-sizing:border-box;
     -webkit-box-sizing:border-box;
     z-index:400;
     opacity:0.9;
+}
+.planning_element_container {
+  position:relative;
+  width:100%;
+  height:100%;
+}
+.planning_element_head, .planning_element_foot {
+  background-color:#B69;
+  width:100%;
+  height:5px;
+  display:none;
+}
+.planning_element_head {
+  top:0;
+  cursor:n-resize;
+}
+.planning_element_foot {
+  position:absolute;
+  bottom:0;
+  cursor:s-resize;
+}
+.type_button {
+  position:absolute;
+  bottom:10px;
+  right:10px;
+  background-color:#D8B;
+  color:#947;
+}
+
+.type_button:hover {
+  background-color:#F9D;
+}
+
+.type_button:active {
+  background-color:#FBF;
+}
+
+#planning_show_choices {
+  position:absolute;
+  bottom:18px;
+  left:50%;
+  margin-left:-80px;
+}
+
+#planning_show_choices .ui-state-default {
+  background-color:#DDD; 
+}
+
+#planning_show_choices .ui-state-active {
+  bottom:0;
+  background-color:#FFF; 
 }
