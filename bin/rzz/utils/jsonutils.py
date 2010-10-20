@@ -1,13 +1,21 @@
 import json
+import datetime
+
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.http import HttpResponse
 
+def serialize(element):
+    if type(element) == datetime.time:
+        return {'minute':element.minute,'hour':element.hour}
+    else:
+        return element
+
 def instance_to_dict(instance, *args, **kwargs):
     fields = [f.attname for f in instance._meta._fields()]
-    return dict([(f, instance.__dict__[f]) 
-              for f in fields 
-              if type(instance.__dict__[f]) != FieldFile] + kwargs.items())
+    return dict([(f, serialize(instance.__dict__[f])) 
+                 for f in fields 
+                 if type(instance.__dict__[f]) != FieldFile] + kwargs.items())
 
 def instance_to_json(instance, *args, **kwargs):
     """

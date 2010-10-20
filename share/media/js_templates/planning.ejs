@@ -1,9 +1,12 @@
 <div id="planning_edit" class="edit_div">
   <div id="planning_header">
     <div id="planning_edit_content" class="content_div">
-      <p> Nom du planning </p>
-      <input type="text" id="planning_title" name="title" value=""/>
-      <p>Ajouter des tags</p> <input type="text" id="planning_tags" name="tags" value=""/> 
+      <div style="float:left;">
+        <p> Nom du planning </p>
+        <input type="text" id="planning_title" name="title" value=""/>
+        <p>Ajouter des tags</p> <input type="text" id="planning_tags" name="tags" value=""/> 
+      </div>
+      <div class="tags_table_container" style="margin-left:10px;float:left;"></div>
       <button id="planning_submit" type="button" style="float:right;">Envoyer</button>
     </div>
     <table id="planning_board_header" class="planning_table">

@@ -261,7 +261,7 @@ body {
   overflow-y:scroll;
 }
 
-#tags_table_container table {
+.tags_table_container table {
   background-color:white;
   border:4px solid #CDD1BB;
 }

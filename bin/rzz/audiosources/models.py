@@ -141,19 +141,27 @@ class Planning(TaggedModel):
     name = models.CharField('Name of the planning', max_length=100)
     planning_elements = models.ManyToManyField(AudioSource, through='PlanningElement')
 
+    def form_url(self):
+        return reverse('edit-planning',args=[self.id])
+
+    def to_dict(self, **kwargs):
+        d = super(Planning, self).to_dict(**kwargs)
+        d.update({'form_url':self.form_url()})
+        return d
+
     def add_elements(self, elements):
         from datetime import time as Time
         for element in elements:
+            time_start = element["time_start"]
             planning_element = PlanningElement(
                 planning = self,
-                source = AudioSource.objects.get(id=element["id"]),
+                source = AudioSource.objects.get(id=element["audiosource_id"]),
                 type = 'single',
-                time_start = Time(element["hour"], element["minute"]),
+                time_start = Time(time_start["hour"], time_start["minute"]),
                 day = element["day"],
                 random = False
             )
             planning_element.save()
-
 
 
 class PlanningElement(models.Model):
@@ -161,6 +169,7 @@ class PlanningElement(models.Model):
         ('single', 'single'),
         ('continuous', 'continuous')
     )
+
     planning = models.ForeignKey(Planning)
     source = models.ForeignKey(AudioSource)
     type = models.CharField(choices=TYPES, max_length=10)
@@ -168,5 +177,11 @@ class PlanningElement(models.Model):
     time_end = models.TimeField(null=True)
     day = models.IntegerField()
     random = models.BooleanField()
+
+    def to_dict(self, with_tags=False, **kwargs):
+        d = instance_to_dict(self)
+        d.pop('source_id')
+        d['audiosource'] = self.source.to_dict()
+        return d
 
 

@@ -224,7 +224,6 @@ Widgets.footer_actions = {
       global: {
         "Creer un planning": {
           action: function() {
-            console.log("LOLDUDE");
             return Application.load("planning");
           }
         }
@@ -434,10 +433,14 @@ ListAudiomodel.prototype.view_events = {
         var el, p_el;
         el = $(proxy);
         el.remove();
-        return (p_el = new PlanningElement(this.audiomodel_base, {
-          top: previous_top,
-          left: previous_left
-        }, column));
+        return (p_el = planning.create_element({
+          audiosource: this.audiomodel_base,
+          time_start: {
+            hour: parseInt(previous_top / 60),
+            minute: previous_top % 60
+          },
+          day: column
+        }));
       }, this));
     }
   }
@@ -483,7 +486,13 @@ ListAudiomodel.prototype.bind_events = function() {
     return $.get(this.href, function(json) {
       return Application.load('playlist', json);
     });
-  }) : undefined;
+  }) : (this.type === "planning" ? this.ui.find('.planning_edit').click(function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    return $.getJSON(this.href, function(json) {
+      return Application.load("planning", json);
+    });
+  }) : undefined);
 };
 TagsTable = (function() {
   function TagsTable(tags_by_category) {
@@ -496,6 +505,16 @@ TagsTable = (function() {
   };
   return TagsTable;
 })();
+TagsTable.prototype.to_delete_tags_array = function() {
+  var _, _ref, _result, id;
+  _result = [];
+  for (_ in _ref = this.to_delete_tags) {
+    if (!__hasProp.call(_ref, _)) continue;
+    id = _ref[_];
+    _result.push(id);
+  }
+  return _result;
+};
 TagsTable.prototype.make_table = function() {
   var _i, _ref, _result, category;
   this.table = $(render_template("tags_table"));
@@ -786,32 +805,44 @@ handle_audiofile_play = function(e) {
   return player ? player.dewset(e.target.href) : undefined;
 };
 PlanningComponent = (function() {
-  function PlanningComponent(init_data) {
+  function PlanningComponent(data) {
     PlanningComponent.__super__.constructor.call(this, {
       template: "planning"
     });
     this.planning_elements = new Set();
     this.init_components();
-    this.update_height();
-    $(window).resize(__bind(function() {
-      return this.update_height();
-    }, this));
     this.add_grid();
-    this.submit_button.button();
     this.bind_events();
+    if (data) {
+      this.tags_table = new TagsTable(data.tags_by_category);
+      this.tags_table_container.append(tag('p', 'Tags')).append(this.tags_table.ui);
+      this.id = data.id;
+      this.mode = "edition";
+      this.init_data(data);
+    } else {
+      this.mode = "creation";
+    }
     return this;
   };
   return PlanningComponent;
 })();
 __extends(PlanningComponent, AppComponent);
 PlanningComponent.prototype.create_link = "/audiosources/json/create-planning";
+PlanningComponent.prototype.edit_link = "/audiosources/json/edit-planning";
 PlanningComponent.prototype.bind_events = function() {
-  return this.submit_button.click(__bind(function() {
-    return $.post(this.create_link, {
+  this.submit_button.click(__bind(function() {
+    return this.mode === "creation" ? $.post(this.create_link, {
       planning_data: this.to_json()
     }, __bind(function(response) {
       return console.log(response);
-    }, this));
+    }, this)) : (this.mode === "edition" ? $.post("" + (this.edit_link) + "/" + (this.id), {
+      planning_data: this.to_json()
+    }, __bind(function(response) {
+      return console.log(response);
+    }, this)) : undefined);
+  }, this));
+  return $(window).resize(__bind(function() {
+    return this.update_height();
   }, this));
 };
 PlanningComponent.prototype.init_components = function() {
@@ -821,7 +852,10 @@ PlanningComponent.prototype.init_components = function() {
   this.board_table = $('#planning_board');
   this.submit_button = $('#planning_submit');
   this.title_input = $('#planning_title');
-  return (this.tags_input = $('#planning_tags'));
+  this.tags_input = $('#planning_tags');
+  this.tags_table_container = $('#planning_edit_content .tags_table_container');
+  this.submit_button.button();
+  return this.update_height();
 };
 PlanningComponent.prototype.update_height = function() {
   return this.container.height($(document).height() - this.container.offset().top - 20);
@@ -850,6 +884,21 @@ PlanningComponent.prototype.add_grid = function() {
   }
   return _result;
 };
+PlanningComponent.prototype.init_data = function(data) {
+  if (data.name) {
+    this.title_input.val(data.name);
+  }
+  return data.planning_elements ? this.add_elements(data.planning_elements) : undefined;
+};
+PlanningComponent.prototype.add_elements = function(planning_elements) {
+  var _i, _len, _result, planning_element;
+  _result = [];
+  for (_i = 0, _len = planning_elements.length; _i < _len; _i++) {
+    planning_element = planning_elements[_i];
+    _result.push(this.create_element(planning_element));
+  }
+  return _result;
+};
 PlanningComponent.prototype.pos = function(el_pos) {
   var pboard_off;
   pboard_off = this.board_table.offset();
@@ -872,6 +921,11 @@ PlanningComponent.prototype.el_pos = function(el, pos) {
     return el_off;
   }
 };
+PlanningComponent.prototype.create_element = function(json_model) {
+  var planning_element;
+  planning_element = new PlanningElement(this, json_model);
+  return this.planning_elements.add(planning_element);
+};
 PlanningComponent.prototype.to_json = function() {
   var _i, _len, _ref, _result, el, pl_els;
   pl_els = (function() {
@@ -885,36 +939,47 @@ PlanningComponent.prototype.to_json = function() {
   return JSON.stringify({
     planning_elements: pl_els,
     title: this.title_input.val(),
-    tags: this.tags_input.val()
+    tags: this.tags_input.val(),
+    to_delete_tags: this.tags_table.to_delete_tags_array()
   });
 };
 PlanningElement = (function() {
-  function PlanningElement(json_model, position, day) {
+  function PlanningElement(planning, json_model) {
     PlanningElement.__super__.constructor.call(this, {
       template: "planning_element",
       context: json_model
     });
+    this.planning = planning;
+    this.type = "single";
     $.extend(this, json_model);
-    this.set_time(position.top);
-    this.set_day(day);
-    this.ui.height(json_model.length / 60);
+    this.set_column_from_day();
+    this.set_pos_from_time();
+    this.ui.height(this.audiosource.length / 60);
     this.ui.width(this.column.width());
     $(window).resize(__bind(function() {
       return this.ui.width(this.column.width());
     }, this));
     this.bind_events();
-    Application.current_component.planning_elements.add(this);
-    console.log(Application.current_component.planning_elements.values());
     return this;
   };
   return PlanningElement;
 })();
 __extends(PlanningElement, Audiomodel);
+PlanningElement.prototype.edit_properties = function() {
+  return __bind(function() {
+    var form;
+    return (form = div(""));
+  }, this);
+};
+PlanningElement.prototype.make_resizable = function() {
+  return this.ui.resizable({
+    grid: 10
+  });
+};
 PlanningElement.prototype.bind_events = function() {
-  var color, planning, td_positions, z_index;
+  var color, td_positions, z_index;
   color = null;
   z_index = null;
-  planning = Application.current_component;
   td_positions = [];
   this.ui.bind('dragstart', __bind(function(e, dd) {
     color = this.ui.css('background-color');
@@ -925,11 +990,11 @@ PlanningElement.prototype.bind_events = function() {
     this.ui.css({
       'z-index': z_index + 10
     });
-    return (td_positions = new GridPositionner(planning.tds));
+    return (td_positions = new GridPositionner(this.planning.tds));
   }, this));
   this.ui.bind('drag', __bind(function(e, dd) {
     var column, rel_cpos, top;
-    rel_cpos = planning.pos({
+    rel_cpos = this.planning.pos({
       top: dd.offsetY,
       left: dd.offsetX
     });
@@ -937,12 +1002,12 @@ PlanningElement.prototype.bind_events = function() {
     top = top > 0 ? top : 0;
     column = td_positions.closest(rel_cpos.left)[0];
     if (column !== this.day) {
-      this.set_day(column);
+      this.set_day_from_column(column);
       this.ui.width(this.column.width());
     }
-    return this.set_time(top);
+    return this.set_time_from_pos(top);
   }, this));
-  return this.ui.bind('drop', __bind(function(e, dd) {
+  this.ui.bind('drop', __bind(function(e, dd) {
     this.ui.css({
       'background-color': color
     });
@@ -950,24 +1015,36 @@ PlanningElement.prototype.bind_events = function() {
       "z-index": z_index
     });
   }, this));
+  return this.ui.bind('hover', __bind(function(e) {
+    return console.log(e);
+  }, this));
 };
-PlanningElement.prototype.set_day = function(day) {
-  this.day = day;
-  this.column = $(Application.current_component.tds[day]);
+PlanningElement.prototype.set_day_from_column = function(column) {
+  this.day = column;
+  return this.set_column_from_day();
+};
+PlanningElement.prototype.set_column_from_day = function() {
+  this.column = $(this.planning.tds[this.day]);
   return this.column.append(this.ui);
 };
-PlanningElement.prototype.set_time = function(top_pos) {
-  this.hour = parseInt(top_pos / 60);
-  this.minute = top_pos % 60;
+PlanningElement.prototype.set_time_from_pos = function(top_pos) {
+  this.time_start.hour = parseInt(top_pos / 60);
+  this.time_start.minute = top_pos % 60;
+  return this.set_pos_from_time();
+};
+PlanningElement.prototype.set_pos_from_time = function() {
   return this.ui.css({
-    top: top_pos
+    top: this.time_start.minute + this.time_start.hour * 60
   });
 };
 PlanningElement.prototype.serialize = function() {
-  return object_with_keys(this, ['day', 'hour', 'minute', 'id']);
+  var o;
+  o = object_with_keys(this, ['day', 'time_start']);
+  o.audiosource_id = this.audiosource.id;
+  return o;
 };
 PlanningElement.prototype.formatted_time = function() {
-  return "" + (format_number(this.hour, 2)) + "h" + (format_number(this.minute, 2));
+  return "" + (format_number(this.time_start.hour, 2)) + "h" + (format_number(this.time_start.minute, 2));
 };
 PlanningElement.prototype.toString = function() {
   return "planning_element_" + (gen_uuid());

@@ -161,7 +161,6 @@ Widgets.footer_actions =
             global:
                 "Creer un planning":
                     action: ->
-                        console.log "LOLDUDE"
                         Application.load "planning"
             selection: null
 
@@ -311,7 +310,12 @@ class ListAudiomodel extends Audiomodel
                 @ui.bind 'drop', (e, dd) =>
                     el = $ proxy
                     el.remove()
-                    p_el = new PlanningElement(@audiomodel_base, {top:previous_top, left:previous_left} , column)
+                    p_el = planning.create_element
+                        audiosource:@audiomodel_base
+                        time_start:
+                            hour: parseInt(previous_top /60)
+                            minute: previous_top % 60
+                        day: column
 
 
     constructor: (type, json_model) ->
@@ -363,6 +367,12 @@ class ListAudiomodel extends Audiomodel
                 $.get @href, (json) ->
                     Application.load 'playlist', json
 
+        else if @type == "planning"
+            @ui.find('.planning_edit').click (e) ->
+                e.stopPropagation(); e.preventDefault()
+                $.getJSON @href, (json) ->
+                    Application.load "planning", json
+
 
 class TagsTable
     # Represents a tags table
@@ -375,6 +385,8 @@ class TagsTable
         @make_table()
         @ui = @table
         @dom = @table[0]
+
+    to_delete_tags_array: -> id for _, id of @to_delete_tags
 
     make_table: () ->
         @table = $(render_template "tags_table")
@@ -617,11 +629,18 @@ handle_audiofile_play = (e) ->
 class PlanningComponent extends AppComponent
 
     create_link:"/audiosources/json/create-planning"
+    edit_link:"/audiosources/json/edit-planning"
 
     bind_events: ->
         @submit_button.click =>
-            $.post @create_link, {planning_data:@to_json()}, (response) =>
-                console.log response
+            if @mode == "creation"
+                $.post @create_link, {planning_data:@to_json()}, (response) =>
+                    console.log response
+            else if @mode == "edition"
+                $.post "#{@edit_link}/#{@id}", {planning_data:@to_json()}, (response) =>
+                    console.log response
+
+        $(window).resize () => @update_height()
 
     init_components: ->
         @board = $ '#main_planning_board'
@@ -631,6 +650,9 @@ class PlanningComponent extends AppComponent
         @submit_button = $ '#planning_submit'
         @title_input = $ '#planning_title'
         @tags_input = $ '#planning_tags'
+        @tags_table_container = $ '#planning_edit_content .tags_table_container'
+        @submit_button.button()
+        @update_height()
 
     update_height: ->
         @container.height $(document).height() - @container.offset().top - 20
@@ -643,15 +665,30 @@ class PlanningComponent extends AppComponent
                 gridiv = div content, class:"grid_time grid_#{div_class}"
                 @board.append(gridiv)
 
-    constructor: (init_data) ->
+    init_data: (data) ->
+        if data.name
+            @title_input.val data.name
+        if data.planning_elements
+            @add_elements(data.planning_elements)
+
+    add_elements: (planning_elements) ->
+        for planning_element in planning_elements
+            @create_element planning_element
+
+    constructor: (data) ->
         super template: "planning"
         @planning_elements = new Set()
         @init_components()
-        @update_height()
-        $(window).resize () => @update_height()
         @add_grid()
-        @submit_button.button()
         @bind_events()
+        if data
+            @tags_table = new TagsTable(data.tags_by_category)
+            @tags_table_container.append(tag 'p' , 'Tags').append @tags_table.ui
+            @id = data.id
+            @mode = "edition"
+            @init_data data
+        else
+            @mode = "creation"
 
     pos: (el_pos) ->
 
@@ -681,19 +718,45 @@ class PlanningComponent extends AppComponent
             el_off.left -= pboard_off.left
             return el_off
 
+    create_element: (json_model) ->
+        planning_element = new PlanningElement @, json_model
+        @planning_elements.add planning_element
+
     to_json: ->
         pl_els = el.serialize() for el in @planning_elements.values()
         return JSON.stringify
             planning_elements: pl_els
             title: @title_input.val()
             tags: @tags_input.val()
+            to_delete_tags: @tags_table.to_delete_tags_array() 
 
 
 class PlanningElement extends Audiomodel
 
+    constructor: (planning, json_model) ->
+        super template: "planning_element", context: json_model
+
+        @planning = planning
+        @type = "single"
+        $.extend this, json_model
+
+        @set_column_from_day()
+        @set_pos_from_time()
+
+        @ui.height @audiosource.length / 60
+        @ui.width @column.width()
+        $(window).resize => @ui.width @column.width()
+
+        @bind_events()
+
+    edit_properties: -> =>
+        form = div ""
+
+    make_resizable: ->
+        @ui.resizable({grid:10})
+
     bind_events: ->
         color = null; z_index=null
-        planning = Application.current_component
         td_positions = []
 
         @ui.bind 'dragstart', (e, dd) =>
@@ -701,51 +764,48 @@ class PlanningElement extends Audiomodel
             z_index = @ui.css 'z-index'
             @ui.css 'background-color':'#EBC'
             @ui.css 'z-index': z_index + 10
-            td_positions = new GridPositionner(planning.tds)
+            td_positions = new GridPositionner(@planning.tds)
 
         @ui.bind 'drag', (e, dd) =>
-            rel_cpos = planning.pos top:dd.offsetY, left:dd.offsetX
+            rel_cpos = @planning.pos top:dd.offsetY, left:dd.offsetX
             top = step(rel_cpos.top, 10)
             top = if top > 0 then top else 0
             [column] = td_positions.closest(rel_cpos.left)
             if column != @day
-                @set_day column
+                @set_day_from_column column
                 @ui.width @column.width()
-            @set_time top
+            @set_time_from_pos top
 
         @ui.bind 'drop', (e, dd) =>
             @ui.css 'background-color':color
             @ui.css "z-index": z_index
 
-    set_day: (day) ->
-        @day = day
-        @column = $(Application.current_component.tds[day])
+        @ui.bind 'hover', (e) =>
+            console.log e
+
+    set_day_from_column: (column) ->
+        @day = column
+        @set_column_from_day()
+
+    set_column_from_day: ->
+        @column = $(@planning.tds[@day])
         @column.append @ui
 
-    set_time: (top_pos) ->
-        @hour = parseInt top_pos / 60
-        @minute = top_pos % 60
-        @ui.css top:top_pos
+    set_time_from_pos : (top_pos) ->
+        @time_start.hour = parseInt top_pos / 60
+        @time_start.minute = top_pos % 60
+        @set_pos_from_time()
 
-    constructor: (json_model, position, day) ->
-        super template: "planning_element", context: json_model
-        $.extend this, json_model
-
-        @set_time(position.top)
-        @set_day(day)
-
-        @ui.height json_model.length / 60
-        @ui.width @column.width()
-        $(window).resize => @ui.width @column.width()
-
-        @bind_events()
-        Application.current_component.planning_elements.add @
-        console.log Application.current_component.planning_elements.values()
+    set_pos_from_time: ->
+        @ui.css top: @time_start.minute + @time_start.hour * 60
 
     serialize : ->
-        return object_with_keys @, ['day', 'hour', 'minute', 'id']
+        o = object_with_keys @, ['day', 'time_start']
+        o.audiosource_id = @audiosource.id
+        return o
 
-    formatted_time: -> "#{format_number @hour, 2}h#{format_number @minute, 2}"
+
+    formatted_time: -> "#{format_number @time_start.hour, 2}h#{format_number @time_start.minute, 2}"
 
     toString: -> "planning_element_#{gen_uuid()}"
 

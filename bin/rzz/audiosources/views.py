@@ -24,8 +24,31 @@ def create_planning(request):
     planning = Planning(name=planning_data['title'])
     planning.save()
     planning.add_elements(planning_data['planning_elements'])
+    add_tags_to_model(planning_data['tags'], planning)
     
     return HttpResponse()
+
+def edit_planning(request, planning_id):
+    """
+    View for edition of a planning
+    """
+    planning = Planning.objects.get(id=planning_id)
+
+    if request.method == 'POST':
+        planning_data = json.loads(request.POST['planning_data'])
+        planning.planningelement_set.all().delete()
+        planning.add_elements(planning_data['planning_elements'])
+        planning.title = planning_data["title"]
+        remove_tags_from_model(planning, planning_data["to_delete_tags"])
+        add_tags_to_model(planning_data['tags'], planning)
+        planning.save()
+        return HttpResponse()
+    else:
+        planning_dict = planning.to_dict(with_tags=True)
+        planning_elements_dicts = [pe.to_dict() for pe in planning.planningelement_set.all()]
+        planning_dict["planning_elements"] = planning_elements_dicts
+        return JSONResponse(planning_dict)
+
 
 @staff_member_required
 def create_audio_source(request):
@@ -209,8 +232,7 @@ def tags_list(request, audiomodel_klass):
                WHERE taggedmodel_id IN (SELECT %s_ptr_id 
                                         FROM audiosources_%s))
         """ % (
-            "taggedmodel" if audiomodel_klass == Planning else "audiomodel",
-            {
+            "taggedmodel" if audiomodel_klass == Planning else "audiomodel", {
                 AudioFile:'audiofile',
                 AudioSource:'audiosource',
                 Planning:"planning"
