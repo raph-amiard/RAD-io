@@ -1,0 +1,9 @@
+<li class="unselectable ui-widget-content audiomodel-box audiosource">
+  <input type="hidden" value="<%= audiomodel.id %>"/> 
+  <p> <span class="audiosource_title"> <%= audiomodel.name %> </span> 
+  </p>
+  <div class="planning_actions">
+    <a class="planning_edit" href="<%= audiomodel.form_url %>">Edit</a>
+    <a class="audiomodel_delete" href="/audiosources/json/delete-audio-source/<%= audiomodel.id %>">Delete</a>
+  </div>
+</li>
