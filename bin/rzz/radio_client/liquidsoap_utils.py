@@ -5,6 +5,18 @@ EXTENSIONS_TO_FORMATS = {
     "mp3":"mp3"
 }
 
+EXTENSIONS_TO_PACKAGES = {
+    "ogg":"icecast",
+    "mp3":"shoutcast"
+}
+
+def create_temp_script_file(*args, **kwargs):
+    script_string = generate_script(*args, **kwargs)
+    script_file = file(settings.LIQUIDSOAP_WORKING_DIRECTORY + "liquidscript.liq", "w")
+    script_file.write(script_string)
+    script_file.close()
+    return script_file
+
 def generate_script(mount_point_name, outputs):
     """
     Generates a liquidsoap script for the given mount point and outputs
@@ -28,14 +40,15 @@ def generate_script(mount_point_name, outputs):
 
     for output in outputs:
         base_string += """
-        output.icecast.{STREAM_FORMAT}(
-            host = {HOST},
+        output.{STREAM_PACKAGE}.{STREAM_FORMAT}(
+            host = "{HOST}",
             port = {PORT},
-            password = {PASSWORD},
+            password = "{PASSWORD}",
             mount = "{MOUNT_POINT_NAME}.{STREAM_EXTENSION}",
             full
         )
         """.format(
+            STREAM_PACKAGE = EXTENSIONS_TO_PACKAGES[output["format"]],
             STREAM_FORMAT = EXTENSIONS_TO_FORMATS[output["format"]],
             HOST = settings.ICECAST_HOST,
             PORT = settings.ICECAST_PORT,

@@ -1,12 +1,13 @@
 import telnetlib
+import subprocess
 
 QUEUE = "main_queue"
 LIQUIDSOAP_BIN = "liquidsoap"
 
 class LiquidsoapProcess():
-    pass
-
-
+    def __init__(self):
+        pass
+        
 class LiquidsoapConnection():
     def __init__(self):
         self.connection = telnetlib.Telnet('localhost', 1234, 1000)
@@ -31,10 +32,6 @@ class QueueCommandWrapper():
         connection.write(command)
         response = connection.read_until('END')[:-3]
         return int(response)
-
-    def lol(self):
-        pass
-
     def push(self, uri):
         """
         Push a source with the corresponding uri into the queue
@@ -70,3 +67,4 @@ class QueueCommandWrapper():
 class ServerCommandsWrapper():
     connection = CONNECTION
     self.queue = QueueCommandWrapper(connection)
+

@@ -18,12 +18,12 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-DATABASE_ENGINE = 'postgresql_psycopg2' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'rzz'          # Or path to database file if using sqlite3.
-DATABASE_USER = 'rzz'          # Not used with sqlite3.
-DATABASE_PASSWORD = 'rzz'      # Not used with sqlite3.
-DATABASE_HOST = 'localhost'    # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = '5432'         # Set to empty string for default. Not used with sqlite3.
+DATABASE_ENGINE = 'postgresql_psycopg2' 
+DATABASE_NAME = 'rzz'
+DATABASE_USER = 'rzz'
+DATABASE_PASSWORD = 'rzz'
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = '5432'
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -104,5 +104,5 @@ ICECAST_PWD = "zero"
 
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
 LIQUIDSOAP_QUEUE_NAME = "main_queue"
-LIQUIDSOAP_SECURITY_AUDIOFILE = os.path.join(PROJECT_PATH, "share/media/audiofiles/security.mp3")
-
+LIQUIDSOAP_SECURITY_AUDIOFILE = os.path.join(PROJECT_PATH, "share/media/security.mp3")
+LIQUIDSOAP_WORKING_DIRECTORY = os.path.join(PROJECT_PATH, "liquidsoap/")

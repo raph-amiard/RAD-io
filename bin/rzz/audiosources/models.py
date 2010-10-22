@@ -164,12 +164,12 @@ class Planning(TaggedModel):
                 random = False
             )
 
-            if type == "continuous":
+            if type in ["continuous", "jingle"]:
                 time_end = element["time_end"]
                 time_end["hour"] = time_end["hour"] % 24
                 planning_element.random = True
                 planning_element.time_end = Time(time_end["hour"], time_end["minute"])
-                planning_element.type = 'continuous'
+                planning_element.type = type
 
             planning_element.save()
 
@@ -177,7 +177,8 @@ class Planning(TaggedModel):
 class PlanningElement(models.Model):
     TYPES = (
         ('single', 'single'),
-        ('continuous', 'continuous')
+        ('continuous', 'continuous'),
+        ('jingle', 'jingle')
     )
 
     planning = models.ForeignKey(Planning)

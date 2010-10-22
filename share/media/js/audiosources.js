@@ -443,6 +443,7 @@ ListAudiomodel.prototype.view_events = {
         el.remove();
         return (p_el = planning.create_element({
           audiosource: this.audiomodel_base,
+          type: planning.active_type,
           time_start: {
             hour: parseInt(previous_top / 60),
             minute: previous_top % 60
@@ -830,6 +831,8 @@ PlanningComponent = (function() {
     } else {
       this.mode = "creation";
     }
+    this.active_type = "single";
+    this.show_hide();
     return this;
   };
   return PlanningComponent;
@@ -837,8 +840,16 @@ PlanningComponent = (function() {
 __extends(PlanningComponent, AppComponent);
 PlanningComponent.prototype.create_link = "/audiosources/json/create-planning";
 PlanningComponent.prototype.edit_link = "/audiosources/json/edit-planning";
+PlanningComponent.prototype.show_hide = function() {
+  var _i, _len, _ref, _result, planning_element;
+  _result = [];
+  for (_i = 0, _len = (_ref = this.planning_elements.values()).length; _i < _len; _i++) {
+    planning_element = _ref[_i];
+    _result.push(planning_element.type === this.active_type ? planning_element.ui.show() : planning_element.ui.hide());
+  }
+  return _result;
+};
 PlanningComponent.prototype.bind_events = function() {
-  var show_hide;
   this.submit_button.click(__bind(function() {
     var success_function;
     success_function = __bind(function() {
@@ -855,21 +866,10 @@ PlanningComponent.prototype.bind_events = function() {
       planning_data: this.to_json()
     }, success_function()) : undefined);
   }, this));
-  show_hide = __bind(function(element_type) {
-    return __bind(function(e) {
-      var _i, _len, _ref, _result, checked, planning_element, ui_method;
-      checked = e.target.checked;
-      ui_method = checked ? "show" : "hide";
-      _result = [];
-      for (_i = 0, _len = (_ref = this.planning_elements.values()).length; _i < _len; _i++) {
-        planning_element = _ref[_i];
-        _result.push(planning_element.type === element_type ? planning_element.ui[ui_method]() : undefined);
-      }
-      return _result;
-    }, this);
-  }, this);
-  this.show_single_checkbox.click(show_hide("single"));
-  this.show_continuous_checkbox.click(show_hide("continuous"));
+  this.show_choices.find("input").click(__bind(function(e) {
+    this.active_type = e.target.id.split(/planning_show_/)[1];
+    return this.show_hide();
+  }, this));
   return $(window).resize(__bind(function() {
     return this.update_height();
   }, this));
@@ -884,9 +884,8 @@ PlanningComponent.prototype.init_components = function() {
   this.tags_input = $('#planning_tags');
   this.tags_table_container = $('#planning_edit_content .tags_table_container');
   this.show_choices = $('#planning_show_choices');
-  this.show_single_checkbox = $('#planning_show_single');
-  this.show_continuous_checkbox = $('#planning_show_continuous');
   this.show_choices.buttonset();
+  this.show_choices.disableTextSelect();
   this.submit_button.button();
   return this.update_height();
 };
@@ -960,7 +959,7 @@ PlanningComponent.prototype.create_element = function(json_model) {
   return this.planning_elements.add(planning_element);
 };
 PlanningComponent.prototype.to_json = function() {
-  var _i, _len, _ref, _result, el, pl_els;
+  var _i, _len, _ref, _result, el, pl_els, to_stringify;
   pl_els = (function() {
     _result = [];
     for (_i = 0, _len = (_ref = this.planning_elements.values()).length; _i < _len; _i++) {
@@ -969,12 +968,15 @@ PlanningComponent.prototype.to_json = function() {
     }
     return _result;
   }).call(this);
-  return JSON.stringify({
+  to_stringify = {
     planning_elements: pl_els,
     title: this.title_input.val(),
-    tags: this.tags_input.val(),
-    to_delete_tags: this.tags_table.to_delete_tags_array()
-  });
+    tags: this.tags_input.val()
+  };
+  if (this.mode === "edition") {
+    to_stringify.to_delete_tags = this.tags_table.to_delete_tags_array();
+  }
+  return JSON.stringify(to_stringify);
 };
 PlanningElement = (function() {
   function PlanningElement(planning, json_model) {
@@ -996,7 +998,10 @@ PlanningElement = (function() {
       this.ui.height(this.audiosource.length / 60);
       this.make_single();
     } else {
-      console.log(this.time_end.hour);
+      if (!this.time_end) {
+        this.time_end = {};
+        this.ui.height(this.audiosource.length / 60);
+      }
       if (this.time_end.hour === 0) {
         this.time_end.hour = 24;
       }
@@ -1025,7 +1030,6 @@ PlanningElement.prototype.edit_properties = function() {
 PlanningElement.prototype.make_continuous = function() {
   this.ui_head.show();
   this.ui_foot.show();
-  this.type = "continuous";
   this.set_time_end_from_height(step(this.ui.height(), 10));
   this.ui.css({
     opacity: 0.75
@@ -1037,7 +1041,6 @@ PlanningElement.prototype.make_continuous = function() {
 PlanningElement.prototype.make_single = function() {
   this.ui_head.hide();
   this.ui_foot.hide();
-  this.type = "single";
   this.time_end = {};
   this.ui.css({
     opacity: 0.9
@@ -1117,15 +1120,12 @@ PlanningElement.prototype.bind_events = function() {
     e.preventDefault();
     return (orig_height = this.ui.height());
   }, this));
-  this.ui_foot.bind('drag', __bind(function(e, dd) {
+  return this.ui_foot.bind('drag', __bind(function(e, dd) {
     var difference;
     e.stopPropagation();
     e.preventDefault();
     difference = step(dd.deltaY, 10);
     return this.set_time_end_from_height(orig_height + difference);
-  }, this));
-  return this.switch_button.click(__bind(function(e) {
-    return this.type === "single" ? this.make_continuous() : this.make_single();
   }, this));
 };
 PlanningElement.prototype.set_day_from_column = function(column) {
@@ -1148,11 +1148,8 @@ PlanningElement.prototype.set_pos_from_time = function() {
   });
 };
 PlanningElement.prototype.set_time_end_from_height = function(height) {
-  var hour, minute;
-  hour = parseInt(height / 60);
-  minute = height % 60;
-  this.time_end.hour = this.time_start.hour + hour;
-  this.time_end.minute = this.time_start.minute + minute;
+  this.time_end.hour = (parseInt(height / 60)) + this.time_start.hour;
+  this.time_end.minute = (height + this.time_start.minute) % 60;
   return this.ui.height(height);
 };
 PlanningElement.prototype.set_height_from_time_end = function() {

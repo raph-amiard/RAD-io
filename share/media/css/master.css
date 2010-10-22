@@ -468,7 +468,7 @@ input[type=text] {
   position:absolute;
   bottom:18px;
   left:50%;
-  margin-left:-80px;
+  margin-left:-100px;
 }
 
 #planning_show_choices .ui-state-default {

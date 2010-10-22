@@ -319,6 +319,7 @@ class ListAudiomodel extends Audiomodel
                     el.remove()
                     p_el = planning.create_element
                         audiosource:@audiomodel_base
+                        type: planning.active_type
                         time_start:
                             hour: parseInt(previous_top /60)
                             minute: previous_top % 60
@@ -638,6 +639,13 @@ class PlanningComponent extends AppComponent
     create_link:"/audiosources/json/create-planning"
     edit_link:"/audiosources/json/edit-planning"
 
+    show_hide: ->
+        for planning_element in @planning_elements.values()
+            if planning_element.type == @active_type
+                planning_element.ui.show()
+            else
+                planning_element.ui.hide()
+
     bind_events: ->
 
         @submit_button.click =>
@@ -651,16 +659,9 @@ class PlanningComponent extends AppComponent
             else if @mode == "edition"
                 $.post "#{@edit_link}/#{@id}", {planning_data:@to_json()}, success_function()
 
-        show_hide = (element_type) => (e) =>
-            checked = e.target.checked
-            ui_method = if checked then "show" else "hide"
-            for planning_element in @planning_elements.values()
-                if planning_element.type == element_type
-                    planning_element.ui[ui_method]()
-
-        @show_single_checkbox.click show_hide "single"
-        @show_continuous_checkbox.click show_hide "continuous"
-
+        @show_choices.find("input").click (e) =>
+            @active_type = e.target.id.split(/planning_show_/)[1]
+            @show_hide()
 
         $(window).resize () => @update_height()
 
@@ -674,9 +675,8 @@ class PlanningComponent extends AppComponent
         @tags_input = $ '#planning_tags'
         @tags_table_container = $ '#planning_edit_content .tags_table_container'
         @show_choices = $ '#planning_show_choices'
-        @show_single_checkbox = $ '#planning_show_single'
-        @show_continuous_checkbox = $ '#planning_show_continuous'
         @show_choices.buttonset()
+        @show_choices.disableTextSelect()
         @submit_button.button()
         @update_height()
 
@@ -715,6 +715,8 @@ class PlanningComponent extends AppComponent
             @init_data data
         else
             @mode = "creation"
+        @active_type = "single"
+        @show_hide()
 
     pos: (el_pos) ->
 
@@ -750,11 +752,13 @@ class PlanningComponent extends AppComponent
 
     to_json: ->
         pl_els = el.serialize() for el in @planning_elements.values()
-        return JSON.stringify
+        to_stringify = 
             planning_elements: pl_els
             title: @title_input.val()
             tags: @tags_input.val()
-            to_delete_tags: @tags_table.to_delete_tags_array() 
+        if @mode == "edition"
+            to_stringify.to_delete_tags = @tags_table.to_delete_tags_array() 
+        return JSON.stringify to_stringify
 
 
 class PlanningElement extends Audiomodel
@@ -777,7 +781,11 @@ class PlanningElement extends Audiomodel
             @ui.height @audiosource.length / 60
             @make_single()
         else
-            console.log @time_end.hour
+
+            if not @time_end
+                @time_end = {}
+                @ui.height @audiosource.length / 60
+
             if @time_end.hour == 0 then @time_end.hour = 24
             console.log @time_end.hour
             @set_height_from_time_end()
@@ -796,14 +804,12 @@ class PlanningElement extends Audiomodel
 
     make_continuous: ->
         @ui_head.show(); @ui_foot.show()
-        @type = "continuous"
         @set_time_end_from_height step(@ui.height(), 10)
         @ui.css opacity:0.75
         @ui.css 'z-index': 200
 
     make_single: ->
         @ui_head.hide(); @ui_foot.hide()
-        @type = "single"
         @time_end = {}
         @ui.css opacity:0.9
         @ui.css 'z-index':400
@@ -862,12 +868,6 @@ class PlanningElement extends Audiomodel
             difference = step(dd.deltaY, 10)
             @set_time_end_from_height orig_height + difference
 
-        @switch_button.click (e) =>
-            if @type == "single"
-                @make_continuous()
-            else
-                @make_single()
-
     set_day_from_column: (column) ->
         @day = column
         @set_column_from_day()
@@ -886,10 +886,8 @@ class PlanningElement extends Audiomodel
         @ui.css top: @top
 
     set_time_end_from_height: (height) ->
-        hour = parseInt height / 60
-        minute = height % 60
-        @time_end.hour = @time_start.hour + hour
-        @time_end.minute = @time_start.minute + minute
+        @time_end.hour = (parseInt height / 60) + @time_start.hour
+        @time_end.minute = (height + @time_start.minute) % 60 
         @ui.height height
 
     set_height_from_time_end: ->
