@@ -2,12 +2,17 @@ from django.conf import settings
 
 EXTENSIONS_TO_FORMATS = {
     "ogg":"vorbis",
-    "mp3":"mp3"
+    "mp3":"lame"
 }
 
 EXTENSIONS_TO_PACKAGES = {
     "ogg":"icecast",
     "mp3":"shoutcast"
+}
+
+EXTENSIONS_TO_QUALITY = {
+    "ogg":"quality",
+    "mp3":"bitrate"
 }
 
 def create_temp_script_file(*args, **kwargs):
@@ -29,6 +34,7 @@ def generate_script(mount_point_name, outputs):
 
     base_string = """
         set("log.file.path", "{LOG_PATH}")
+        set("server.telnet",true)
         queue = request.equeue(id="{QUEUE_NAME}")
         security = single("{SECURITY}")
         full = fallback(track_sensitive = false, [queue, security])
@@ -39,22 +45,28 @@ def generate_script(mount_point_name, outputs):
     )
 
     for output in outputs:
+
+        format = output["format"]
+        quality_param = EXTENSIONS_TO_QUALITY[format]
+        quality = output.get(quality_param, None)
+        quality_string = "{0} = {1},\n\t\t".format(quality_param, quality) if quality else ""
+
         base_string += """
-        output.{STREAM_PACKAGE}.{STREAM_FORMAT}(
+        output.icecast.{STREAM_FORMAT}(
             host = "{HOST}",
             port = {PORT},
             password = "{PASSWORD}",
-            mount = "{MOUNT_POINT_NAME}.{STREAM_EXTENSION}",
+            {QUALITY_STRING}mount = "{MOUNT_POINT_NAME}.{STREAM_EXTENSION}",
             full
         )
         """.format(
-            STREAM_PACKAGE = EXTENSIONS_TO_PACKAGES[output["format"]],
-            STREAM_FORMAT = EXTENSIONS_TO_FORMATS[output["format"]],
+            STREAM_FORMAT = EXTENSIONS_TO_FORMATS[format],
             HOST = settings.ICECAST_HOST,
             PORT = settings.ICECAST_PORT,
             PASSWORD = settings.ICECAST_PWD,
             MOUNT_POINT_NAME = mount_point_name,
-            STREAM_EXTENSION = output["format"]
+            STREAM_EXTENSION = format,
+            QUALITY_STRING = quality_string,
         )
 
     return base_string

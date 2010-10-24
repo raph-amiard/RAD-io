@@ -106,3 +106,10 @@ LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
 LIQUIDSOAP_QUEUE_NAME = "main_queue"
 LIQUIDSOAP_SECURITY_AUDIOFILE = os.path.join(PROJECT_PATH, "share/media/security.mp3")
 LIQUIDSOAP_WORKING_DIRECTORY = os.path.join(PROJECT_PATH, "liquidsoap/")
+LIQUIDSOAP_BIN = "liquidsoap"
+
+RADIO_OUTPUTS = [
+    { 'format':'ogg', 'bitrate':128 },
+    { 'format':'mp3', 'bitrate':128 }
+]
+RADIO_MOUNT_NAME = "zero"

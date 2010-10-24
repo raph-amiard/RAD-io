@@ -1,16 +1,29 @@
 import telnetlib
 import subprocess
+from rzz.radio_client.liquidsoap_utils import create_temp_script_file
+from django.conf import settings
 
-QUEUE = "main_queue"
-LIQUIDSOAP_BIN = "liquidsoap"
+class LiquidsoapAgent():
+    status = "stopped"
 
-class LiquidsoapProcess():
     def __init__(self):
-        pass
-        
-class LiquidsoapConnection():
-    def __init__(self):
-        self.connection = telnetlib.Telnet('localhost', 1234, 1000)
+        self.script = create_temp_script_file(settings.RADIO_MOUNT_NAME, settings.RADIO_OUTPUTS)
+        self.liquidsoap_process = None
+
+    def start(self):
+        if not self.liquidsoap_process:
+            self.liquidsoap_process = subprocess.Popen([settings.LIQUIDSOAP_BIN, "-t", self.script.name])
+            self.status = "started"
+
+    def connect(self):
+        if self.status == "started":
+            self.connection = telnetlib.Telnet('localhost', 1234, 1000)
+            self.queue = QueueCommandWrapper(self.connection, settings.LIQUIDSOAP_QUEUE_NAME)
+
+    def stop(self):
+        if self.liquidsoap_process:
+            self.liquidsoap_process.kill()
+            self.status = "stopped"
 
 class QueueCommandWrapper():
     queue_size = 0
@@ -18,6 +31,11 @@ class QueueCommandWrapper():
     def __init__(self, connection, queue_name):
         self.connection = connection
         self.queue_name = queue_name
+
+    def make_command(self, command_str):
+        print command_str
+        self.connection.write(command_str)
+
 
     def insert(self, position, uri):
         """
@@ -28,43 +46,42 @@ class QueueCommandWrapper():
         if position > self.queue_size:
             print 'You inserted beyond the queue size. uri appended at the end'
 
-        command = '{0}.insert {1} {2} \n'.format(self.queue, position, uri)
-        connection.write(command)
-        response = connection.read_until('END')[:-3]
+        command = '{0}.insert {1} {2} \n'.format(self.queue_name, position, uri)
+        self.make_command(command)
+        response = self.connection.read_until('END')[:-3]
         return int(response)
+
     def push(self, uri):
         """
         Push a source with the corresponding uri into the queue
         Returns the source id
         """
-        command = '{0}.push {1}\n'.format(self.queue, uri)
-        connection.write(command)
-        response = connection.read_until('END')[:-3]		
+        command = '{0}.push {1}\n'.format(self.queue_name, uri)
+        self.make_command(command)
+        response = self.connection.read_until('END')[:-3]		
         return int(response)
 
     def get_queue(self):
         """
         Returns a list of the ids currently queued
         """
-        connection.write('{0}.queue\n'.format(self.queue))
-        response = connection.read_until('END')[:-3]
+        self.make_command('{0}.queue\n'.format(self.queue_name))
+        response = self.connection.read_until('END')[:-3]
         return [int(t) for t in response.split(' ')]
 
     def remove(self, id):
         """
         Remove the source with given id
         """
-        connection.write('{0}.remove {1}\n'.format(self.queue, id))
-        response = connection.read_until('END')[:-3]
+        self.make_command('{0}.remove {1}\n'.format(self.queue_name, id))
+        response = self.connection.read_until('END')[:-3]
         if not response == 'OK':
             print 'There is no source with the given id'
+
+    def flush(self):
+        for track_id in self.get_queue():
+            self.remove(track_id)
 
     def move(self, id, position):
         """
         """
-
-
-class ServerCommandsWrapper():
-    connection = CONNECTION
-    self.queue = QueueCommandWrapper(connection)
-
