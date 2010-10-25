@@ -3,6 +3,7 @@ import subprocess
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file
 from django.conf import settings
 from time import sleep
+from datetime import datetime
 
 def start_radio():
     agent = LiquidsoapAgent()
@@ -122,21 +123,26 @@ class RadioQueue(QueueCommandWrapper):
 
 class RadioSource(object):
 
-    def __init__(self, radio_queue):
+    def __init__(self, radio_queue, planning_element):
         self.queue = radio_queue
+        self.planning_element = planning_element
+        self.audiosource = planning_element.source
 
     def set_active(self):
         self.queue.flush()
 
 class ProgramSource(RadioSource):
 
-    def __init__(self, radio_queue, planning_element):
-        super(ProgramSource, self).__init__(radio_queue)
-        self.planning_element = planning_element
-        self.audiosource = planning_element.source
-
     def set_active(self):
         super(ProgramSource, self).set_active()
         for audiofile in self.audiosource.sorted_audiofiles():
             radio_queue.push(audiofile)
 
+class BackSource(RadioSource):
+
+    def set_active(self):
+        super(BackSource, self).set_active()
+        audiofiles = self.audiosource.sorted_audiofiles()
+        now = datetime.now()
+        time_end = self.planning_element.time_end
+        while now.time() < 
