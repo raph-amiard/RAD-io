@@ -2,8 +2,16 @@ import telnetlib
 import subprocess
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file
 from django.conf import settings
+from time import sleep
 
-class LiquidsoapAgent():
+def start_radio():
+    agent = LiquidsoapAgent()
+    agent.start()
+    sleep(1)
+    agent.connect()
+    return agent
+
+class LiquidsoapAgent(object):
     status = "stopped"
 
     def __init__(self):
@@ -18,14 +26,14 @@ class LiquidsoapAgent():
     def connect(self):
         if self.status == "started":
             self.connection = telnetlib.Telnet('localhost', 1234, 1000)
-            self.queue = QueueCommandWrapper(self.connection, settings.LIQUIDSOAP_QUEUE_NAME)
+            self.queue = RadioQueue(self.connection, settings.LIQUIDSOAP_QUEUE_NAME)
 
     def stop(self):
         if self.liquidsoap_process:
             self.liquidsoap_process.kill()
             self.status = "stopped"
 
-class QueueCommandWrapper():
+class QueueCommandWrapper(object):
     queue_size = 0
 
     def __init__(self, connection, queue_name):
@@ -69,6 +77,14 @@ class QueueCommandWrapper():
         response = self.connection.read_until('END')[:-3]
         return [int(t) for t in response.split(' ')]
 
+    def get_secondary_queue(self):
+        """
+        Returns a list of the ids currently queued
+        """
+        self.make_command('{0}.secondary_queue\n'.format(self.queue_name))
+        response = self.connection.read_until('END')[:-3]
+        return [int(t) for t in response.split(' ')]
+
     def remove(self, id):
         """
         Remove the source with given id
@@ -79,9 +95,48 @@ class QueueCommandWrapper():
             print 'There is no source with the given id'
 
     def flush(self):
-        for track_id in self.get_queue():
+        for track_id in self.get_secondary_queue():
             self.remove(track_id)
 
     def move(self, id, position):
         """
         """
+
+class RadioQueue(QueueCommandWrapper):
+
+    queue_list = []
+    audiofiles = {}
+
+    def __insert__(self, position, audiofile):
+        id = super(RadioQueue, self).insert(position, audiofile.file.path)
+
+    def push(self, audiofile):
+        id = super(RadioQueue, self).push(audiofile.file.path)
+        queue_list = self.get_queue()
+
+        if id in self.queue_list: 
+            self.audiofiles[id] = audiofile
+            return True
+        else:
+            return False
+
+class RadioSource(object):
+
+    def __init__(self, radio_queue):
+        self.queue = radio_queue
+
+    def set_active(self):
+        self.queue.flush()
+
+class ProgramSource(RadioSource):
+
+    def __init__(self, radio_queue, planning_element):
+        super(ProgramSource, self).__init__(radio_queue)
+        self.planning_element = planning_element
+        self.audiosource = planning_element.source
+
+    def set_active(self):
+        super(ProgramSource, self).set_active()
+        for audiofile in self.audiosource.sorted_audiofiles():
+            radio_queue.push(audiofile)
+

@@ -123,10 +123,13 @@ class AudioSource(AudioModel):
         d = super(AudioSource, self).to_dict(**kwargs)
         d.update({'form_url':self.form_url()})
         if with_audiofiles:
-            d.update({'sorted_audiofiles':self.sorted_audiofiles()})
+            d.update({'sorted_audiofiles':self.sorted_audiofiles_dict()})
         return d
 
     def sorted_audiofiles(self):
+        return [s.audiofile for s in self.sourceelement_set.order_by('position')]
+
+    def sorted_audiofiles_dict(self):
         return [dict_union(s.audiofile.to_dict(), source_element_id=s.id)
                 for s in self.sourceelement_set.order_by('position')]
         

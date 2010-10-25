@@ -4,10 +4,10 @@ import logging
 
 CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
-PROJECT_PATH = '/home/raph/Projects/rzz_website_new/'
+PROJECT_PATH = '/home/raph/Projects/django_rzz/'
 
 LOG_PATH = os.path.join(PROJECT_PATH, 'log/')
-LOG_FILENAME = os.path.join(PROJECT_PATH, 'logging.out')
+LOG_FILENAME = os.path.join(LOG_PATH, 'logging.out')
 logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
 DEBUG = True
@@ -99,7 +99,7 @@ INSTALLED_APPS = (
 )
 
 ICECAST_HOST = "localhost"
-ICECAST_PORT = 8100
+ICECAST_PORT = 8150
 ICECAST_PWD = "zero"
 
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
@@ -109,7 +109,7 @@ LIQUIDSOAP_WORKING_DIRECTORY = os.path.join(PROJECT_PATH, "liquidsoap/")
 LIQUIDSOAP_BIN = "liquidsoap"
 
 RADIO_OUTPUTS = [
-    { 'format':'ogg', 'bitrate':128 },
+    { 'format':'ogg', 'quality':8.0 },
     { 'format':'mp3', 'bitrate':128 }
 ]
 RADIO_MOUNT_NAME = "zero"
