@@ -1,4 +1,5 @@
 from django.conf import settings
+from random import shuffle
 
 EXTENSIONS_TO_FORMATS = {
     "ogg":"vorbis",
@@ -71,3 +72,17 @@ def generate_script(mount_point_name, outputs):
 
     return base_string
 
+
+class RandomAudioSourceWrapper(object):
+    audiofiles = []
+
+    def __init__(self, audiosource):
+        self.audiofiles = audiosource.sorted_audiofiles()
+        self.shuffled_audiofiles = list(self.audiofiles)
+        shuffle(self.shuffled_audiofiles)
+
+    def get_next_random_audiofile(self):
+        if not self.shuffled_audiofiles:
+            self.shuffled_audiofiles = list(self.audiofiles)
+            shuffle(self.shuffled_audiofiles)
+        return self.shuffled_audiofiles.pop()

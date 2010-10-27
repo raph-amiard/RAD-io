@@ -10,10 +10,11 @@ from django.shortcuts import get_object_or_404
 
 from rzz.artists.models import Artist
 from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list, Planning
-from rzz.audiosources.forms import AudioFileForm, EditAudioFileForm
+from rzz.audiosources.forms import EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
 from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource, remove_tags_from_model
+from rzz.utils.file import get_mp3_metadata
 
 @staff_member_required
 def create_planning(request):
@@ -25,7 +26,7 @@ def create_planning(request):
     planning.save()
     planning.add_elements(planning_data['planning_elements'])
     add_tags_to_model(planning_data['tags'], planning)
-    
+
     return HttpResponse()
 
 def edit_planning(request, planning_id):
@@ -67,16 +68,15 @@ def create_audio_source(request):
 
         add_audiofiles_to_audiosource(playlist_tuples, audio_source)
         return JSONResponse({
-            'status':'success', 
-            'action':'creation', 
+            'status':'success',
+            'action':'creation',
             'audiosource':audio_source.to_dict()
         })
 
     return JSONResponse({
-        'audiofileform': AudioFileForm().as_p(), 
-        'action': 'creation', 
-        'tag_list': tag_list(), 
-        'title': 'Creation d''une nouvelle playlist', 
+        'action': 'creation',
+        'tag_list': tag_list(),
+        'title': 'Creation d''une nouvelle playlist',
         'form_url': reverse('create-audio-source')
     })
 
@@ -93,8 +93,8 @@ def edit_audio_source(request, audiosource_id):
         # Save to be able to add audiofiles to source
         audio_source.save()
 
-        playlist_tuples = [(int(key.split('_')[-1]), int(val)) 
-                           for key, val in request.POST.items() 
+        playlist_tuples = [(int(key.split('_')[-1]), int(val))
+                           for key, val in request.POST.items()
                            if key.startswith('source_element_')]
 
         to_delete_tags = [val for key, val in request.POST.items()
@@ -103,17 +103,16 @@ def edit_audio_source(request, audiosource_id):
         remove_tags_from_model(audio_source, to_delete_tags)
         add_audiofiles_to_audiosource(playlist_tuples, audio_source)
         return JSONResponse({
-            'status':'success', 
-            'action':'edition', 
+            'status':'success',
+            'action':'edition',
             'audiosource':audio_source.to_dict()
         })
 
     return JSONResponse({
-        'audiofileform':AudioFileForm().as_p(), 
-        'action':'edition', 
-        'tag_list':tag_list(), 
+        'action':'edition',
+        'tag_list':tag_list(),
         'title': "Edition de la playlist %s" % audio_source.title,
-        'audiosource':audio_source.to_dict(with_audiofiles=True, with_tags=True), 
+        'audiosource':audio_source.to_dict(with_audiofiles=True, with_tags=True),
         'form_url': reverse('edit-audio-source', args=[audiosource_id])
     })
 
@@ -121,21 +120,27 @@ def edit_audio_source(request, audiosource_id):
 def create_audio_file(request):
     """
     AJAX
-    POST View for creation of audio files 
+    POST View for creation of audio files
     Returns a json representation of the audiofile
     """
     #TODO: Add error handling
     if request.method == 'POST':
-        form = AudioFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            audiofile = form.save()
-            return JSONResponse({
-                'audiofile':audiofile.to_dict(), 
-                'status':'ok'
-                }, mimetype=False)
-        else:
-            return JSONResponse(dict(form.errors.items() + [('status', 'error')]),
-                                mimetype=False)
+        files = request.FILES.getlist('file')
+        print files
+        af_list = []
+
+        for file in files:
+            af = AudioFile()
+            path = file.temporary_file_path()
+            af.artist, af.title, af.length = get_mp3_metadata(path)
+            af.file = file
+            af.save()
+            af_list.append(af.to_dict())
+
+        return JSONResponse({
+            'audiofiles':af_list,
+            'status':'ok'
+            }, mimetype=False)
 
 def audio_models_list(request,audiomodel_klass, page):
     """

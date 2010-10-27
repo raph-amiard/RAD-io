@@ -595,11 +595,13 @@ AudioFileForm = (function() {
         return true;
       }, this),
       success: __bind(function(response, status_text, form) {
+        console.log(response);
+        console.log(response.audiofiles);
         clearInterval(this.interval_id);
         this.progress_bar.hide();
         this.ui.remove();
-        (typeof opts.success === "function" ? opts.success(response.audiofile) : undefined);
-        return response.status === "error" ? alert("Error with the file uploaded") : this.success_message(response.audiofile);
+        (typeof opts.success === "function" ? opts.success(response.audiofiles) : undefined);
+        return response.status === "error" ? alert("Error with the file uploaded") : this.success_message(response.audiofiles);
       }, this)
     });
     return this;
@@ -622,8 +624,14 @@ AudioFileForm.prototype.update_progress_info = function() {
     }, this));
   }, this);
 };
-AudioFileForm.prototype.success_message = function(af) {
-  return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été ajouté avec succès");
+AudioFileForm.prototype.success_message = function(audiofiles) {
+  var _i, _len, _result, af;
+  _result = [];
+  for (_i = 0, _len = audiofiles.length; _i < _len; _i++) {
+    af = audiofiles[_i];
+    _result.push(post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été ajouté avec succès"));
+  }
+  return _result;
 };
 PlaylistElement = (function() {
   function PlaylistElement(audiofile, container, fresh) {
@@ -740,19 +748,30 @@ MainComponent = (function() {
 __extends(MainComponent, AppComponent);
 PlaylistComponent = (function() {
   function PlaylistComponent(json) {
-    var _i, _len, _ref, audiofile, audiofile_form;
+    var _i, _len, _ref, audiofile, gen_audiofile_form;
     PlaylistComponent.__super__.constructor.call(this, {
       template: "audiosource_base",
       context: json
     });
     this.init_components();
     this.action = json.action;
-    audiofile_form = new AudioFileForm({
-      success: __bind(function(audiofile) {
-        return this.tracklist.append(audiofile, true);
-      }, this)
-    });
-    this.fields.file_forms.append(audiofile_form.ui);
+    gen_audiofile_form = __bind(function() {
+      return new AudioFileForm({
+        beforeSubmit: __bind(function() {
+          return this.fields.file_forms.append(gen_audiofile_form().ui);
+        }, this),
+        success: __bind(function(audiofiles) {
+          var _i, _len, _result, audiofile;
+          _result = [];
+          for (_i = 0, _len = audiofiles.length; _i < _len; _i++) {
+            audiofile = audiofiles[_i];
+            _result.push(this.tracklist.append(audiofile, true));
+          }
+          return _result;
+        }, this)
+      });
+    }, this);
+    this.fields.file_forms.append(gen_audiofile_form().ui);
     this.inputs.tags.autocomplete(multicomplete_params(json.tag_list));
     this.inputs.tags.unbind('blur.autocomplete');
     if (this.action === "edition") {
@@ -905,6 +924,7 @@ PlanningComponent.prototype.add_grid = function() {
             6: 'hour'
           }[i] || 'tenth';
           content = i === 1 ? ("" + (format_number(h, 2)) + "h00") : "";
+          console.log(div);
           gridiv = div(content, {
             "class": ("grid_time grid_" + div_class)
           });

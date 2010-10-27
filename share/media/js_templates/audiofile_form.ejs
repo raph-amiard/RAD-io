@@ -1,7 +1,7 @@
-<form class="audiofileform" action="/audiosources/json/create-audio-file?X-Progress-ID=<%= uuid %>" enctype="multipart/form-data" method="post">
+<form class="audiofileform" action="/audiosources/json/create-audio-file?X-Progress-ID=<%= uuid %>" enctype="multipart/form-data" method="post" >
   <p>
     <label for="id_file">File:</label> 
-    <input type="file" name="file" id="id_file" />
+    <input type="file" name="file" id="id_file" multiple=""/>
   </p>
   <input type="Submit" value="Envoyer" />
   <div class="progress_bar"></div>

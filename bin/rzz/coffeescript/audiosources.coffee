@@ -457,14 +457,16 @@ class AudioFileForm extends TemplateComponent
                 return true
 
             success: (response, status_text, form) =>
+                console.log response
+                console.log response.audiofiles
                 clearInterval @interval_id
                 @progress_bar.hide()
                 @ui.remove()
-                opts.success?(response.audiofile)
+                opts.success?(response.audiofiles)
                 if response.status == "error"
                     alert("Error with the file uploaded")
                 else
-                    @success_message response.audiofile
+                    @success_message response.audiofiles
 
     update_progress_info: ->
         =>
@@ -473,8 +475,9 @@ class AudioFileForm extends TemplateComponent
                     progress = parseInt(data.received) / parseInt(data.size)
                     @progress_bar.progressbar "option", "value", progress * 100
 
-    success_message: (af) ->
-        post_message "Le morceau #{af.artist} - #{af.title} a été ajouté avec succès"
+    success_message: (audiofiles) ->
+        for af in audiofiles
+            post_message "Le morceau #{af.artist} - #{af.title} a été ajouté avec succès"
 
 
 class PlaylistElement extends Audiomodel
@@ -588,12 +591,16 @@ class PlaylistComponent extends AppComponent
         @action = json.action
 
         # Add a form for audio file upload
-        audiofile_form = new AudioFileForm {
-            success: (audiofile) =>
-                @tracklist.append audiofile, yes
-        }
+        gen_audiofile_form = =>
+            return new AudioFileForm {
+                beforeSubmit: () =>
+                    @fields.file_forms.append gen_audiofile_form().ui
+                success: (audiofiles) =>
+                    for audiofile in audiofiles
+                        @tracklist.append audiofile, yes
+            }
 
-        @fields.file_forms.append audiofile_form.ui
+        @fields.file_forms.append gen_audiofile_form().ui
 
         @inputs.tags.autocomplete(multicomplete_params json.tag_list)
         @inputs.tags.unbind 'blur.autocomplete'
@@ -688,6 +695,7 @@ class PlanningComponent extends AppComponent
             for i in [1..6]
                 div_class = {3:'half',6:'hour'}[i] or 'tenth'
                 content = if i == 1 then "#{format_number h, 2}h00" else ""
+                console.log div
                 gridiv = div content, class:"grid_time grid_#{div_class}"
                 @board.append(gridiv)
 

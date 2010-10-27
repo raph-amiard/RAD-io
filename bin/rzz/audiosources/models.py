@@ -84,7 +84,7 @@ class AudioFile(AudioModel):
     artist = models.CharField('Audiofile artist', max_length=200)
     rzz_artist = models.ForeignKey(Artist, null=True)
     file = models.FileField(upload_to=audio_file_name)
-    
+
     def __unicode__(self):
         return u'%s - %s' % (self.artist, self.title)
 
@@ -112,9 +112,9 @@ class AudioSource(AudioModel):
     title = models.CharField('AudioSource title', max_length=400)
     rzz_artist = models.ForeignKey(Artist, null=True)
     audio_files = models.ManyToManyField(AudioFile, through='SourceElement')
-    
+
     def __unicode__(self):
-        return self.title 
+        return self.title
 
     def form_url(self):
         return reverse('edit-audio-source',args=[self.id])
@@ -132,7 +132,7 @@ class AudioSource(AudioModel):
     def sorted_audiofiles_dict(self):
         return [dict_union(s.audiofile.to_dict(), source_element_id=s.id)
                 for s in self.sourceelement_set.order_by('position')]
-        
+
 
 class SourceElement(models.Model):
     position = models.IntegerField()

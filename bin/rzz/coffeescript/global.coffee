@@ -107,19 +107,19 @@ make_xps_menu = (opts) ->
     text = tag("div", txt)
 
     title = tag("h2", opts["title"])
-    div = tag("div", '', class:"xps_menu")
-    div.attr('id', id)
+    mdiv = tag("div", '', class:"xps_menu")
+    mdiv.attr('id', id)
 
     # If the menu is supposed to have a validate button, add it to the actions
     if opts["show_validate"]
         val_text = opts["validate_text"]
         val_func = (e) ->
-            opts["validate_action"].apply($(div), [e])
+            opts["validate_action"].apply($(mdiv), [e])
             $("##{id}").dialog("close").remove()
         opts.actions[val_text] = val_func
 
     return {
-        div:div.append(title).append(text).attr "id", id
+        div:mdiv.append(title).append(text).attr "id", id
         buttons: opts.actions
         on_show: opts.on_show
     }

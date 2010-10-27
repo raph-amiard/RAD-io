@@ -142,7 +142,7 @@ d$ = function(selector) {
   return obj;
 };
 make_xps_menu = function(opts) {
-  var _i, _len, _result, defaults, id, p, text, title, txt, val_func, val_text;
+  var _i, _len, _result, defaults, id, mdiv, p, text, title, txt, val_func, val_text;
   /*
   Creates a menu div from an opts object
   The menu div is meant to be dialogified with jquery.ui and the show_menu function
@@ -170,20 +170,20 @@ make_xps_menu = function(opts) {
   }
   text = tag("div", txt);
   title = tag("h2", opts["title"]);
-  div = tag("div", '', {
+  mdiv = tag("div", '', {
     "class": "xps_menu"
   });
-  div.attr('id', id);
+  mdiv.attr('id', id);
   if (opts["show_validate"]) {
     val_text = opts["validate_text"];
     val_func = function(e) {
-      opts["validate_action"].apply($(div), [e]);
+      opts["validate_action"].apply($(mdiv), [e]);
       return $("#" + id).dialog("close").remove();
     };
     opts.actions[val_text] = val_func;
   }
   return {
-    div: div.append(title).append(text).attr("id", id),
+    div: mdiv.append(title).append(text).attr("id", id),
     buttons: opts.actions,
     on_show: opts.on_show
   };

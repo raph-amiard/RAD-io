@@ -2,7 +2,6 @@ from django.core.urlresolvers import reverse
 from django.conf.urls.defaults import *
 
 import rzz.audiosources.views as views
-from rzz.audiosources.forms import AudioFileForm
 from rzz.audiosources.models import AudioFile, TagCategory, AudioSource, SourceElement, Planning
 from rzz.utils.views import delete_model_JSON
 

@@ -4,7 +4,7 @@ import logging
 
 CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
-PROJECT_PATH = '/home/raph/Projects/django_rzz/'
+PROJECT_PATH = '/home/raph/Projects/rzz_website_new/'
 
 LOG_PATH = os.path.join(PROJECT_PATH, 'log/')
 LOG_FILENAME = os.path.join(LOG_PATH, 'logging.out')
@@ -30,11 +30,11 @@ DATABASE_PORT = '5432'
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'Europe/Paris'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr-fr'
 
 SITE_ID = 1
 
@@ -84,6 +84,7 @@ TEMPLATE_DIRS = (
 )
 
 FILE_UPLOAD_HANDLERS = ('rzz.utils.handlers.UploadProgressCachedHandler', ) + global_settings.FILE_UPLOAD_HANDLERS
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10
 
 INSTALLED_APPS = (
 	'rzz.news',
@@ -99,7 +100,7 @@ INSTALLED_APPS = (
 )
 
 ICECAST_HOST = "localhost"
-ICECAST_PORT = 8150
+ICECAST_PORT = 8100
 ICECAST_PWD = "zero"
 
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
@@ -113,3 +114,4 @@ RADIO_OUTPUTS = [
     { 'format':'mp3', 'bitrate':128 }
 ]
 RADIO_MOUNT_NAME = "zero"
+RADIO_JINGLES_FREQUENCY = 5 * 60
