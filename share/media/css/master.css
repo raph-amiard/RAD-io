@@ -448,7 +448,7 @@ input[type=text] {
   bottom:0;
   cursor:s-resize;
 }
-.type_button {
+.delete_button {
   position:absolute;
   bottom:10px;
   right:10px;
@@ -456,11 +456,11 @@ input[type=text] {
   color:#947;
 }
 
-.type_button:hover {
+.delete_button:hover {
   background-color:#F9D;
 }
 
-.type_button:active {
+.delete_button:active {
   background-color:#FBF;
 }
 

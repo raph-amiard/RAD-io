@@ -150,7 +150,6 @@ Widgets.footer_actions =
             global:
                 "Créer une playlist":
                     action: ->
-                        console.log "INTO ACTION Créer une playlist"
                         $.getJSON "/audiosources/json/create-audio-source", (data) ->
                             Application.load "playlist", data
             selection:
@@ -162,7 +161,6 @@ Widgets.footer_actions =
             global:
                 "Creer un planning":
                     action: ->
-                        console.log "INTO ACTION Créer une playlist"
                         Application.load "planning"
             selection: null
 
@@ -457,8 +455,6 @@ class AudioFileForm extends TemplateComponent
                 return true
 
             success: (response, status_text, form) =>
-                console.log response
-                console.log response.audiofiles
                 clearInterval @interval_id
                 @progress_bar.hide()
                 @ui.remove()
@@ -695,7 +691,6 @@ class PlanningComponent extends AppComponent
             for i in [1..6]
                 div_class = {3:'half',6:'hour'}[i] or 'tenth'
                 content = if i == 1 then "#{format_number h, 2}h00" else ""
-                console.log div
                 gridiv = div content, class:"grid_time grid_#{div_class}"
                 @board.append(gridiv)
 
@@ -758,6 +753,10 @@ class PlanningComponent extends AppComponent
         planning_element = new PlanningElement @, json_model
         @planning_elements.add planning_element
 
+    delete_element: (planning_element) ->
+        @planning_elements.remove planning_element
+        planning_element.ui.remove()
+
     to_json: ->
         pl_els = el.serialize() for el in @planning_elements.values()
         to_stringify = 
@@ -773,6 +772,7 @@ class PlanningElement extends Audiomodel
 
     constructor: (planning, json_model) ->
         super template: "planning_element", context: json_model
+        @string_id = "planning_element_#{gen_uuid()}"
 
         @planning = planning
         @type = "single"
@@ -795,7 +795,6 @@ class PlanningElement extends Audiomodel
                 @ui.height @audiosource.length / 60
 
             if @time_end.hour == 0 then @time_end.hour = 24
-            console.log @time_end.hour
             @set_height_from_time_end()
             @make_continuous()
 
@@ -804,8 +803,8 @@ class PlanningElement extends Audiomodel
     init_components: ->
         @ui_head = @ui.find('.planning_element_head')
         @ui_foot = @ui.find('.planning_element_foot')
-        @switch_button = @ui.find('.type_button')
-        @switch_button.button()
+        @delete_button = @ui.find('.delete_button')
+        @delete_button.button()
 
     edit_properties: -> =>
         form = div ""
@@ -876,6 +875,9 @@ class PlanningElement extends Audiomodel
             difference = step(dd.deltaY, 10)
             @set_time_end_from_height orig_height + difference
 
+        @delete_button.click (e, dd) =>
+            @planning.delete_element @
+
     set_day_from_column: (column) ->
         @day = column
         @set_column_from_day()
@@ -910,10 +912,9 @@ class PlanningElement extends Audiomodel
         o.audiosource_id = @audiosource.id
         return o
 
-
     formatted_time: -> "#{format_number @time_start.hour, 2}h#{format_number @time_start.minute, 2}"
 
-    toString: -> "planning_element_#{gen_uuid()}"
+    toString: -> @string_id
 
 
 class GridPositionner

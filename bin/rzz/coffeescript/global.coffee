@@ -41,7 +41,10 @@ class Set
         for i, el of tab
             @map[el] = el
     add: (el) -> @map[el] = el
-    remove: (el) -> delete @map[el]
+
+    remove: (el) ->
+        delete @map[el]
+
     has: (el) -> @map[el]?
     values: () -> return value for key,value of @map
 

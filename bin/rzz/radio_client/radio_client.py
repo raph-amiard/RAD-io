@@ -2,7 +2,7 @@ import telnetlib
 import subprocess
 from time import sleep
 from datetime import datetime, timedelta
-from threading import Thread
+from threading import Thread, Timer
 
 from django.conf import settings
 
@@ -10,17 +10,21 @@ from rzz.radio_client.liquidsoap_utils import create_temp_script_file, RandomAud
 from rzz.audiosources.models import Planning, PlanningElement
 from rzz.utils.cron import CronTab, Event
 
+def connection():
+    return telnetlib.Telnet('localhost', 1234, 1000)
+
+
 def start_radio():
     agent = LiquidsoapAgent()
     agent.start()
     sleep(1)
-    #agent.connect()
-    #scheduler = Scheduler(Planning.objects.get(name="AAAAA"), agent.queue)
-    #scheduler.start()
+    scheduler = Scheduler(Planning.objects.get(name="AAAAA"))
+    scheduler.start()
     return agent
 
 class LiquidsoapAgent(object):
     status = "stopped"
+    queues = {}
 
     def __init__(self):
         self.script = create_temp_script_file(settings.RADIO_MOUNT_NAME, settings.RADIO_OUTPUTS)
@@ -31,11 +35,6 @@ class LiquidsoapAgent(object):
             self.liquidsoap_process = subprocess.Popen([settings.LIQUIDSOAP_BIN, "-t", self.script.name])
             self.status = "started"
 
-    def connect(self):
-        if self.status == "started":
-            self.connection = telnetlib.Telnet('localhost', 1234, 1000)
-            self.queue = RadioQueue(self.connection, settings.LIQUIDSOAP_QUEUE_NAME)
-
     def stop(self):
         if self.liquidsoap_process:
             self.liquidsoap_process.kill()
@@ -45,8 +44,8 @@ class QueueCommandWrapper(object):
     queue_size = 0
     queue_list = []
 
-    def __init__(self, connection, queue_name):
-        self.connection = connection
+    def __init__(self, queue_name):
+        self.connection = connection()
         self.queue_name = queue_name
 
     def make_command(self, command_str):
@@ -148,11 +147,10 @@ class RadioQueue(QueueCommandWrapper):
 
 class RadioSource(object):
 
-    def __init__(self, scheduler, planning_element):
-        self.queue = scheduler.radio_queue
+    def __init__(self, queue, planning_element):
+        self.queue = queue
         self.planning_element = planning_element
         self.audiosource = planning_element.source
-        self.scheduler = scheduler
 
     def refresh(self):
         self.planning_element = PlanningElement.objects.get(id=self.planning_element.id)
@@ -160,35 +158,17 @@ class RadioSource(object):
 
     def set_active(self):
         self.refresh()
+        print self.queue.get_secondary_queue()
         self.queue.flush()
 
 
 class ProgramSource(RadioSource):
 
-    def set_inactive(self):
-        print u"Program source {0} set inactive".format(self.audiosource.title)
-        while self.queue.get_secondary_queue():
-            sleep(60)
-        if self.scheduler.active_backsource:
-            self.scheduler.active_backsource.set_active()
-        self.scheduler.active_programsource = None
-
     def set_active(self):
-
         print u"Program source {0} set active".format(self.audiosource.title)
         super(ProgramSource, self).set_active()
-
-        self.scheduler.active_programsource = self
-        time = 0
-
         for audiofile in self.audiosource.sorted_audiofiles():
             self.queue.push(audiofile)
-            time += audiofile.length
-
-        if self.scheduler.active_jinglesource:
-            self.scheduler.active_jinglesource.insert_jingles()
-
-        Thread(target=self.set_inactive).start()
 
 
 class BackSource(RadioSource):
@@ -200,66 +180,42 @@ class BackSource(RadioSource):
         now = datetime.now()
         time_end = self.planning_element.time_end
 
-        self.scheduler.active_backsource = self
-        print "TIME_END LOL : {0}".format(time_end)
-
         while now.time() < time_end and now.weekday() == self.planning_element.day:
             audiofile = audiofiles.get_next_random_audiofile()
             self.queue.push(audiofile)
             now = now + timedelta(seconds=audiofile.length)
 
-        if self.scheduler.active_jinglesource:
-            self.scheduler.active_jinglesource.insert_jingles()
-
-    def set_inactive(self):
-        print u"Back source {0} set inactive".format(self.audiosource.title)
-        self.scheduler.active_backsource = None
-
 
 class JingleSource(RadioSource):
 
+    CHUNK_SIZE = 10
+    CALLBACK_TIME = 60
+
     def set_active(self):
         print u"Jingle source {0} set active".format(self.audiosource.title)
-        self.scheduler.active_jinglesource = self
+        super(JingleSource, self).set_active()
 
-    def set_inactive(self):
-        print u"Jingle source {0} set inactive".format(self.audiosource.title)
-        self.scheduler.active_jinglesource = None
+        self.audiofiles = RandomAudioSourceWrapper(self.audiosource)
+        Thread(target=self.insert_jingles).start()
 
     def insert_jingles(self):
+        time_current = datetime.now()
 
-        self.refresh()
-        audiofiles = RandomAudioSourceWrapper(self.audiosource)
-        frequency = settings.RADIO_JINGLES_FREQUENCY
-        limit = 0
-        queue_list = self.queue.get_queue()
-        time_end = self.planning_element.time_end
-        now = datetime.now()
-        jingle_index = 0
+        while time_current.time() < self.planning_element.time_end:
+            print "INSERT JINGLES CALLBACK"
+            time_current = datetime.now()
 
-        for i in range(0, len(queue_list) -1):
+            if len(self.queue.get_secondary_queue()) <= 1:
+                print "JINGLES QUEUE EMPTY"
+                for i in range(0, self.CHUNK_SIZE):
+                    self.queue.push(self.audiofiles.get_next_random_audiofile())
 
-            if now.time() > time_end:
-                break
+            sleep(self.CALLBACK_TIME)
 
-            audiofile = self.queue.audiofiles[queue_list[i]]
-            limit += audiofile.length
-            now = now + timedelta(seconds=audiofile.length)
-
-            if limit > frequency:
-                limit = 0
-                jingle = audiofiles.get_next_random_audiofile()
-                self.queue.insert(jingle_index+1, jingle)
-                jingle_index += 1
-
-            jingle_index += 1
+        self.queue.flush()
 
 
 class Scheduler(object):
-
-    active_backsource = None
-    active_programsource = None
-    active_jinglesource = None
 
     TYPES_TO_CLASSES = {
         "single": ProgramSource,
@@ -267,20 +223,32 @@ class Scheduler(object):
         "jingle": JingleSource
     }
 
-    def __init__(self, planning, radio_queue):
+    def __init__(self, planning):
         self.planning = planning
-        self.radio_queue = radio_queue
+        self.queues = {}
+        self.queues["single"] = RadioQueue(settings.LIQUIDSOAP_PROGRAM_QUEUE_NAME)
+        self.queues["continuous"] = RadioQueue(settings.LIQUIDSOAP_BACK_QUEUE_NAME)
+        self.queues["jingle"] = RadioQueue(settings.LIQUIDSOAP_JINGLES_QUEUE_NAME)
 
     def start(self):
-        time_now = datetime.now().time()
+
+        now = datetime.now()
+        time_now = now.time()
         self.cron_tab = CronTab()
+        now_jingle_source = None
+        now_back_source = None
+
         for pe in self.planning.planningelement_set.all():
-            source = self.TYPES_TO_CLASSES[pe.type](self, pe)
+
+            source = self.TYPES_TO_CLASSES[pe.type](self.queues[pe.type], pe)
+
             print "TREATING SOURCE {0}".format(pe.source.title.encode('utf8','replace'))
             print "TYPE : {0}".format(pe.type)
             print "TIME_START : {0}".format(pe.time_start)
 
-            if pe.type in ["continuous", "jingle"] and pe.time_start < time_now < pe.time_end:
+            if pe.type in ["continuous", "jingle"] \
+                    and pe.time_start < time_now < pe.time_end \
+                    and pe.day == now.weekday():
                 print "PUTTING ON PLAY NOW"
                 if pe.type == "jingle":
                     now_jingle_source = source
@@ -292,18 +260,11 @@ class Scheduler(object):
                 self.cron_tab.add_event(Event(
                     source.set_active, min=pe.time_start.minute, hour=pe.time_start.hour, dow=pe.day))
 
-            if pe.type in ["continuous", "jingle"]:
-                print "TIME_END : {0}".format(pe.time_end)
-                print "ADDING CRON JOB FOR TIME END"
-                self.cron_tab.add_event(Event(
-                    source.set_inactive,
-                    min=pe.time_end.minute-1,
-                    hour=pe.time_end.hour,
-                    dow=pe.day
-                ))
             print "\n"
 
-        now_jingle_source.set_active()
-        now_back_source.set_active()
+        if now_jingle_source:
+            now_jingle_source.set_active()
+        if now_back_source:
+            now_back_source.set_active()
 
         self.cron_tab.run()

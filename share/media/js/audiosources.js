@@ -205,7 +205,6 @@ Widgets.footer_actions = {
       global: {
         "Créer une playlist": {
           action: function() {
-            console.log("INTO ACTION Créer une playlist");
             return $.getJSON("/audiosources/json/create-audio-source", function(data) {
               return Application.load("playlist", data);
             });
@@ -225,7 +224,6 @@ Widgets.footer_actions = {
       global: {
         "Creer un planning": {
           action: function() {
-            console.log("INTO ACTION Créer une playlist");
             return Application.load("planning");
           }
         }
@@ -595,8 +593,6 @@ AudioFileForm = (function() {
         return true;
       }, this),
       success: __bind(function(response, status_text, form) {
-        console.log(response);
-        console.log(response.audiofiles);
         clearInterval(this.interval_id);
         this.progress_bar.hide();
         this.ui.remove();
@@ -924,7 +920,6 @@ PlanningComponent.prototype.add_grid = function() {
             6: 'hour'
           }[i] || 'tenth';
           content = i === 1 ? ("" + (format_number(h, 2)) + "h00") : "";
-          console.log(div);
           gridiv = div(content, {
             "class": ("grid_time grid_" + div_class)
           });
@@ -978,6 +973,10 @@ PlanningComponent.prototype.create_element = function(json_model) {
   planning_element = new PlanningElement(this, json_model);
   return this.planning_elements.add(planning_element);
 };
+PlanningComponent.prototype.delete_element = function(planning_element) {
+  this.planning_elements.remove(planning_element);
+  return planning_element.ui.remove();
+};
 PlanningComponent.prototype.to_json = function() {
   var _i, _len, _ref, _result, el, pl_els, to_stringify;
   pl_els = (function() {
@@ -1004,6 +1003,7 @@ PlanningElement = (function() {
       template: "planning_element",
       context: json_model
     });
+    this.string_id = ("planning_element_" + (gen_uuid()));
     this.planning = planning;
     this.type = "single";
     $.extend(this, json_model);
@@ -1025,7 +1025,6 @@ PlanningElement = (function() {
       if (this.time_end.hour === 0) {
         this.time_end.hour = 24;
       }
-      console.log(this.time_end.hour);
       this.set_height_from_time_end();
       this.make_continuous();
     }
@@ -1038,8 +1037,8 @@ __extends(PlanningElement, Audiomodel);
 PlanningElement.prototype.init_components = function() {
   this.ui_head = this.ui.find('.planning_element_head');
   this.ui_foot = this.ui.find('.planning_element_foot');
-  this.switch_button = this.ui.find('.type_button');
-  return this.switch_button.button();
+  this.delete_button = this.ui.find('.delete_button');
+  return this.delete_button.button();
 };
 PlanningElement.prototype.edit_properties = function() {
   return __bind(function() {
@@ -1140,12 +1139,15 @@ PlanningElement.prototype.bind_events = function() {
     e.preventDefault();
     return (orig_height = this.ui.height());
   }, this));
-  return this.ui_foot.bind('drag', __bind(function(e, dd) {
+  this.ui_foot.bind('drag', __bind(function(e, dd) {
     var difference;
     e.stopPropagation();
     e.preventDefault();
     difference = step(dd.deltaY, 10);
     return this.set_time_end_from_height(orig_height + difference);
+  }, this));
+  return this.delete_button.click(__bind(function(e, dd) {
+    return this.planning.delete_element(this);
   }, this));
 };
 PlanningElement.prototype.set_day_from_column = function(column) {
@@ -1191,7 +1193,7 @@ PlanningElement.prototype.formatted_time = function() {
   return "" + (format_number(this.time_start.hour, 2)) + "h" + (format_number(this.time_start.minute, 2));
 };
 PlanningElement.prototype.toString = function() {
-  return "planning_element_" + (gen_uuid());
+  return this.string_id;
 };
 GridPositionner = (function() {
   function GridPositionner(tds) {

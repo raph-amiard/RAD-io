@@ -3,7 +3,7 @@ from random import shuffle
 
 EXTENSIONS_TO_FORMATS = {
     "ogg":"vorbis",
-    "mp3":"lame"
+    "mp3":"mp3"
 }
 
 EXTENSIONS_TO_PACKAGES = {
@@ -36,13 +36,19 @@ def generate_script(mount_point_name, outputs):
     base_string = """
         set("log.file.path", "{LOG_PATH}")
         set("server.telnet",true)
-        queue = request.equeue(id="{QUEUE_NAME}")
+        program_queue = request.equeue(id="{PROGRAM_QUEUE_NAME}")
+        back_queue = request.equeue(id="{BACK_QUEUE_NAME}")
+        jingles_queue = request.equeue(id="{JINGLES_QUEUE_NAME}")
+        timed_jingles = delay({JINGLES_FREQUENCY}., jingles_queue)
         security = single("{SECURITY}")
-        full = fallback(track_sensitive = false, [queue, security])
+        full = fallback(track_sensitive = false, [timed_jingles, program_queue, back_queue , security])
     """.format(
         LOG_PATH = settings.LIQUIDSOAP_LOG_PATH,
-        QUEUE_NAME = settings.LIQUIDSOAP_QUEUE_NAME,
-        SECURITY = settings.LIQUIDSOAP_SECURITY_AUDIOFILE
+        PROGRAM_QUEUE_NAME = settings.LIQUIDSOAP_PROGRAM_QUEUE_NAME,
+        BACK_QUEUE_NAME = settings.LIQUIDSOAP_BACK_QUEUE_NAME,
+        JINGLES_QUEUE_NAME = settings.LIQUIDSOAP_JINGLES_QUEUE_NAME,
+        SECURITY = settings.LIQUIDSOAP_SECURITY_AUDIOFILE,
+        JINGLES_FREQUENCY = settings.RADIO_JINGLES_FREQUENCY
     )
 
     for output in outputs:
@@ -53,11 +59,11 @@ def generate_script(mount_point_name, outputs):
         quality_string = "{0} = {1},\n\t\t".format(quality_param, quality) if quality else ""
 
         base_string += """
-        output.icecast.{STREAM_FORMAT}(
+        output.icecast(%{STREAM_FORMAT},
             host = "{HOST}",
             port = {PORT},
             password = "{PASSWORD}",
-            {QUALITY_STRING}mount = "{MOUNT_POINT_NAME}.{STREAM_EXTENSION}",
+            mount = "{MOUNT_POINT_NAME}.{FORMAT}",
             full
         )
         """.format(
@@ -66,8 +72,7 @@ def generate_script(mount_point_name, outputs):
             PORT = settings.ICECAST_PORT,
             PASSWORD = settings.ICECAST_PWD,
             MOUNT_POINT_NAME = mount_point_name,
-            STREAM_EXTENSION = format,
-            QUALITY_STRING = quality_string,
+            FORMAT = format,
         )
 
     return base_string

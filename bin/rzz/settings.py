@@ -97,6 +97,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'gunicorn',
 )
 
 ICECAST_HOST = "localhost"
@@ -104,7 +105,9 @@ ICECAST_PORT = 8100
 ICECAST_PWD = "zero"
 
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
-LIQUIDSOAP_QUEUE_NAME = "main_queue"
+LIQUIDSOAP_JINGLES_QUEUE_NAME = "jingles_queue"
+LIQUIDSOAP_BACK_QUEUE_NAME = "back_queue"
+LIQUIDSOAP_PROGRAM_QUEUE_NAME = "program_queue"
 LIQUIDSOAP_SECURITY_AUDIOFILE = os.path.join(PROJECT_PATH, "share/media/security.mp3")
 LIQUIDSOAP_WORKING_DIRECTORY = os.path.join(PROJECT_PATH, "liquidsoap/")
 LIQUIDSOAP_BIN = "liquidsoap"
