@@ -2,9 +2,25 @@ import os.path
 from django.conf import global_settings 
 import logging
 
-CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
+REQUIRED_KEYS = ["PROJECT_PATH", "ICECAST_HOST", "ICECAST_PORT", "ICECAST_PWD"]
 
-PROJECT_PATH = '/home/raph/Projects/rzz_website_new/'
+# Import local settings
+try:
+    import socket
+    host_name = socket.gethostname().replace('.', '_').replace('-','_')
+    exec "import host_settings.%s as host_settings" % host_name
+except ImportError, e:
+    raise e
+
+# Set the settings keys that are required
+try:
+    for key in REQUIRED_KEYS:
+        globals()[key] = getattr(host_settings, key)
+except AttributeError, e:
+    raise e
+
+
+CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
 LOG_PATH = os.path.join(PROJECT_PATH, 'log/')
 LOG_FILENAME = os.path.join(LOG_PATH, 'logging.out')
@@ -18,7 +34,7 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-DATABASE_ENGINE = 'postgresql_psycopg2' 
+DATABASE_ENGINE = 'postgresql_psycopg2'
 DATABASE_NAME = 'rzz'
 DATABASE_USER = 'rzz'
 DATABASE_PASSWORD = 'rzz'
@@ -100,10 +116,6 @@ INSTALLED_APPS = (
     'gunicorn',
 )
 
-ICECAST_HOST = "localhost"
-ICECAST_PORT = 8100
-ICECAST_PWD = "zero"
-
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
 LIQUIDSOAP_JINGLES_QUEUE_NAME = "jingles_queue"
 LIQUIDSOAP_BACK_QUEUE_NAME = "back_queue"
@@ -116,5 +128,16 @@ RADIO_OUTPUTS = [
     { 'format':'ogg', 'quality':8.0 },
     { 'format':'mp3', 'bitrate':128 }
 ]
+
 RADIO_MOUNT_NAME = "zero"
 RADIO_JINGLES_FREQUENCY = 5 * 60
+
+# Set every other key defined in host_settings
+# So you can redefine anything per host in the host_settings file
+for el_name in dir(host_settings):
+    if not(el_name in REQUIRED_KEYS) and not el_name.startswith('__'):
+        print el_name
+        # Get the element in the module
+        el = getattr(host_settings, el_name)
+        # Set a similar element in the current module
+        globals()[el_name] = el
