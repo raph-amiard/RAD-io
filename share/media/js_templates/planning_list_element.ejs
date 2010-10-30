@@ -1,9 +1,10 @@
-<li class="unselectable ui-widget-content audiomodel-box audiosource">
+<li class="unselectable ui-widget-content audiomodel-box audiosource <%= audiomodel.active ? "planning_active" : "" %> ">
   <input type="hidden" value="<%= audiomodel.id %>"/> 
   <p> <span class="audiosource_title"> <%= audiomodel.name %> </span> 
   </p>
-  <div class="planning_actions">
+  <div class="planning_actions ">
     <a class="planning_edit" href="<%= audiomodel.form_url %>">Edit</a>
+    <% if (!audiomodel.active) { %> <a class="planning_set_active" href="/audiosources/json/planning-set-active/<%= audiomodel.id %>">Set active</a> <% } %>
     <a class="audiomodel_delete" href="/audiosources/json/delete-audio-source/<%= audiomodel.id %>">Delete</a>
   </div>
 </li>

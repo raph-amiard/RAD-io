@@ -83,6 +83,7 @@ Widgets.text_selector =
 
 
 Widgets.audiomodels =
+
     container: d$ '#track_selector'
     models:
         audiofile: "Tracks"

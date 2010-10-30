@@ -17,6 +17,15 @@ from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosou
 from rzz.utils.file import get_mp3_metadata
 
 @staff_member_required
+def set_planning_active(request, planning_id):
+    """
+    Set the corresponding planning as active
+    """
+    planning = get_object_or_404(Planning, id=planning_id)
+    planning.set_active()
+    return HttpResponse()
+
+@staff_member_required
 def create_planning(request):
     """
     View for dynamic creation of a planning
@@ -197,7 +206,7 @@ def edit_audio_file(request, audiofile_id):
                                if not key.startswith('to_delete_tag')])
 
         form = EditAudioFileForm(remaining_dict)
-        
+
         if form.is_valid():
             artist = form.cleaned_data['artist']
             title = form.cleaned_data['title']

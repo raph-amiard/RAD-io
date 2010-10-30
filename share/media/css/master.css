@@ -479,3 +479,7 @@ input[type=text] {
   bottom:0;
   background-color:#FFF; 
 }
+
+#track_selector li.planning_active {
+  background-color: #C8B;
+}

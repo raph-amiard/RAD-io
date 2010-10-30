@@ -8,6 +8,7 @@ from rzz.utils.file import move_field_file, set_mp3_metadata
 from rzz.utils.jsonutils import instance_to_dict
 from rzz.utils.collections import dict_union
 from rzz.audiosources.utils import append_to_key
+from rzz.audiosources.manager import PlanningManager
 from rzz.artists.models import Artist
 
 def tag_list():
@@ -139,10 +140,16 @@ class SourceElement(models.Model):
     audiofile = models.ForeignKey(AudioFile)
     audiosource = models.ForeignKey(AudioSource)
 
-
 class Planning(TaggedModel):
     name = models.CharField('Name of the planning', max_length=100)
     planning_elements = models.ManyToManyField(AudioSource, through='PlanningElement')
+    active = models.BooleanField()
+    objects = PlanningManager()
+
+    def set_active(self):
+        self._default_manager.all().update(active=False)
+        self.active = True
+        self.save()
 
     def form_url(self):
         return reverse('edit-planning',args=[self.id])
@@ -178,6 +185,7 @@ class Planning(TaggedModel):
 
 
 class PlanningElement(models.Model):
+
     TYPES = (
         ('single', 'single'),
         ('continuous', 'continuous'),
