@@ -487,19 +487,30 @@ ListAudiomodel.prototype.bind_events = function() {
   if (this.type === "audiofile") {
     this.ui.find('.audiofile_edit').click(this.handle_audiofile_edit());
     return this.ui.find('.audiofile_play').click(handle_audiofile_play);
-  } else   return this.type === "audiosource" ? this.ui.find('.audiosource_edit').click(function(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    return $.get(this.href, function(json) {
-      return Application.load('playlist', json);
+  } else if (this.type === "audiosource") {
+    return this.ui.find('.audiosource_edit').click(function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      return $.get(this.href, function(json) {
+        return Application.load('playlist', json);
+      });
     });
-  }) : (this.type === "planning" ? this.ui.find('.planning_edit').click(function(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    return $.getJSON(this.href, function(json) {
-      return Application.load("planning", json);
+  } else if (this.type === "planning") {
+    this.ui.find('.planning_edit').click(function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      return $.getJSON(this.href, function(json) {
+        return Application.load("planning", json);
+      });
     });
-  }) : undefined);
+    return this.ui.find('.planning_set_active').click(function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      return $.getJSON(this.href, function(json) {
+        return Widgets.audiomodels.current_model === "planning" ? Widgets.audiomodels.load() : undefined;
+      });
+    });
+  }
 };
 TagsTable = (function() {
   function TagsTable(tags_by_category) {
