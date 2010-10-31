@@ -380,6 +380,13 @@ class ListAudiomodel extends Audiomodel
                 $.getJSON @href, (json) ->
                     Application.load "planning", json
 
+            @ui.find('.planning_set_active').click (e) ->
+                e.stopPropagation(); e.preventDefault()
+                $.getJSON @href, (json) ->
+                    if Widgets.audiomodels.current_model == "planning"
+                        Widgets.audiomodels.load()
+
+
 
 class TagsTable
     # Represents a tags table
