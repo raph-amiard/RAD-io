@@ -8,19 +8,11 @@
     {% block csslibs %}{% endblock %}
     {% block scripts %}{% endblock %}
     {% block css %}{% endblock %}
-    <link rel="stylesheet" href="{{ MEDIA_URL }}/css/master.css" type="text/css" media="screen" charset="utf-8"/>
   </head>
 
   <body>
     <div id="messages"></div>
-    <div id="modal_menu_hider"></div>
-    <div id="modal_menu">
-      <div id="modal_menu_titlebar">
-        <h4 id="modal_menu_title"></h4>
-        <button id="modal_menu_close">X</button>
-      </div>
-      <div id="modal_menu_content"></div>
-    </div>
+    {% block more_body %} {% endblock %}
     <div id="content">
       {% block content %}{% endblock %}
     </div>

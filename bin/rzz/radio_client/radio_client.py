@@ -8,17 +8,21 @@ from django.conf import settings
 
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file, RandomAudioSourceWrapper
 from rzz.audiosources.models import Planning, PlanningElement
+from rzz.playlist.models import PlaylistElement
 from rzz.utils.cron import CronTab, Event
 
-def connection():
-    return telnetlib.Telnet('localhost', 1234, 1000)
+# TODO : Find something better than a global to handle audiofiles
 
+audiofiles = {}
+
+def connection():
+    return telnetlib.Telnet(settings.LIQUIDSOAP_HOST, settings.LIQUIDSOAP_TELNET_PORT, 1000)
 
 def start_radio():
     agent = LiquidsoapAgent()
     agent.start()
     sleep(1)
-    scheduler = Scheduler(Planning.objects.get(name="AAAAA"))
+    scheduler = Scheduler(Planning.objects.active_planning())
     scheduler.start()
     return agent
 
@@ -40,13 +44,10 @@ class LiquidsoapAgent(object):
             self.liquidsoap_process.kill()
             self.status = "stopped"
 
-class QueueCommandWrapper(object):
-    queue_size = 0
-    queue_list = []
+class CommandWrapper(object):
 
-    def __init__(self, queue_name):
+    def __init__(self):
         self.connection = connection()
-        self.queue_name = queue_name
 
     def make_command(self, command_str):
         print "COMMAND : \"{0}\"".format(command_str)
@@ -54,6 +55,55 @@ class QueueCommandWrapper(object):
         response = self.connection.read_until('END')[:-3].replace('\n', '')
         print "REPONSE : \"{0}\"".format(response)
         return response
+
+
+class RequestCommandWrapper(CommandWrapper):
+
+    def on_air(self):
+        response = self.make_command("request.on_air").strip()
+        if response:
+            try:
+                request_id = int(response.split(' ')[0])
+                return request_id, audiofiles[request_id]
+            except KeyError:
+                return None, None
+        else:
+            return None, None
+
+class PlaylistLogger(object):
+
+    current_rid = None
+
+    def __init__(self):
+        self.request_handler = RequestCommandWrapper()
+
+    def log(self):
+        while True:
+            rid, playlist_element = self.request_handler.on_air()
+
+            print "IN PLAYLIST LOGGER : LOG"
+            print rid
+            print playlist_element
+
+            if not(rid is None) and rid != self.current_rid:
+                print "INTO TEH LOOP"
+                audiofile = playlist_element["audiofile"]
+                audiosource = playlist_element["audiosource"]
+                self.current_rid = rid
+                PlaylistElement(audiofile=audiofile, audiosource=audiosource).save()
+
+            sleep(10)
+
+    def start(self):
+        Thread(target=self.log).start()
+
+class QueueCommandWrapper(CommandWrapper):
+    queue_size = 0
+    queue_list = []
+
+    def __init__(self, queue_name):
+        CommandWrapper.__init__(self)
+        self.queue_name = queue_name
 
     def insert(self, position, uri):
         """
@@ -99,6 +149,7 @@ class QueueCommandWrapper(object):
             print 'There is no source with the given id'
 
     def flush(self):
+
         for track_id in self.get_secondary_queue():
             self.remove(track_id)
 
@@ -110,7 +161,6 @@ class QueueCommandWrapper(object):
 class RadioQueue(QueueCommandWrapper):
 
     queue_list = []
-    audiofiles = {}
 
     def insert(self, position, audiofile):
 
@@ -121,29 +171,15 @@ class RadioQueue(QueueCommandWrapper):
             return self.push(audiofile)
 
         id = super(RadioQueue, self).insert(position, audiofile.file.path)
-
         sleep(0.1)
         self.queue_list = self.get_secondary_queue()
-        self.audiofiles[id] = audiofile
-
-        if id in self.queue_list:
-            return True
-        else:
-            return False
-
+        return id
 
     def push(self, audiofile):
         id = super(RadioQueue, self).push(audiofile.file.path)
-
         sleep(0.1)
         self.queue_list = self.get_secondary_queue()
-        self.audiofiles[id] = audiofile
-
-        if id in self.queue_list:
-            return True
-        else:
-            return False
-
+        return id
 
 class RadioSource(object):
 
@@ -161,6 +197,13 @@ class RadioSource(object):
         print self.queue.get_secondary_queue()
         self.queue.flush()
 
+    def push_in_queue(self, audiofile):
+        rid = self.queue.push(audiofile)
+        audiofiles[rid] = {
+            "audiofile": audiofile,
+            "audiosource": self.audiosource
+        }
+
 
 class ProgramSource(RadioSource):
 
@@ -168,7 +211,7 @@ class ProgramSource(RadioSource):
         print u"Program source {0} set active".format(self.audiosource.title)
         super(ProgramSource, self).set_active()
         for audiofile in self.audiosource.sorted_audiofiles():
-            self.queue.push(audiofile)
+            self.push_in_queue(audiofile)
 
 
 class BackSource(RadioSource):
@@ -182,7 +225,7 @@ class BackSource(RadioSource):
 
         while now.time() < time_end and now.weekday() == self.planning_element.day:
             audiofile = audiofiles.get_next_random_audiofile()
-            self.queue.push(audiofile)
+            self.push_in_queue(audiofile)
             now = now + timedelta(seconds=audiofile.length)
 
 
@@ -208,7 +251,7 @@ class JingleSource(RadioSource):
             if len(self.queue.get_secondary_queue()) <= 1:
                 print "JINGLES QUEUE EMPTY"
                 for i in range(0, self.CHUNK_SIZE):
-                    self.queue.push(self.audiofiles.get_next_random_audiofile())
+                    self.push_in_queue(self.audiofiles.get_next_random_audiofile())
 
             sleep(self.CALLBACK_TIME)
 
@@ -266,5 +309,7 @@ class Scheduler(object):
             now_jingle_source.set_active()
         if now_back_source:
             now_back_source.set_active()
+
+        PlaylistLogger().start()
 
         self.cron_tab.run()

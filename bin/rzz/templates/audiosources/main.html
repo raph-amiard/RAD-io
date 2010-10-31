@@ -8,35 +8,43 @@
   <script type="text/javascript" src="{{ MEDIA_URL }}js/swfobject.js"></script> 
 {% endblock %}
 
+{% block css %}
+    <link rel="stylesheet" href="{{ MEDIA_URL }}/css/admin.css" type="text/css" media="screen" charset="utf-8"/>
+{% endblock %}
+
 {% block content %}
+
   <div id="main_menu">
     <span> RZZ Admin <span>
-  <object data="{{ MEDIA_URL }}/flash/dewplayer-rect.swf" width="240" height="20" name="dewplayer" id="audiofile_player" type="application/x-shockwave-flash"> 
-    <param name="movie" value="{{ MEDIA_URL }}/flash/dewplayer-rect.swf"/> 
-    <param name="flashvars" value="mp3=http://localhost/site_media/audiofiles/DMX_Krew-You_Cant_Hide_Your_Love.mp3&javascript=on" /> 
-    <param name="wmode" value="transparent" /> 
-  </object> 
+    <object data="{{ MEDIA_URL }}/flash/dewplayer-rect.swf" width="240" height="20" name="dewplayer" id="audiofile_player" type="application/x-shockwave-flash"> 
+      <param name="movie" value="{{ MEDIA_URL }}/flash/dewplayer-rect.swf"/> 
+      <param name="flashvars" value="mp3=http://localhost/site_media/audiofiles/DMX_Krew-You_Cant_Hide_Your_Love.mp3&javascript=on" /> 
+      <param name="wmode" value="transparent" /> 
+    </object> 
   </div>
+
   <div id="tag_selector_header" class="selector">
     <div class="head_and_foot">
-    <h4> Tags:</h4> 
+      <h4> Tags:</h4> 
     </div>
   </div>
+
   <div id="tag_selector_container" class="selector">
     <div id="tag_selector">
     </div>
   </div>
+
   <div id="track_selector_container" class="track_selector_align selector selector_container">
     <div id="track_selector">
     </div>
   </div>
-  <div id="track_selector_footer" class="track_selector_align">
-  </div>
+
+  <div id="track_selector_footer" class="track_selector_align"> </div>
+
   <div id="track_selector_header" class="track_selector_align selector">
     <div class="head_and_foot">
       <h4> Browse:</h4>
-      <div id="source_type">
-     </div>
+      <div id="source_type"> </div>
       <input type="text" id="text_selector"/>
     </div>
   </div>

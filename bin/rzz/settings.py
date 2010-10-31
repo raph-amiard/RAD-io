@@ -110,6 +110,7 @@ INSTALLED_APPS = (
     'rzz.utils',
     'rzz.config',
     'rzz.radio_client',
+    'rzz.playlist',
     'django.contrib.auth',
 	'django.contrib.admin',
     'django.contrib.contenttypes',
@@ -119,6 +120,8 @@ INSTALLED_APPS = (
 )
 
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
+LIQUIDSOAP_TELNET_PORT = 1234
+LIQUIDSOAP_HOST = 'localhost'
 LIQUIDSOAP_JINGLES_QUEUE_NAME = "jingles_queue"
 LIQUIDSOAP_BACK_QUEUE_NAME = "back_queue"
 LIQUIDSOAP_PROGRAM_QUEUE_NAME = "program_queue"
