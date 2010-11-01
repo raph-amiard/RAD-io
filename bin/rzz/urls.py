@@ -16,6 +16,7 @@ urlpatterns = patterns('',
 	(r'^news/', include('rzz.news.urls')),
 	(r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
         {'document_root': settings.MEDIA_ROOT,
-		 'show_indexes': True}),
+         'show_indexes': True}),
     url(r'upload-progress/$', upload_progress, name='upload-progress'),
+    url(r'$', 'django.views.generic.simple.redirect_to', {'url':'news/'})
 )
