@@ -17,6 +17,10 @@ from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosou
 from rzz.utils.file import get_mp3_metadata
 
 @staff_member_required
+def main(request):
+    return direct_to_template(request, 'audiosources/main.html')
+
+@staff_member_required
 def set_planning_active(request, planning_id):
     """
     Set the corresponding planning as active
@@ -135,7 +139,6 @@ def create_audio_file(request):
     #TODO: Add error handling
     if request.method == 'POST':
         files = request.FILES.getlist('file')
-        print files
         af_list = []
 
         for file in files:
@@ -260,6 +263,6 @@ def tags_list(request, audiomodel_klass):
         except KeyError:
             categories[tag.category.name] = [tag]
 
-    return direct_to_template(request, 
+    return direct_to_template(request,
                               'audiosources/tags_list.html',
                               extra_context={'categories':categories})

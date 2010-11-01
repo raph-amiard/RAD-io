@@ -23,6 +23,6 @@ class NewsPostAdmin(admin.ModelAdmin):
 			instance.editor = request.user
 			instance.save()
 		return instance
-	
+
 admin.site.register(NewsPost, NewsPostAdmin)
 admin.site.register(Comment)

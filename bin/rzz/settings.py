@@ -2,7 +2,7 @@ import os.path
 from django.conf import global_settings 
 import logging
 
-REQUIRED_KEYS = ["PROJECT_PATH", "ICECAST_HOST", "ICECAST_PORT", "ICECAST_PWD"]
+REQUIRED_KEYS = ["PROJECT_PATH", "ICECAST_HOST", "ICECAST_PORT", "ICECAST_PWD", "RADIO_HOST"]
 
 # Import local settings
 try:
@@ -116,7 +116,9 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'django.contrib.markup',
     'gunicorn',
+    'sorl.thumbnail',
 )
 
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
@@ -141,7 +143,6 @@ RADIO_JINGLES_FREQUENCY = 5 * 60
 # So you can redefine anything per host in the host_settings file
 for el_name in dir(host_settings):
     if not(el_name in REQUIRED_KEYS) and not el_name.startswith('__'):
-        print el_name
         # Get the element in the module
         el = getattr(host_settings, el_name)
         # Set a similar element in the current module

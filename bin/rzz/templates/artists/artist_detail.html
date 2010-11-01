@@ -1,0 +1,11 @@
+{% extends "radio_front.html" %}
+
+{% block content %}
+  <div class="content_holder">
+    <h3>{{ artist.name }}</h3>
+    <div class="artist_image">
+      <img src="{{ artist.picture.url }}" alt="{{ artist.name }} picture"/>
+    </div>
+    <p>{{ artist.biography }}</p>
+  </div>
+{% endblock %}

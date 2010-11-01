@@ -10,4 +10,3 @@ class ArtistAdmin(admin.ModelAdmin):
 	form = ArtistForm
 
 admin.site.register(Artist, ArtistAdmin)
-

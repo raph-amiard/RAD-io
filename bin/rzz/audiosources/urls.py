@@ -10,7 +10,7 @@ def url_delete_model(model_klass, model_name):
     return url(r'json/{0}/(?P<model_id>\d+)$'.format(n), delete_model_JSON,{'model_klass':model_klass}, name=n)
 
 urlpatterns = patterns('',
-    url(r'^main/$', 'django.views.generic.simple.direct_to_template', {'template':'audiosources/main.html'}),
+    url(r'^main/$', views.main, name='audiosources-main'),
 	url(r'^json/create-audio-file$',views.create_audio_file, name='create-audio-file'),
     url(r'^json/create-audio-source$', views.create_audio_source, name='create-audio-source'),
     url(r'^json/create-planning$', views.create_planning, name='create-planning'),

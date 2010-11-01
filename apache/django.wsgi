@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append('/home/raph/Projects/django_rzz/bin')
+sys.path.append('/home/raph/Projects/rzz_website_new/bin')
 os.environ['DJANGO_SETTINGS_MODULE']= 'rzz.settings'
 
 import django.core.handlers.wsgi

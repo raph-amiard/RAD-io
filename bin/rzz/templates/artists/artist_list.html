@@ -1,0 +1,14 @@
+{% extends "radio_front.html" %}
+{% load thumbnail %}
+
+{% block content %}
+  {% for artist in artist_list %}
+    <div class="content_holder">
+      <h3><a href="{% url artist-detail artist.id %}">{{ artist.name }}</a></h3>
+      <div class="artist_image">
+        <img src="{% thumbnail artist.picture 100x100 %}" alt="{{ artist.name }} picture"/>
+      </div>
+      <p>{{ artist.biography|truncatewords:20 }}</p>
+    </div>
+  {% endfor %}
+{% endblock %}

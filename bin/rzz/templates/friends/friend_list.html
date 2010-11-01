@@ -1,0 +1,16 @@
+{% extends "radio_front.html" %}
+{% load thumbnail %}
+
+{% block content %}
+  {% for friend in friend_list %}
+    <div class="content_holder">
+      <h3><a href="{{ friend.url }}">{{ friend.name }}</a></h3>
+      <div class="friend_image">
+        {% if friend.picture %}
+          <img src="{% thumbnail friend.picture 100x100 %}" alt="{{ friend.name }} picture"/>
+        {% endif %}
+      </div>
+      <p>{{ friend.description }}</p>
+    </div>
+  {% endfor %}
+{% endblock %}

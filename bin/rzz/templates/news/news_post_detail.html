@@ -1,0 +1,15 @@
+{% extends "radio_front.html" %}
+{% load markup %}
+
+{% block content %}
+  <div class="content_holder">
+    <h3>{{ news_post.title }}</h3>
+    <div class"news_post_info">
+      <span> Posté le </span>
+      <span> {{ news_post.date_created|date:"DATE_FORMAT" }} </span>
+      <span> par </span>
+      <span> {{ news_post.poster.username }}</span>
+    </div>
+    <p>{{ news_post.content|markdown }}</p>
+  </div>
+{% endblock %}

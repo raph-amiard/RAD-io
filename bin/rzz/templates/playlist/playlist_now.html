@@ -1,0 +1,22 @@
+{% extends "radio_front.html" %}
+
+{% block content %}
+<div class="content_holder">
+  <table class="playlist_table">
+    <tr>
+      <td> Heure </td>
+      <td> Artiste </td>
+      <td> Titre </td>
+    </tr>
+    {% for source in elements_by_source %}
+      {% for element in source.elements %}
+        <tr>
+          <td>{{ element.on_air|date:"H:i:s" }}</td>
+          <td>{{ element.audiofile.artist }}</td>
+          <td>{{ element.audiofile.title }}</td>
+        </tr>
+      {% endfor %}
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
