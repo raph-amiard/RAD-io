@@ -1,0 +1,42 @@
+<VirtualHost *:80>
+    ServerName localhost
+
+    WSGIScriptAlias / /home/raph/Projects/rzz_website_new/apache/django.wsgi
+
+    Alias /site_media/ /home/raph/Projects/rzz_website_new/share/media/
+
+    Alias /media/ /usr/local/lib/python2.6/dist-packages/django/contrib/admin/media/
+
+    <Directory /usr/local/lib/python2.6/dist-packages/django/contrib/admin/media>
+        Order deny,allow
+        Allow from all
+    </Directory>
+
+    <Directory /home/raph/Projects/rzz_website_new/share/media>
+        Order deny,allow
+        Allow from all
+    </Directory>
+
+    <Directory /home/raph/Projects/rzz_website_new/apache>
+        Order deny,allow
+        Allow from all
+    </Directory>
+
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerName radiohost
+    SetEnv downgrade-1.0 1
+    SetEnv force-response-1.0 1
+
+    ProxyRequests Off
+
+    ProxyPass / http://localhost:8100/
+    ProxyPassReverse / http://localhost:8100/
+
+    <Location />
+            Order allow,deny
+            Allow from all
+    </Location>
+
+</VirtualHost>
