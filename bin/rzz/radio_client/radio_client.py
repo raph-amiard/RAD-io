@@ -90,7 +90,8 @@ class PlaylistLogger(object):
                 audiofile = playlist_element["audiofile"]
                 planning_element = playlist_element["planning_element"]
                 self.current_rid = rid
-                PlaylistElement(audiofile=audiofile, planning_element=planning_element).save()
+                ple = PlaylistElement(audiofile=audiofile, planning_element=planning_element)
+                ple.save()
 
             sleep(0.5)
 

@@ -178,7 +178,6 @@ class Planning(TaggedModel):
 
             if type in ["continuous", "jingle"]:
                 time_end = element["time_end"]
-                print time_end
 
                 if time_end["hour"] == 24:
                     planning_element.time_end = Time(23, 59)
