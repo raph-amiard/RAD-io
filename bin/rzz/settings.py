@@ -137,7 +137,7 @@ RADIO_OUTPUTS = [
 ]
 
 RADIO_MOUNT_NAME = "zero"
-RADIO_JINGLES_FREQUENCY = 5 * 60
+RADIO_JINGLES_FREQUENCY = 60
 
 # Set every other key defined in host_settings
 # So you can redefine anything per host in the host_settings file

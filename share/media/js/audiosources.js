@@ -877,7 +877,7 @@ PlanningComponent.prototype.show_hide = function() {
 };
 PlanningComponent.prototype.bind_events = function() {
   this.submit_button.click(__bind(function() {
-    var success_function;
+    var success_function, tjs;
     success_function = __bind(function() {
       return __bind(function() {
         var name;
@@ -886,11 +886,16 @@ PlanningComponent.prototype.bind_events = function() {
         return post_message("Le planning " + name + " a été " + (this.mode === "creation" ? "créé" : "édité") + " avec succes");
       }, this);
     }, this);
-    return this.mode === "creation" ? $.post(this.create_link, {
-      planning_data: this.to_json()
-    }, success_function()) : (this.mode === "edition" ? $.post("" + (this.edit_link) + "/" + (this.id), {
-      planning_data: this.to_json()
-    }, success_function()) : undefined);
+    if (this.mode === "creation") {
+      return $.post(this.create_link, {
+        planning_data: this.to_json()
+      }, success_function());
+    } else if (this.mode === "edition") {
+      tjs = this.to_json();
+      return $.post("" + (this.edit_link) + "/" + (this.id), {
+        planning_data: tjs
+      }, success_function());
+    }
   }, this));
   this.show_choices.find("input").click(__bind(function(e) {
     this.active_type = e.target.id.split(/planning_show_/)[1];
@@ -1060,7 +1065,6 @@ PlanningElement.prototype.edit_properties = function() {
 PlanningElement.prototype.make_continuous = function() {
   this.ui_head.show();
   this.ui_foot.show();
-  this.set_time_end_from_height(step(this.ui.height(), 10));
   this.ui.css({
     opacity: 0.75
   });
@@ -1181,7 +1185,7 @@ PlanningElement.prototype.set_pos_from_time = function() {
   });
 };
 PlanningElement.prototype.set_time_end_from_height = function(height) {
-  this.time_end.hour = (parseInt(height / 60)) + this.time_start.hour;
+  this.time_end.hour = parseInt((height + this.time_start.minute + this.time_start.hour * 60) / 60);
   this.time_end.minute = (height + this.time_start.minute) % 60;
   return this.ui.height(height);
 };

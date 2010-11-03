@@ -668,7 +668,8 @@ class PlanningComponent extends AppComponent
             if @mode == "creation"
                 $.post @create_link, {planning_data:@to_json()}, success_function()
             else if @mode == "edition"
-                $.post "#{@edit_link}/#{@id}", {planning_data:@to_json()}, success_function()
+                tjs = @to_json()
+                $.post "#{@edit_link}/#{@id}", {planning_data:tjs}, success_function()
 
         @show_choices.find("input").click (e) =>
             @active_type = e.target.id.split(/planning_show_/)[1]
@@ -767,12 +768,12 @@ class PlanningComponent extends AppComponent
 
     to_json: ->
         pl_els = el.serialize() for el in @planning_elements.values()
-        to_stringify = 
+        to_stringify =
             planning_elements: pl_els
             title: @title_input.val()
             tags: @tags_input.val()
         if @mode == "edition"
-            to_stringify.to_delete_tags = @tags_table.to_delete_tags_array() 
+            to_stringify.to_delete_tags = @tags_table.to_delete_tags_array()
         return JSON.stringify to_stringify
 
 
@@ -819,7 +820,6 @@ class PlanningElement extends Audiomodel
 
     make_continuous: ->
         @ui_head.show(); @ui_foot.show()
-        @set_time_end_from_height step(@ui.height(), 10)
         @ui.css opacity:0.75
         @ui.css 'z-index': 200
 
@@ -904,8 +904,8 @@ class PlanningElement extends Audiomodel
         @ui.css top: @top
 
     set_time_end_from_height: (height) ->
-        @time_end.hour = (parseInt height / 60) + @time_start.hour
-        @time_end.minute = (height + @time_start.minute) % 60 
+        @time_end.hour = parseInt((height + @time_start.minute + @time_start.hour * 60)/ 60)
+        @time_end.minute = (height + @time_start.minute) % 60
         @ui.height height
 
     set_height_from_time_end: ->

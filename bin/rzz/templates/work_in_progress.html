@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load radio_adress %}
+
+{% block css %}
+  <link href='http://fonts.googleapis.com/css?family=Droid+Sans&subset=latin' rel='stylesheet' type='text/css'>
+  <style type="text/css">
+    body {
+      font-family: 'Droid Sans', arial, serif;
+    }
+    .work_in_progress {
+      width:600px;
+      margin-left:auto;
+      margin-right:auto;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="work_in_progress">
+    <img src="{{ MEDIA_URL }}/img/rzz_nrj.jpg"/>
+    <p> La radio est actuellement en train de muter, le site est donc indisponible </p>
+    <p> En attendant vous pouvez écouter la radio <a href="{% main_radio_adress "mp3" %}">ici !</a></p>
+  </div>
+{% endblock %}

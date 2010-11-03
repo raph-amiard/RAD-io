@@ -9,11 +9,14 @@
       <td> Titre </td>
     </tr>
     {% for source in elements_by_source %}
+        <tr>
+          <td colspan="3">{{ source.source }}</td>
+        </tr>
       {% for element in source.elements %}
         <tr>
           <td>{{ element.on_air|date:"H:i:s" }}</td>
-          <td>{{ element.audiofile.artist }}</td>
-          <td>{{ element.audiofile.title }}</td>
+          <td>{{ element.artist }}</td>
+          <td>{{ element.title }}</td>
         </tr>
       {% endfor %}
     {% endfor %}

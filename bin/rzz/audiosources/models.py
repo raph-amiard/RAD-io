@@ -176,9 +176,14 @@ class Planning(TaggedModel):
 
             if type in ["continuous", "jingle"]:
                 time_end = element["time_end"]
-                time_end["hour"] = time_end["hour"] % 24
+                print time_end
+
+                if time_end["hour"] == 24:
+                    planning_element.time_end = Time(23, 59)
+                else:
+                    planning_element.time_end = Time(time_end["hour"], time_end["minute"])
+
                 planning_element.random = True
-                planning_element.time_end = Time(time_end["hour"], time_end["minute"])
                 planning_element.type = type
 
             planning_element.save()

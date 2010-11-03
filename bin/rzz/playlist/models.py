@@ -1,9 +1,9 @@
 from django.db import models
-from rzz.audiosources.models import AudioFile, AudioSource
+from rzz.audiosources.models import AudioFile, PlanningElement
 from rzz.playlist.manager import PlaylistElementManager
 
 class PlaylistElement(models.Model):
     objects = PlaylistElementManager()
     audiofile = models.ForeignKey(AudioFile)
-    audiosource = models.ForeignKey(AudioSource)
+    planning_element = models.ForeignKey(PlanningElement)
     on_air = models.DateTimeField(auto_now=True)

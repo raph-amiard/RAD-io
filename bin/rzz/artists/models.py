@@ -1,8 +1,9 @@
 from django.db import models
+from django.template.defaultfilters import slugify
 
 
 def artist_image_path(instance, filename):
-	return 'artists/{0}.{1}'.format(instance.name, 
+	return 'img/artists/{0}.{1}'.format(slugify(instance.name), 
 									filename.split('.')[-1])
 
 

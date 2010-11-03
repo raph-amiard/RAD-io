@@ -49,18 +49,23 @@ class CommandWrapper(object):
     def __init__(self):
         self.connection = connection()
 
-    def make_command(self, command_str):
-        print "COMMAND : \"{0}\"".format(command_str)
+    def make_command(self, command_str, log=True):
+
+        def dprint(arg):
+            if log:
+                print arg
+
+        dprint("COMMAND : \"{0}\"".format(command_str))
         self.connection.write(command_str+'\n')
         response = self.connection.read_until('END')[:-3].replace('\n', '')
-        print "REPONSE : \"{0}\"".format(response)
+        dprint("REPONSE : \"{0}\"".format(response))
         return response
 
 
 class RequestCommandWrapper(CommandWrapper):
 
     def on_air(self):
-        response = self.make_command("request.on_air").strip()
+        response = self.make_command("request.on_air", log=False).strip()
         if response:
             try:
                 request_id = int(response.split(' ')[0])
@@ -81,18 +86,13 @@ class PlaylistLogger(object):
         while True:
             rid, playlist_element = self.request_handler.on_air()
 
-            print "IN PLAYLIST LOGGER : LOG"
-            print rid
-            print playlist_element
-
             if not(rid is None) and rid != self.current_rid:
-                print "INTO TEH LOOP"
                 audiofile = playlist_element["audiofile"]
-                audiosource = playlist_element["audiosource"]
+                planning_element = playlist_element["planning_element"]
                 self.current_rid = rid
-                PlaylistElement(audiofile=audiofile, audiosource=audiosource).save()
+                PlaylistElement(audiofile=audiofile, planning_element=planning_element).save()
 
-            sleep(10)
+            sleep(0.5)
 
     def start(self):
         Thread(target=self.log).start()
@@ -201,7 +201,7 @@ class RadioSource(object):
         rid = self.queue.push(audiofile)
         audiofiles[rid] = {
             "audiofile": audiofile,
-            "audiosource": self.audiosource
+            "planning_element": self.planning_element
         }
 
 
@@ -300,6 +300,7 @@ class Scheduler(object):
 
             else:
                 print "ADDING CRON JOB FOR TIME START"
+                print source.set_active
                 self.cron_tab.add_event(Event(
                     source.set_active, min=pe.time_start.minute, hour=pe.time_start.hour, dow=pe.day))
 

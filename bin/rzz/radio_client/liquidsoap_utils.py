@@ -41,7 +41,8 @@ def generate_script(mount_point_name, outputs):
         jingles_queue = request.equeue(id="{JINGLES_QUEUE_NAME}")
         timed_jingles = delay({JINGLES_FREQUENCY}., jingles_queue)
         security = single("{SECURITY}")
-        full = fallback(track_sensitive = false, [timed_jingles, program_queue, back_queue , security])
+        radio = fallback(track_sensitive = true, [timed_jingles, program_queue, back_queue])
+        full = fallback(track_sensitive = false, [radio, security])
     """.format(
         LOG_PATH = settings.LIQUIDSOAP_LOG_PATH,
         PROGRAM_QUEUE_NAME = settings.LIQUIDSOAP_PROGRAM_QUEUE_NAME,

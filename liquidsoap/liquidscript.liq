@@ -4,9 +4,10 @@
         program_queue = request.equeue(id="program_queue")
         back_queue = request.equeue(id="back_queue")
         jingles_queue = request.equeue(id="jingles_queue")
-        timed_jingles = delay(300., jingles_queue)
+        timed_jingles = delay(60., jingles_queue)
         security = single("/home/raph/Projects/rzz_website_new/share/media/security.mp3")
-        full = fallback(track_sensitive = false, [timed_jingles, program_queue, back_queue , security])
+        radio = fallback(track_sensitive = true, [timed_jingles, program_queue, back_queue])
+        full = fallback(track_sensitive = false, [radio, security])
     
         output.icecast(%vorbis,
             host = "localhost",
