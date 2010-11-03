@@ -145,6 +145,7 @@ def create_audio_file(request):
             af = AudioFile()
             path = file.temporary_file_path()
             af.artist, af.title, af.length = get_mp3_metadata(path)
+            af.original_filename = file.name
             af.file = file
             af.save()
             af_list.append(af.to_dict())
@@ -228,7 +229,7 @@ def edit_audio_file(request, audiofile_id):
                 'status':'ok'
             })
         else:
-            return JSONResponse(dict(form.errors.items() 
+            return JSONResponse(dict(form.errors.items()
                                      + [('status','errors')]))
 
     template = loader.get_template('audiosources/audiofile_edit_form.html')
@@ -244,9 +245,9 @@ def edit_audio_file(request, audiofile_id):
 def tags_list(request, audiomodel_klass):
     tags = Tag.objects.extra(where=[
         """
-        id IN (SELECT tag_id 
-               FROM audiosources_taggedmodel_tags 
-               WHERE taggedmodel_id IN (SELECT %s_ptr_id 
+        id IN (SELECT tag_id
+               FROM audiosources_taggedmodel_tags
+               WHERE taggedmodel_id IN (SELECT %s_ptr_id
                                         FROM audiosources_%s))
         """ % (
             "taggedmodel" if audiomodel_klass == Planning else "audiomodel", {

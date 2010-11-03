@@ -14,7 +14,7 @@ from rzz.artists.models import Artist
 def tag_list():
     output = []
     for cat in TagCategory.objects.all():
-        output += ['{0}:{1}'.format(cat.name, tag.name) 
+        output += ['{0}:{1}'.format(cat.name, tag.name)
                    for tag in cat.tag_set.all()]
     return output
 
@@ -81,10 +81,12 @@ class AudioModel(TaggedModel):
 
 
 class AudioFile(AudioModel):
+
     title = models.CharField('Audiofile title', max_length=400)
     artist = models.CharField('Audiofile artist', max_length=200)
     rzz_artist = models.ForeignKey(Artist, null=True)
     file = models.FileField(upload_to=audio_file_name)
+    original_filename = models.CharField('Original File Name', max_length=250, null=True)
 
     def __unicode__(self):
         return u'%s - %s' % (self.artist, self.title)
