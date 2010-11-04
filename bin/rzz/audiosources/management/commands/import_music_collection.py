@@ -34,7 +34,7 @@ class Command(BaseCommand):
                     af.artist, af.title, af.length = get_mp3_metadata(file_path)
                 except HeaderNotFoundError, e:
                     print "Couldn't process MP3 : {0}\n".format(e)
-                    log.write("{0}, {1} \n".format(audio_file, path)
+                    log.write("{0}, {1} \n".format(audio_file, path))
                     continue
 
                 new_rel_file_path = audio_file_name(af, audio_file)
