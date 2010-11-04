@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 try:
                     af.artist, af.title, af.length = get_mp3_metadata(file_path)
                 except HeaderNotFoundError, e:
-                    print "Couldn't process MP3 : {0}".format(e)
+                    print "Couldn't process MP3 : {0}\n".format(e)
                     continue
 
                 new_rel_file_path = audio_file_name(af, audio_file)
@@ -41,13 +41,15 @@ class Command(BaseCommand):
                 shutil.copy(file_path, new_file_path)
                 af.file.name = new_rel_file_path
                 af.original_filename = audio_file
+                af.save()
 
                 if af.artist == "unknown_artist":
                     af.tags.add(bad_artist_tag)
+                    print "Added bad artist tag"
                 if af.title == "unknown_title":
                     af.tags.add(bad_title_tag)
+                    print "Added bad title tag"
 
-                af.save()
 
                 print "File successfully added to database !"
 
