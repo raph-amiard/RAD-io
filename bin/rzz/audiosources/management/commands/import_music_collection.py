@@ -5,12 +5,15 @@ from mutagen.mp3 import HeaderNotFoundError
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from rzz.audiosources.models import AudioFile, audio_file_name
+from rzz.audiosources.models import AudioFile, Tag, TagCategory, audio_file_name
 from rzz.utils.file import get_mp3_metadata
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        tc, _= TagCategory.objects.get_or_create(name="status")
+        bad_artist_tag, _ = Tag.objects.get_or_create(name="bad artist", category = tc)
+        bad_title_tag, _ = Tag.objects.get_or_create(name="bad title", category = tc)
         collection_path = args[0]
 
         for path, child_dirs , filenames in os.walk(collection_path):
@@ -38,6 +41,12 @@ class Command(BaseCommand):
                 shutil.copy(file_path, new_file_path)
                 af.file.name = new_rel_file_path
                 af.original_filename = audio_file
+
+                if af.artist == "unknown_artist":
+                    af.tags.add(bad_artist_tag)
+                if af.title == "unknown_title":
+                    af.tags.add(bad_title_tag)
+
                 af.save()
 
                 print "File successfully added to database !"
