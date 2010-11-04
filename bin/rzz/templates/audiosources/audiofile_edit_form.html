@@ -1,4 +1,5 @@
 <form id="audiofile_edit_form" action="{% url audio-file-edit audiofile.id %}" method="post">
+  <p> <label> Nom original : </label> {{ audiofile.original_filename }}</p>
   {{ form.as_p }}
   {% if audiofile.tags %}
     <h3> Tags actuels </h3>
