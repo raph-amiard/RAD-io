@@ -85,7 +85,7 @@ class AudioFile(AudioModel):
     title = models.CharField('Audiofile title', max_length=400)
     artist = models.CharField('Audiofile artist', max_length=200)
     rzz_artist = models.ForeignKey(Artist, null=True)
-    file = models.FileField(upload_to=audio_file_name)
+    file = models.FileField(upload_to=audio_file_name, max_length=300)
     original_filename = models.CharField('Original File Name', max_length=250, null=True)
 
     def __unicode__(self):
