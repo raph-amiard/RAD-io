@@ -4,7 +4,7 @@ from django.db import models
 from django.core.urlresolvers import reverse
 
 from rzz.utils.str import sanitize_filename, sanitize_filestring
-from rzz.utils.file import move_field_file, set_mp3_metadata
+from rzz.utils.file import move_field_file, set_mp3_metadata, first_available_filename
 from rzz.utils.jsonutils import instance_to_dict
 from rzz.utils.collections import dict_union
 from rzz.audiosources.utils import append_to_key
