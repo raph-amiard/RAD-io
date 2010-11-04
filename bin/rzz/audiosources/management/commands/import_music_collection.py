@@ -11,6 +11,7 @@ from rzz.utils.file import get_mp3_metadata
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        log = file("bad_files.log", "w")
         tc, _= TagCategory.objects.get_or_create(name="status")
         bad_artist_tag, _ = Tag.objects.get_or_create(name="bad artist", category = tc)
         bad_title_tag, _ = Tag.objects.get_or_create(name="bad title", category = tc)
@@ -33,6 +34,7 @@ class Command(BaseCommand):
                     af.artist, af.title, af.length = get_mp3_metadata(file_path)
                 except HeaderNotFoundError, e:
                     print "Couldn't process MP3 : {0}\n".format(e)
+                    log.write("{0}, {1} \n".format(audio_file, path)
                     continue
 
                 new_rel_file_path = audio_file_name(af, audio_file)
@@ -54,3 +56,5 @@ class Command(BaseCommand):
                 print "File successfully added to database !"
 
                 print "\n"
+
+        log.close()
