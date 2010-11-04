@@ -24,9 +24,10 @@ def audio_file_name(instance, filename):
 	if instance.title or instance.artist:
 		artist = sanitize_filestring(instance.artist if instance.artist else 'unknown_artist')
 		title = sanitize_filestring(instance.title if instance.title else 'unknown_title')
-		return 'audiofiles/{0}-{1}.{2}'.format(artist, title,ext)
+		filename = 'audiofiles/{0}-{1}.{2}'.format(artist, title,ext)
 	else:
-		return 'audiofiles/{0}'.format(sanitize_filename(filename))
+		filename = 'audiofiles/{0}'.format(sanitize_filename(filename))
+    return first_available_filename(filename)
 
 
 class TagCategory(models.Model):

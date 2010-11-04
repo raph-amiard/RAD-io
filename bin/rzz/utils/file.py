@@ -27,3 +27,17 @@ def get_mp3_metadata(mp3_path):
     title = u' '.join(mp3['title']) if 'title' in mp3 else u'unknown_title'
     artist = u' '.join(mp3['artist']) if 'artist' in mp3 else u'unknown_artist'
     return artist, title, mp3.info.length
+
+def first_available_filename(filename):
+
+    if path.isfile(path.join(settings.MEDIA_ROOT, filename)):
+        file_ext = filename.split(".")[-1]
+        base_filename = ".".join(filename.split(".")[:-1])
+        i = 1
+        while path.isfile(path.join(settings.MEDIA_ROOT, filename)):
+            filename = "{0}_{1}.{2}".format(base_filename, i, file_ext)
+            i = i + 1
+
+    return filename
+
+
