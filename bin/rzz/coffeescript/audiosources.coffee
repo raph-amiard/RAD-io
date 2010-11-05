@@ -696,8 +696,9 @@ class PlanningComponent extends AppComponent
         @container.height $(document).height() - @container.offset().top - 20
 
     add_grid: ->
-        for h in [0...24]
-            for i in [1..6]
+
+        for h from 0 to 24
+            for i from 1 to 5
                 div_class = {3:'half',6:'hour'}[i] or 'tenth'
                 content = if i == 1 then "#{format_number h, 2}h00" else ""
                 gridiv = div content, class:"grid_time grid_#{div_class}"
@@ -962,7 +963,6 @@ step = (num, step) -> num - (num % step)
 $ ->
     # Load every widget
     for cname, widget of Widgets
-        console.log "Loading component #{cname}"
         widget.load()
 
     # Load main component
