@@ -24,7 +24,7 @@ $(function() {
     make_selectable: function(opts) {
       var container, defaults;
       defaults = {
-        handler: void 0,
+        handler: undefined,
         unique_select: false,
         select_class: 'ui-selected'
       };
@@ -39,7 +39,7 @@ $(function() {
         } else {
           $(this).toggleClass(opts.select_class);
         }
-        return opts.handler ? opts.handler(e) : void 0;
+        return opts.handler ? opts.handler(e) : undefined;
       });
       return this.children().disableTextSelect();
     },
