@@ -20,5 +20,7 @@
     <img src="{{ MEDIA_URL }}/img/rzz_nrj.jpg"/>
     <p> La radio est actuellement en train de muter, le site est donc indisponible </p>
     <p> En attendant vous pouvez écouter la radio <a href="{% main_radio_adress "mp3" %}">ici !</a></p>
+    <p> {% include "partials/ffmp3_player.html" %}</p>
   </div>
 {% endblock %}
+
