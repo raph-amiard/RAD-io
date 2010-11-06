@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from threading import Thread, Timer
 
 from django.conf import settings
+from django.db import transaction
 
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file, RandomAudioSourceWrapper
 from rzz.audiosources.models import Planning, PlanningElement
@@ -82,6 +83,7 @@ class PlaylistLogger(object):
     def __init__(self):
         self.request_handler = RequestCommandWrapper()
 
+    @transaction.commit_manually
     def log(self):
         while True:
             rid, playlist_element = self.request_handler.on_air()
@@ -92,6 +94,7 @@ class PlaylistLogger(object):
                 self.current_rid = rid
                 ple = PlaylistElement(audiofile=audiofile, planning_element=planning_element)
                 ple.save()
+                transaction.commit()
 
             sleep(0.5)
 
