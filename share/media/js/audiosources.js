@@ -303,6 +303,9 @@ Audiomodel.prototype.set_artist = function(artist) {
     return this.ui.find("." + (this.type) + "_artist").text(this.artist);
   }
 };
+Audiomodel.prototype.set_play_link = function(play_link) {
+  return this.type === "audiofile" ? this.ui.find("." + (this.type) + "_play").attr("href", play_link) : undefined;
+};
 Audiomodel.prototype.post_message = function(af) {
   return post_message("Le morceau " + (af.artist) + " - " + (af.title) + " a été modifié avec succès");
 };
@@ -327,9 +330,11 @@ Audiomodel.prototype.make_audiofile_edit_menu = function(data) {
         data: tags_table.to_delete_tags,
         success: function(json) {
           var af;
+          console.log(json);
           af = json.audiofile;
           audiomodel.set_title(af.title);
           audiomodel.set_artist(af.artist);
+          audiomodel.set_play_link(af.file_url);
           return audiomodel.post_message(af);
         }
       });

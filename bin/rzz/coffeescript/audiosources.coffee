@@ -218,6 +218,10 @@ class Audiomodel extends TemplateComponent
             @artist = artist
             @ui.find(".#{@type}_artist").text(@artist)
 
+    set_play_link: (play_link) ->
+        if @type == "audiofile"
+            @ui.find(".#{@type}_play").attr "href", play_link
+
     post_message: (af) ->
         post_message "Le morceau #{af.artist} - #{af.title} a été modifié avec succès"
 
@@ -241,9 +245,11 @@ class Audiomodel extends TemplateComponent
                     dataType:'json'
                     data: tags_table.to_delete_tags
                     success: (json) ->
+                        console.log json
                         af = json.audiofile
                         audiomodel.set_title af.title
                         audiomodel.set_artist af.artist
+                        audiomodel.set_play_link af.file_url
                         audiomodel.post_message af
         }
 
