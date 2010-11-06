@@ -1,0 +1,9 @@
+{% load radio_adress %}
+
+<object width="329" height="21" bgcolor="#FFFFFF">
+<param name="movie" value="{{ MEDIA_URL }}flash/ffmp3.swf" />
+<param name="flashvars" value="url={% main_radio_adress_bare "mp3" %}&lang=fr&codec=mp3&volume=65&tracking=true&autoplay=true&title=Radio%20Zero Zero&jsevents=false&welcome=WELCOME%20TO..." />
+<param name="wmode" value="window" />
+<param name="scale" value="noscale" />
+<embed src="{{ MEDIA_URL }}flash/ffmp3.swf" flashvars="url={% main_radio_adress_bare "mp3" %}&lang=fr&codec=mp3&volume=65&tracking=true&autoplay=true&title=Radio%20Zero Zero&jsevents=false&welcome=WELCOME%20TO..." width="329" scale="noscale" height="21" wmode="window" bgcolor="#FFFFFF" type="application/x-shockwave-flash" />
+
