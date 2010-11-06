@@ -6,6 +6,7 @@ from threading import Thread, Timer
 
 from django.conf import settings
 from django.db import transaction
+from django.core.cache import cache
 
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file, RandomAudioSourceWrapper
 from rzz.audiosources.models import Planning, PlanningElement
@@ -277,11 +278,14 @@ class Scheduler(object):
         self.queues["continuous"] = RadioQueue(settings.LIQUIDSOAP_BACK_QUEUE_NAME)
         self.queues["jingle"] = RadioQueue(settings.LIQUIDSOAP_JINGLES_QUEUE_NAME)
 
-    def start(self):
+    def reload_cron_events(self):
+        self.cron_tab.flush()
+        self.create_cron_events()
+
+    def create_cron_events(self):
 
         now = datetime.now()
         time_now = now.time()
-        self.cron_tab = CronTab()
         now_jingle_source = None
         now_back_source = None
 
@@ -295,16 +299,16 @@ class Scheduler(object):
 
             if pe.type in ["continuous", "jingle"] \
                     and pe.time_start < time_now < pe.time_end \
-                    and pe.day == now.weekday():
+                    and pe.day == now.weekday() :
+
                 print "PUTTING ON PLAY NOW"
                 if pe.type == "jingle":
                     now_jingle_source = source
                 else:
                     now_back_source = source
-
             else:
+
                 print "ADDING CRON JOB FOR TIME START"
-                print source.set_active
                 self.cron_tab.add_event(Event(
                     source.set_active, min=pe.time_start.minute, hour=pe.time_start.hour, dow=pe.day))
 
@@ -315,6 +319,30 @@ class Scheduler(object):
         if now_back_source:
             now_back_source.set_active()
 
+    def watch_planning_changes(self):
+        while 1:
+            print "WATCHING FOR PLANNING CHANGES"
+
+            if cache.get('planning_change'):
+                print "PLANNING CHANGED: RELOADING ELEMENTS"
+                cache.delete('planning_change')
+                self.planning = Planning.objects.active_planning()
+                self.queues["single"].flush()
+                self.reload_cron_events()
+
+            sleep(60)
+
+    def start(self):
+
+        self.cron_tab = CronTab()
+
+        # Create all crons events
+        self.create_cron_events()
+
+        # Watch for any planning changes, for dynamic crons reloading
+        Thread(target=self.watch_planning_changes).start()
+
+        # Record events for the playlist
         PlaylistLogger().start()
 
         self.cron_tab.run()
