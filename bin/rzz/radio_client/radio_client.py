@@ -96,7 +96,9 @@ class PlaylistLogger(object):
 
                 print "Logging a file in the playlist"
                 cursor.execute("""
-                    INSERT INTO playlist_playlistelement VALUES (DEFAULT, %s, %s , %s)
+                    INSERT INTO playlist_playlistelement
+                    (audiofile_id, on_air, planning_element_id)
+                    VALUES (%s, %s , %s)
                     """, [audiofile.id, datetime.now(), planning_element.id]
                 )
                 cursor = connection.cursor()
