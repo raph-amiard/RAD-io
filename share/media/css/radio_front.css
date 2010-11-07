@@ -1,3 +1,113 @@
 body {
     font-family: 'Cantarell', arial, serif;
+    font-size:0.95em;
+}
+
+body a:link {
+    color:black;
+}
+
+body a:visited {
+    color:black;
+}
+
+#logo {
+    position:absolute;
+    background-image:url("/site_media/img/site_content/logo_supreme.jpg");
+    width:300px;
+    height:200px;
+}
+
+#content_holder {
+    position:absolute;
+    width:600px;
+    margin-top:200px;
+    padding-top:30px;
+    margin-left:300px
+}
+
+#bigtitle {
+    position:absolute;
+    top:-145px;
+    font-size:2em;
+}
+
+#content {
+}
+
+#main_menu {
+    position:absolute;
+    top:0px;
+}
+
+#main_menu_list {
+    list-style-type:None;
+    margin:0;
+    padding:0;
+}
+
+#main_menu_list li {
+    float:left;
+    padding-right:10px;
+    width:90px;
+}
+
+.content_holder {
+    margin-top:2em;
+    margin-bottom:3em;
+}
+
+.news_post_info {
+    position:relative;
+    font-size:0.8em;
+    top:-1.5em;
+}
+
+p, ul {
+    margin:0.5em 0px;
+}
+
+.playlist_table {
+    width:100%;
+    border: dashed 1px black;
+}
+
+.playlist_table th {
+    text-align:left;
+}
+
+.playlist_table td {
+    font-size:0.85em;
+}
+
+.friend_image , .artist_image {
+    float:left;
+    margin-right:1em;
+}
+
+.background {
+    position:fixed;
+    height:100%;
+    width:100%;
+    margin:0;
+    padding:0;
+    z-index:-1;
+    background-repeat:no-repeat;
+    background-position:right bottom;
+}
+
+.back_four {
+    background-image:url("/site_media/img/site_content/font_four.jpg");
+}
+
+.back_three {
+    background-image:url("/site_media/img/site_content/font_three.jpg");
+}
+
+.back_one {
+    background-image:url("/site_media/img/site_content/font_one.jpg");
+}
+
+.back_two {
+    background-image:url("/site_media/img/site_content/font_two.jpg");
 }

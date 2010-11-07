@@ -1,0 +1,10 @@
+{% load markup %}
+{% load thumbnail %}
+
+<div class="content_holder">
+  <h2>{{ artist.name }}</h2>
+  <div class="artist_image">
+    <img src="{% thumbnail artist.picture 250x250 %}" alt="{{ artist.name }} picture"/>
+  </div>
+  <div>{{ artist.biography|markdown }}</div>
+</div>

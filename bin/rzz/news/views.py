@@ -3,7 +3,7 @@ from rzz.news.models import NewsPost
 
 def news_posts_list(request, page):
     return object_list(request, 
-        queryset = NewsPost.objects.all(),
+        queryset = NewsPost.objects.all().order_by('-date_created'),
         paginate_by = 20,
         page = page,
         template_name="news/news_post_list.html",

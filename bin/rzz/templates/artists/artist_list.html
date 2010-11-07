@@ -4,11 +4,15 @@
 {% block content %}
   {% for artist in artist_list %}
     <div class="content_holder">
-      <h3><a href="{% url artist-detail artist.id %}">{{ artist.name }}</a></h3>
+      <h2><a href="{% url artist-detail artist.id %}">{{ artist.name }}</a></h2>
       <div class="artist_image">
         <img src="{% thumbnail artist.picture 100x100 %}" alt="{{ artist.name }} picture"/>
       </div>
-      <p>{{ artist.biography|truncatewords:20 }}</p>
+      <div>{{ artist.biography|truncatewords:20 }}</div>
     </div>
   {% endfor %}
+{% endblock %}
+
+{% block background %}
+    <div class="background back_two"></div>
 {% endblock %}
