@@ -189,7 +189,6 @@ def taggedmodel_common_tags(request, taggedmodel_id):
 
 
 def edit_audio_files(request):
-    print request
 
     audiofiles_ids_list = request.POST.getlist("audiofiles")
     audiofiles = AudioFile.objects.filter(id__in=audiofiles_ids_list)
