@@ -111,3 +111,8 @@ p, ul {
 .back_two {
     background-image:url("/site_media/img/site_content/font_two.jpg");
 }
+
+.clear_div {
+    overflow:auto;
+    width:100%;
+}

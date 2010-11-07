@@ -3,11 +3,11 @@
 
 {% block content %}
   {% for friend in friend_list %}
-    <div class="content_holder">
+    <div class="content_holder clear_div">
       <h2><a href="{{ friend.url }}">{{ friend.name }}</a></h2>
       <div class="friend_image">
         {% if friend.picture %}
-          <img src="{% thumbnail friend.picture 100x100 %}" alt="{{ friend.name }} picture"/>
+          <img src="{% thumbnail friend.picture 100x100 bw %}" alt="{{ friend.name }} picture"/>
         {% endif %}
       </div>
       <div>{{ friend.description }}</div>
