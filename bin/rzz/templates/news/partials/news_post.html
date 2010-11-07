@@ -1,0 +1,12 @@
+{% load markup %}
+
+<div class="content_holder">
+  <h2><a href="{% url news-post-detail news_post.id %}">{{ news_post.title }}</a></h2>
+  <div class="news_post_info">
+    <span> Posté le </span>
+    <span> {{ news_post.date_created|date:"d F Y" }} </span>
+    <span> par </span>
+    <span> {{ news_post.poster.username }}</span>
+  </div>
+  {{ news_post.content|markdown }}
+</div>

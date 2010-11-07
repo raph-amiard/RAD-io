@@ -6,7 +6,17 @@
   <link href='http://fonts.googleapis.com/css?family=Cantarell&subset=latin' rel='stylesheet' type='text/css' />
 {% endblock %}
 
-{% block more_body %}
+{% block morebody %}
+    <div id="logo"></div>
+{% endblock %}
+
+{% block bigtitle %}
+    <h1 id="bigtitle">
+      radiozerozero
+    </h1>
+{% endblock %}
+
+{% block menu %}
   <div id="main_menu"> 
     <ul id="main_menu_list">
       <li><a href="{% main_radio_adress "mp3" %}">Listen!</a></li>
@@ -19,3 +29,6 @@
   </div>
 {% endblock %}
 
+{% block background %}
+    <div class="background back_four"></div>
+{% endblock %}

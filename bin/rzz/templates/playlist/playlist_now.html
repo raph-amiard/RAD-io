@@ -4,17 +4,17 @@
 <div class="content_holder">
   <table class="playlist_table">
     <tr>
-      <td> Heure </td>
-      <td> Artiste </td>
-      <td> Titre </td>
+      <th> Heure </th>
+      <th> Artiste </th>
+      <th> Titre </th>
     </tr>
     {% for source in elements_by_source %}
         <tr>
-          <td colspan="3">{{ source.source }}</td>
+          <th colspan="3">{{ source.source }}</td>
         </tr>
       {% for element in source.elements %}
         <tr>
-          <td>{{ element.on_air|date:"H:i:s" }}</td>
+          <td>{{ element.on_air|date:"H:i" }}</td>
           <td>{{ element.artist }}</td>
           <td>{{ element.title }}</td>
         </tr>

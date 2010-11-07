@@ -1,17 +1,7 @@
 {% extends "radio_front.html" %}
-{% load markup %}
 
 {% block content %}
   {% for news_post in news_post_list %}
-    <div class="content_holder">
-      <h3><a href="{% url news-post-detail news_post.id %}">{{ news_post.title }}</a></h3>
-      <div class"news_post_info">
-        <span> Posté le </span>
-        <span> {{ news_post.date_created|date:"d F Y" }} </span>
-        <span> par </span>
-        <span> {{ news_post.poster.username }}</span>
-      </div>
-      <p>{{ news_post.content|markdown }}</p>
-    </div>
+    {% include "news/partials/news_post.html" %}
   {% endfor %}
 {% endblock %}

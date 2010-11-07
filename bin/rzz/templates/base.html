@@ -11,11 +11,16 @@
   </head>
 
   <body>
+    {% block morebody %}{% endblock %}
     <div id="messages"></div>
-    {% block more_body %} {% endblock %}
-    <div id="content">
-      {% block content %}{% endblock %}
+    <div id="content_holder">
+      {% block bigtitle %}{% endblock %}
+      {% block menu %}{% endblock %}
+      <div id="content">
+        {% block content %}{% endblock %}
+      </div>
     </div>
+    {% block background %}{% endblock %}
   </body>
 
 </html>
