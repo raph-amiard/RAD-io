@@ -125,7 +125,10 @@ Widgets.audiomodels =
                 ul.append audiomodel.ui
                 audiomodel.bind_events()
 
-            ul.make_selectable select_class: 'selected-box'
+            ul.make_selectable
+                select_class: 'selected-box'
+                handler: =>
+                    @selected_audiomodels = (parseInt(i.value) for i in ul.find('li.selected-box input'))
 
             $('[id$="select_footer"]').hide()
             $("##{@current_model}_select_footer").show()
@@ -142,8 +145,11 @@ Widgets.footer_actions =
                     action: ->
                 "Supprimer":
                     action: ->
-                "Ajouter tags":
+                "Editer selection":
                     action: ->
+                        menu = new AudioFileGroupEditForm(Widgets.audiomodels.selected_audiomodels)
+                        menu.show()
+
             global:
                 "Uploader des tracks":
                     action: ->
@@ -252,7 +258,6 @@ class Audiomodel extends TemplateComponent
                         audiomodel.set_play_link af.file_url
                         audiomodel.post_message af
         }
-
 
     handle_audiofile_edit: ->
         audiomodel = @
@@ -441,10 +446,31 @@ class TagsTable
             category_tr.append(tag "td", category).append(tags_td)
             @table.append category_tr
 
+class AudioFileGroupEditForm extends TemplateComponent
+
+    url: "/audiosources/json/edit-audio-files"
+
+    constructor: (selected_audiofiles) ->
+        super template:'audiofile_group_edit_form'
+
+        url = @url
+        @menu = make_xps_menu
+            name: "group_edit_audiomodels"
+            text: @ui
+            title: "Edition en groupe"
+            validate_action: ->
+                $(@).find('form').ajaxSubmit
+                    dataType:'json'
+                    data: {'audiofiles': selected_audiofiles}
+                    url: url
+                    success: (json) ->
+                        console.log "ZUCCESSZEN"
+
+    show: () ->
+        show_menu @menu
 
 class AudioFileForm extends TemplateComponent
     # Form for audio file upload
-    # TODO: Make that shit work with a multiple file input
 
     progress_url: "/upload-progress/"
     update_freq: 1000
