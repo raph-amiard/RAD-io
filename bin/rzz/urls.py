@@ -18,7 +18,6 @@ urlpatterns = patterns('',
         {'document_root': settings.MEDIA_ROOT,
          'show_indexes': True}),
     url(r'upload-progress/$', upload_progress, name='upload-progress'),
-    url(r'^$', 'django.views.generic.simple.direct_to_template', {'template':'work_in_progress.html'}),
     url(r'^listen$', 'django.views.generic.simple.direct_to_template', {'template':'listen.html'}, name='listen'),
-    # url(r'$', 'django.views.generic.simple.redirect_to', {'url':'news/'})
+    url(r'$', 'django.views.generic.simple.redirect_to', {'url':'news/'})
 )
