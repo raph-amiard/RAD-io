@@ -9,7 +9,7 @@ from django.template import Context, loader
 from django.shortcuts import get_object_or_404
 
 from rzz.artists.models import Artist
-from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list, Planning
+from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list, Planning, TaggedModel
 from rzz.audiosources.forms import EditAudioFileForm
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
@@ -184,14 +184,28 @@ def audio_models_list(request,audiomodel_klass, page):
 
     return JSONResponse([af.to_dict() for af in audiomodels])
 
-def delete_audiomodel_tag(request, audiomodel_id, tag_id):
-    audiomodel = get_object_or_404(AudioModel, pk=audiomodel_id);
-    tag = get_object_or_404(Tag, pk=tag_id);
-    try:
-        audiomodel.tags.remove(tag);
-        return JSONResponse({'status':'ok'})
-    except:
-        return JSONResponse({'status':'errors'})
+def taggedmodel_common_tags(request, taggedmodel_id):
+    taggedmodel = get_object_or_404(TaggedModel, pk=taggedmodel_id)
+
+
+def edit_audio_files(request):
+    print request
+
+    audiofiles_ids_list = request.POST.getlist("audiofiles")
+    audiofiles = AudioFile.objects.filter(id__in=audiofiles_ids_list)
+    tags_updated = artist_updated = False
+
+    if request.POST["tags"]:
+        tags_updated = True
+        for audiofile in audiofiles:
+            add_tags_to_model(request.POST["tags"], audiofile)
+
+    if request.POST["artist"]:
+        artist_updated = True
+        audiofiles.update(artist=request.POST["artist"])
+
+    return JSONResponse({'tags_updated':tags_updated, 'artist_updated':artist_updated})
+
 
 def edit_audio_file(request, audiofile_id):
     """

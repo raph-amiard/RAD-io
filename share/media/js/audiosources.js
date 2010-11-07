@@ -1,4 +1,4 @@
-var AppComponent, Application, AudioFileForm, Audiomodel, GridPositionner, ListAudiomodel, MainComponent, PlanningComponent, PlanningElement, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, handle_audiofile_play, step;
+var AppComponent, Application, AudioFileForm, AudioFileGroupEditForm, Audiomodel, GridPositionner, ListAudiomodel, MainComponent, PlanningComponent, PlanningElement, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, handle_audiofile_play, step;
 var __bind = function(func, context) {
   return function() { return func.apply(context, arguments); };
 }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
@@ -168,7 +168,18 @@ Widgets.audiomodels = {
         audiomodel.bind_events();
       }
       ul.make_selectable({
-        select_class: 'selected-box'
+        select_class: 'selected-box',
+        handler: __bind(function() {
+          var _j, _len2, _ref, _result, i;
+          return (this.selected_audiomodels = (function() {
+            _result = [];
+            for (_j = 0, _len2 = (_ref = ul.find('li.selected-box input')).length; _j < _len2; _j++) {
+              i = _ref[_j];
+              _result.push(parseInt(i.value));
+            }
+            return _result;
+          })());
+        }, this)
       });
       $('[id$="select_footer"]').hide();
       return $("#" + (this.current_model) + "_select_footer").show();
@@ -191,8 +202,12 @@ Widgets.footer_actions = {
         "Supprimer": {
           action: function() {}
         },
-        "Ajouter tags": {
-          action: function() {}
+        "Editer selection": {
+          action: function() {
+            var menu;
+            menu = new AudioFileGroupEditForm(Widgets.audiomodels.selected_audiomodels);
+            return menu.show();
+          }
         }
       },
       global: {
@@ -584,6 +599,39 @@ TagsTable.prototype.make_table = function() {
     }).call(this);
   }
   return _result;
+};
+AudioFileGroupEditForm = (function() {
+  function AudioFileGroupEditForm(selected_audiofiles) {
+    var url;
+    AudioFileGroupEditForm.__super__.constructor.call(this, {
+      template: 'audiofile_group_edit_form'
+    });
+    url = this.url;
+    this.menu = make_xps_menu({
+      name: "group_edit_audiomodels",
+      text: this.ui,
+      title: "Edition en groupe",
+      validate_action: function() {
+        return $(this).find('form').ajaxSubmit({
+          dataType: 'json',
+          data: {
+            'audiofiles': selected_audiofiles
+          },
+          url: url,
+          success: function(json) {
+            return console.log("ZUCCESSZEN");
+          }
+        });
+      }
+    });
+    return this;
+  };
+  return AudioFileGroupEditForm;
+})();
+__extends(AudioFileGroupEditForm, TemplateComponent);
+AudioFileGroupEditForm.prototype.url = "/audiosources/json/edit-audio-files";
+AudioFileGroupEditForm.prototype.show = function() {
+  return show_menu(this.menu);
 };
 AudioFileForm = (function() {
   function AudioFileForm(opts) {

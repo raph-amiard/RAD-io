@@ -43,6 +43,10 @@ class Event(object):
             self.action(*self.args, **self.kwargs)
 
 class CronTab(object):
+
+    def flush(self):
+        self.events = []
+
     def __init__(self, *events):
         self.events = list(events)
 

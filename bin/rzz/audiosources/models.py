@@ -1,6 +1,8 @@
 from os import path
 
 from django.db import models
+from django.db.models.signals import post_save
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
 
 from rzz.utils.str import sanitize_filename, sanitize_filestring
@@ -215,4 +217,7 @@ class PlanningElement(models.Model):
         d['audiosource'] = self.source.to_dict()
         return d
 
+def planning_changed_handler(sender, **kwargs):
+    cache.set('planning_change', True)
 
+post_save.connect(planning_changed_handler, sender=Planning)
