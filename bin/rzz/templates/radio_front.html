@@ -1,5 +1,4 @@
 {% extends "base_jquery.html" %}
-{% load radio_adress %}
 
 {% block css %}
   <link href='{{ MEDIA_URL }}css/radio_front.css' rel='stylesheet' type='text/css'/>
@@ -19,7 +18,7 @@
 {% block menu %}
   <div id="main_menu"> 
     <ul id="main_menu_list">
-      <li><a href="{% main_radio_adress "mp3" %}">Listen!</a></li>
+      <li><a href="{% url listen %}" onclick='window.open("{% url listen %}", "Listen!", "width=350,height=200,scrollbars=no");return false'>Listen!</a></li>
       <li><a href="{% url news-post-list 1 %}">News</a></li>
       <li><a href="{% url playlist-now %}">Playlist</a></li>
       <li><a href="{% url friend-list 1 %}">Friends</a></li>

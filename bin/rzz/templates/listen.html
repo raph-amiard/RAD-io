@@ -1,0 +1,16 @@
+{% extends "base_jquery.html" %}
+{% load radio_adress %}
+
+{% block css %}
+  <link href='{{ MEDIA_URL }}css/radio_front.css' rel='stylesheet' type='text/css'/>
+  <link href='http://fonts.googleapis.com/css?family=Cantarell&subset=latin' rel='stylesheet' type='text/css' />
+{% endblock %}
+
+{% block morebody %}
+  {% include "partials/ffmp3_player.html" %}
+  <p> Si vous n'avez pas flash ou que vous voulez écouter la radio sans vous connecter au site internet, vous pouvez en cliquant <a href="{% main_radio_adress "mp3" %}">ici</a></p>
+{% endblock %}
+
+{% block background %}
+    <div class="background back_four"></div>
+{% endblock %}
