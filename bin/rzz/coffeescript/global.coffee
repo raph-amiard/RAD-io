@@ -81,7 +81,6 @@ format_length = (l) ->
 d$ = (selector) ->
     obj = {selector: selector}
     $ ->
-        console.log obj
         obj = $.extend obj, $(selector)
     return obj
 

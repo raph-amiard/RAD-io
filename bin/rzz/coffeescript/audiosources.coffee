@@ -251,7 +251,6 @@ class Audiomodel extends TemplateComponent
                     dataType:'json'
                     data: tags_table.to_delete_tags
                     success: (json) ->
-                        console.log json
                         af = json.audiofile
                         audiomodel.set_title af.title
                         audiomodel.set_artist af.artist
@@ -463,8 +462,7 @@ class AudioFileGroupEditForm extends TemplateComponent
                     dataType:'json'
                     data: {'audiofiles': selected_audiofiles}
                     url: url
-                    success: (json) ->
-                        console.log "ZUCCESSZEN"
+                    success: (json) -> return null
 
     show: () ->
         show_menu @menu
@@ -994,7 +992,6 @@ step = (num, step) -> num - (num % step)
 $ ->
     # Load every widget
     for cname, widget of Widgets
-        console.log "Loading component #{cname}"
         widget.load()
 
     # Load main component

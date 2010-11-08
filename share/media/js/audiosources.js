@@ -345,7 +345,6 @@ Audiomodel.prototype.make_audiofile_edit_menu = function(data) {
         data: tags_table.to_delete_tags,
         success: function(json) {
           var af;
-          console.log(json);
           af = json.audiofile;
           audiomodel.set_title(af.title);
           audiomodel.set_artist(af.artist);
@@ -619,7 +618,7 @@ AudioFileGroupEditForm = (function() {
           },
           url: url,
           success: function(json) {
-            return console.log("ZUCCESSZEN");
+            return null;
           }
         });
       }
@@ -1313,7 +1312,6 @@ $(function() {
   for (cname in _ref = Widgets) {
     if (!__hasProp.call(_ref, cname)) continue;
     widget = _ref[cname];
-    console.log("Loading component " + cname);
     widget.load();
   }
   return Application.load("main");

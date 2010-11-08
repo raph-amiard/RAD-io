@@ -136,7 +136,6 @@ d$ = function(selector) {
     selector: selector
   };
   $(function() {
-    console.log(obj);
     return (obj = $.extend(obj, $(selector)));
   });
   return obj;
