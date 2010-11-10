@@ -24,6 +24,7 @@ CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
 LOG_PATH = os.path.join(PROJECT_PATH, 'log/')
 LOG_FILENAME = os.path.join(LOG_PATH, 'logging.out')
+RADIO_LOG_FILENAME = os.path.join(LOG_PATH, 'radio_log.out')
 logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
 DEBUG = True
