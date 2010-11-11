@@ -1,0 +1,9 @@
+{% extends "radio_front.html" %}
+
+{% block content %}
+  <h2> Administration </h2>
+  <ul>
+    <li><a href="/admin/">Administration des contenus du site</a></li>
+    <li><a href="{% url audiosources-main %}">Administration des contenus musicaux</a></li>
+  </ul>
+{% endblock %}

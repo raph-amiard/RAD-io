@@ -1,0 +1,12 @@
+{% extends "radio_front.html" %}
+
+{% block content %}
+  <h2> Administration </h2>
+  <p> Veuillez fournir votre nom d'utilisateur et mot de passe pour vous connecter au site d'administration de Radio Zero Zero </p>
+  <form method="post" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="hidden" name="next" value="{{ next }}" />
+    <input type="submit" value="Connection" />
+  </form>
+{% endblock %}

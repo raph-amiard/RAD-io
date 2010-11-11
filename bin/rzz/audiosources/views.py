@@ -16,9 +16,11 @@ from rzz.utils.queries import Q_or
 from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource, remove_tags_from_model
 from rzz.utils.file import get_mp3_metadata
 
+
 @staff_member_required
 def main(request):
     return direct_to_template(request, 'audiosources/main.html')
+
 
 @staff_member_required
 def set_planning_active(request, planning_id):
@@ -28,6 +30,7 @@ def set_planning_active(request, planning_id):
     planning = get_object_or_404(Planning, id=planning_id)
     planning.set_active()
     return HttpResponse()
+
 
 @staff_member_required
 def create_planning(request):
@@ -42,6 +45,8 @@ def create_planning(request):
 
     return HttpResponse()
 
+
+@staff_member_required
 def edit_planning(request, planning_id):
     """
     View for edition of a planning
@@ -93,6 +98,7 @@ def create_audio_source(request):
         'form_url': reverse('create-audio-source')
     })
 
+
 @staff_member_required
 def edit_audio_source(request, audiosource_id):
     """
@@ -129,6 +135,7 @@ def edit_audio_source(request, audiosource_id):
         'form_url': reverse('edit-audio-source', args=[audiosource_id])
     })
 
+
 @staff_member_required
 def create_audio_file(request):
     """
@@ -154,6 +161,7 @@ def create_audio_file(request):
             'audiofiles':af_list,
             'status':'ok'
             }, mimetype=False)
+
 
 def audio_models_list(request,audiomodel_klass, page):
     """
@@ -187,6 +195,7 @@ def audio_models_list(request,audiomodel_klass, page):
     audiomodels = audiomodels[bottom:top if top <= cnt else cnt]
 
     return JSONResponse([af.to_dict() for af in audiomodels])
+
 
 def taggedmodel_common_tags(request, taggedmodel_id):
     taggedmodel = get_object_or_404(TaggedModel, pk=taggedmodel_id)

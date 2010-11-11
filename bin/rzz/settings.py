@@ -112,6 +112,7 @@ INSTALLED_APPS = (
     'rzz.config',
     'rzz.radio_client',
     'rzz.playlist',
+    'rzz.admin',
     'django.contrib.auth',
 	'django.contrib.admin',
     'django.contrib.contenttypes',
@@ -138,6 +139,8 @@ RADIO_OUTPUTS = [
 
 RADIO_MOUNT_NAME = "zero"
 RADIO_JINGLES_FREQUENCY = 60
+
+LOGIN_URL = "/login/"
 
 # Set every other key defined in host_settings
 # So you can redefine anything per host in the host_settings file

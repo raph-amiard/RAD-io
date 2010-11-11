@@ -70,6 +70,7 @@ p, ul {
 .playlist_table {
     width:100%;
     border: dashed 1px black;
+    padding: 0.5em;
 }
 
 .playlist_table th {

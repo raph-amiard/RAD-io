@@ -5,6 +5,10 @@
   <link href='http://fonts.googleapis.com/css?family=Cantarell&subset=latin' rel='stylesheet' type='text/css' />
 {% endblock %}
 
+{% block scripts %}
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/radio_front.js"></script>
+{% endblock %}
+
 {% block morebody %}
     <div id="logo"></div>
 {% endblock %}
@@ -23,7 +27,7 @@
       <li><a href="{% url playlist-now %}">Playlist</a></li>
       <li><a href="{% url friend-list 1 %}">Friends</a></li>
       <li><a href="{% url artist-list 1 %}">Artists</a></li>
-      <li><a href="/admin/">Admin</a></li>
+      <li><a href="{% url admin-root %}">Admin</a></li>
     </ul>
   </div>
 {% endblock %}
