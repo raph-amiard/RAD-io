@@ -15,8 +15,7 @@ def conv_to_set(obj):  # Allow single integer to be provided
         obj = set(obj)
     return obj
 
-# The actual Event class
-class Event(object):
+class CronEvent(object):
     def __init__(self, action, min=allMatch, hour=allMatch, 
                        day=allMatch, month=allMatch, dow=allMatch, 
                        args=(), kwargs={}):

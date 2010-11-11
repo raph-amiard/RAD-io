@@ -18,13 +18,10 @@ def playlist_now(request):
     cursor.execute("""
         SELECT p_el.on_air, audiofile.artist, audiofile.title, audiosource.title
         FROM playlist_playlistelement AS p_el,
-            audiosources_planningelement,
             audiosources_audiosource AS audiosource,
             audiosources_audiofile AS audiofile
         WHERE p_el.audiofile_id = audiofile.audiomodel_ptr_id
-            AND p_el.planning_element_id = audiosources_planningelement.id
-            AND audiosources_planningelement.source_id = audiosource.audiomodel_ptr_id
-            AND audiosources_planningelement.type != 'jingle'
+            AND p_el.audiosource_id = audiosource.audiomodel_ptr_id
         ORDER BY on_air DESC LIMIT 50;
     """)
 

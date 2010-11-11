@@ -3,7 +3,7 @@ import subprocess
 import logging
 from time import sleep
 from datetime import datetime, timedelta
-from threading import Thread, Timer
+from threading import Thread, Timer, Event
 
 from django.conf import settings
 from django.core.cache import cache
@@ -11,9 +11,7 @@ from django.core.cache import cache
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file, RandomAudioSourceWrapper
 from rzz.audiosources.models import Planning, PlanningElement
 from rzz.playlist.models import PlaylistElement
-from rzz.utils.cron import CronTab, Event
-
-logging.basicConfig(filename=settings.RADIO_LOG_FILENAME, level=logging.DEBUG)
+from rzz.utils.cron import CronTab, CronEvent
 
 # TODO : Find something better than a global to handle audiofiles
 audiofiles = {}
@@ -93,20 +91,20 @@ class PlaylistLogger(object):
     def log(self):
         from django.db import connection,transaction
         cursor = connection.cursor()
+
         while True:
             rid, playlist_element = self.request_handler.on_air()
-
             if not(rid is None) and rid != self.current_rid:
                 audiofile = playlist_element["audiofile"]
-                planning_element = playlist_element["planning_element"]
+                audiosource = playlist_element["audiosource"]
                 self.current_rid = rid
 
                 log("Logging a file in the playlist")
                 cursor.execute("""
                     INSERT INTO playlist_playlistelement
-                    (audiofile_id, on_air, planning_element_id)
+                    (audiofile_id, on_air, audiosource_id)
                     VALUES (%s, %s , %s)
-                    """, [audiofile.id, datetime.now(), planning_element.id]
+                    """, [audiofile.id, datetime.now(), audiosource.id]
                 )
                 cursor = connection.cursor()
                 transaction.commit_unless_managed()
@@ -116,6 +114,7 @@ class PlaylistLogger(object):
 
     def start(self):
         Thread(target=self.log).start()
+
 
 class QueueCommandWrapper(CommandWrapper):
     queue_size = 0
@@ -151,6 +150,8 @@ class QueueCommandWrapper(CommandWrapper):
         response = self.make_command('{0}.queue'.format(self.queue_name))
         response = response.strip()
         return [int(t) for t in response.split(' ')] if response else []
+        if not response == 'OK':
+            log('There is no source with the given id')
 
     def get_secondary_queue(self):
         """
@@ -165,8 +166,6 @@ class QueueCommandWrapper(CommandWrapper):
         Remove the source with given id
         """
         response = self.make_command('{0}.remove {1}'.format(self.queue_name, id))
-        if not response == 'OK':
-            log('There is no source with the given id')
 
     def flush(self):
 
@@ -221,7 +220,7 @@ class RadioSource(object):
         rid = self.queue.push(audiofile)
         audiofiles[rid] = {
             "audiofile": audiofile,
-            "planning_element": self.planning_element
+            "audiosource": self.audiosource
         }
 
 
@@ -324,7 +323,7 @@ class Scheduler(object):
             else:
 
                 log("ADDING CRON JOB FOR TIME START")
-                self.cron_tab.add_event(Event(
+                self.cron_tab.add_event(CronEvent(
                     source.set_active, min=pe.time_start.minute, hour=pe.time_start.hour, dow=pe.day))
 
             print "\n"
@@ -340,15 +339,22 @@ class Scheduler(object):
 
             if cache.get('planning_change'):
                 log("PLANNING CHANGED: RELOADING ELEMENTS")
+
+                # Reset the cache key
                 cache.delete('planning_change')
+
+                # Get the active planning to get the changes
                 self.planning = Planning.objects.active_planning()
+
+                # If there is a single program playing, flush it
                 self.queues["single"].flush()
+
+                # Reload all cron events
                 self.reload_cron_events()
 
             sleep(60)
 
     def start(self):
-
         self.cron_tab = CronTab()
 
         # Create all crons events
@@ -361,3 +367,4 @@ class Scheduler(object):
         PlaylistLogger().start()
 
         self.cron_tab.run()
+
