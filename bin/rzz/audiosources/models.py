@@ -105,8 +105,8 @@ class AudioFile(AudioModel):
 
     def update_file(self):
         set_mp3_metadata(self.file.path, self.artist, self.title)
-        move_field_file(self.file, 
-                          audio_file_name(self, 
+        move_field_file(self.file,
+                          audio_file_name(self,
                                           path.split(self.file.name)[1]))
 
     def to_dict(self, **kwargs):

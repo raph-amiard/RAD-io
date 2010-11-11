@@ -94,7 +94,9 @@ class PlaylistLogger(object):
 
         while True:
             rid, playlist_element = self.request_handler.on_air()
-            if not(rid is None) and rid != self.current_rid:
+
+            if not(rid is None) and rid != self.current_rid and\
+                    not(playlist_element["planning_element"].type == "jingle"):
                 audiofile = playlist_element["audiofile"]
                 audiosource = playlist_element["audiosource"]
                 self.current_rid = rid
@@ -220,7 +222,8 @@ class RadioSource(object):
         rid = self.queue.push(audiofile)
         audiofiles[rid] = {
             "audiofile": audiofile,
-            "audiosource": self.audiosource
+            "audiosource": self.audiosource,
+            "planning_element":self.planning_element
         }
 
 
