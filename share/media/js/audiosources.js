@@ -161,6 +161,8 @@ Widgets.audiomodels = {
     return this.container.find("li");
   },
   load: function() {
+    var start;
+    start = (new Date).getTime();
     return $.getJSON(this.view_url(), this.filter_to_params(), __bind(function(audiomodels_list) {
       var _i, _len, audiomodel, json_audiomodel, ul;
       this.all = [];
@@ -168,6 +170,9 @@ Widgets.audiomodels = {
       ul = tag('ul');
       this.container.html('');
       this.container.append(ul);
+      console.log("Time : " + ((new Date).getTime() - start));
+      console.log("Before rendering list");
+      start = (new Date).getTime();
       for (_i = 0, _len = audiomodels_list.length; _i < _len; _i++) {
         json_audiomodel = audiomodels_list[_i];
         audiomodel = new ListAudiomodel(this.current_model, json_audiomodel);
@@ -176,6 +181,8 @@ Widgets.audiomodels = {
         ul.append(audiomodel.ui);
         audiomodel.bind_events();
       }
+      console.log("After rendering list");
+      console.log("Time : " + ((new Date).getTime() - start));
       ul.make_selectable({
         select_class: 'selected-box',
         handler: __bind(function() {

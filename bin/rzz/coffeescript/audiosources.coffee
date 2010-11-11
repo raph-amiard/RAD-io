@@ -116,6 +116,7 @@ Widgets.audiomodels =
     elements: -> @container.find("li")
 
     load: ->
+        start = (new Date).getTime()
         $.getJSON @view_url(), @filter_to_params() , (audiomodels_list) =>
 
             @all = []
@@ -125,12 +126,17 @@ Widgets.audiomodels =
             @container.html ''
             @container.append ul
 
+            console.log "Time : #{(new Date).getTime() - start}"
+            console.log "Before rendering list"
+            start = (new Date).getTime()
             for json_audiomodel in audiomodels_list
                 audiomodel = new ListAudiomodel(@current_model, json_audiomodel)
                 @all.push audiomodel
                 @by_id[audiomodel.id] = audiomodel
                 ul.append audiomodel.ui
                 audiomodel.bind_events()
+            console.log "After rendering list"
+            console.log "Time : #{(new Date).getTime() - start}"
 
             ul.make_selectable
                 select_class: 'selected-box'
