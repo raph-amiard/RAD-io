@@ -1,4 +1,3 @@
-
 Application =
     # Main application singleton, regroups global mechanics
 
@@ -11,6 +10,14 @@ Application =
 
     current_view: 'main'
     current_component: undefined
+    is_ctrl_pressed: no
+
+    init: ->
+        $(document).keydown (e) =>
+            if e.which == 17 then @is_ctrl_pressed = yes
+
+        $(document).keyup (e) =>
+            if e.which == 17 then @is_ctrl_pressed = no
 
     load: (name, view_params) ->
         @current_component?.close()
@@ -295,7 +302,7 @@ class ListAudiomodel extends Audiomodel
                 @ui.bind 'dragstart', (e, dd) =>
 
                     height = @length / 60
-                    width = planning.tds.first().width()
+                    width = planning.tds[1].width
                     proxy = div @title, class:'audiofile_proxy'
 
                     proxy.css top:dd.offsetY, left:dd.offsetX, position:'absolute'
@@ -332,7 +339,7 @@ class ListAudiomodel extends Audiomodel
                         time_start:
                             hour: parseInt(previous_top /60)
                             minute: previous_top % 60
-                        day: column
+                        day: column-1
 
 
     constructor: (type, json_model) ->
@@ -642,11 +649,14 @@ class PlaylistComponent extends AppComponent
         # Add Necessary information for playlist, if in edition mode
         if @action == "edition"
 
+            @submit_button.text("Editer la playlist")
             @tags_table = new TagsTable(json.audiosource.tags_by_category)
             @fields.tags.append(@tags_table.ui)
 
             for audiofile in json.audiosource.sorted_audiofiles
                 @tracklist.append(audiofile, no)
+        else
+            @submit_button.text("Créer la playlist")
 
         @submit_button.button()
         @submit_button.click (e) =>
@@ -791,6 +801,7 @@ class PlanningComponent extends AppComponent
     create_element: (json_model) ->
         planning_element = new PlanningElement @, json_model
         @planning_elements.add planning_element
+        planning_element
 
     delete_element: (planning_element) ->
         @planning_elements.remove planning_element
@@ -839,6 +850,15 @@ class PlanningElement extends Audiomodel
 
         @bind_events()
 
+    make_model: () ->
+        time_start:@time_start
+        time_end:@time_end
+        type:@type
+        random:@random
+        day:@day
+        audiosource:@audiosource
+        planning_id:@planning_id
+
     init_components: ->
         @ui_head = @ui.find('.planning_element_head')
         @ui_foot = @ui.find('.planning_element_foot')
@@ -863,33 +883,41 @@ class PlanningElement extends Audiomodel
     bind_events: ->
         color = null; z_index=null
         td_positions = []
+        element = null
 
         $(window).resize => @ui.width @column.width()
 
         @ui.bind 'dragstart', (e, dd) =>
-            e.stopPropagation();e.preventDefault()
-            color = @ui.css 'background-color'
-            z_index = @ui.css 'z-index'
-            @ui.css 'background-color':'#EBC'
-            @ui.css 'z-index': z_index + 10
+            e.stopPropagation(); e.preventDefault()
+
+            if Application.is_ctrl_pressed
+                console.log "CTRL PRESSED"
+                element = @planning.create_element @make_model()
+            else
+                element = @
+
+            color = element.ui.css 'background-color'
+            z_index = element.ui.css 'z-index'
+            element.ui.css 'background-color':'#EBC'
+            element.ui.css 'z-index': z_index + 10
             td_positions = new GridPositionner(@planning.tds)
 
         @ui.bind 'drag', (e, dd) =>
             e.stopPropagation();e.preventDefault()
-            rel_cpos = @planning.pos top:dd.offsetY, left:dd.offsetX
+            rel_cpos = element.planning.pos top:dd.offsetY, left:dd.offsetX
             top = step(rel_cpos.top, 10)
             top = if top > 0 then top else 0
             [column] = td_positions.closest(rel_cpos.left)
-            if column != @day
-                @set_day_from_column column
-                @ui.width @column.width()
-            @set_time_from_pos top
-            if @type == "continuous" then @refresh_time_end()
+            if column-1 != @day and column > 0
+                element.set_day_from_column column
+                element.ui.width element.column.width()
+            element.set_time_from_pos top
+            if element.type == "continuous" then element.refresh_time_end()
 
         @ui.bind 'dragend', (e, dd) =>
             e.stopPropagation();e.preventDefault()
-            @ui.css 'background-color':color
-            @ui.css "z-index": z_index
+            element.ui.css 'background-color':color
+            element.ui.css "z-index": z_index
 
         orig_height = null; orig_top = null
 
@@ -917,11 +945,12 @@ class PlanningElement extends Audiomodel
             @planning.delete_element @
 
     set_day_from_column: (column) ->
-        @day = column
+        @day = column - 1
+        console.log "day: #{@day}, column: #{column}"
         @set_column_from_day()
 
     set_column_from_day: ->
-        @column = $(@planning.tds[@day])
+        @column = $(@planning.tds[@day + 1])
         @column.append @ui
 
     set_time_from_pos : (top_pos) ->
@@ -983,6 +1012,8 @@ class GridPositionner
                 ret = 0
                 col = 0
 
+        if col==0 then col=1;ret=@steps[col]
+
         return [col, ret]
 
 step = (num, step) -> num - (num % step)
@@ -990,10 +1021,12 @@ step = (num, step) -> num - (num % step)
 # ========================================= DOCUMENT READY PART ======================================== #
 
 $ ->
+    # Init application singleton
+    Application.init()
+
     # Load every widget
     for cname, widget of Widgets
         widget.load()
 
     # Load main component
-
     Application.load "main"

@@ -369,8 +369,13 @@ input[type=text] {
   vertical-align:top;
   margin:0;
   padding:0;
-  width:14.286%;
   border-left:1px solid black;
+}
+.hours_td { width:5%; }
+.day_td { width:13.571428%; }
+#planning_board td.hours_td {
+  background-color:yellow;
+  opacity:0.2;
 }
 #main_planning_board_container {
   padding-top:140px;

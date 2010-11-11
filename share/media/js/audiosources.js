@@ -20,6 +20,15 @@ Application = {
   },
   current_view: 'main',
   current_component: undefined,
+  is_ctrl_pressed: false,
+  init: function() {
+    $(document).keydown(__bind(function(e) {
+      return e.which === 17 ? (this.is_ctrl_pressed = true) : undefined;
+    }, this));
+    return $(document).keyup(__bind(function(e) {
+      return e.which === 17 ? (this.is_ctrl_pressed = false) : undefined;
+    }, this));
+  },
   load: function(name, view_params) {
     var _ref, klass;
     (((_ref = this.current_component) != null) ? _ref.close() : undefined);
@@ -411,7 +420,7 @@ ListAudiomodel.prototype.view_events = {
       this.ui.bind('dragstart', __bind(function(e, dd) {
         var height, width;
         height = this.length / 60;
-        width = planning.tds.first().width();
+        width = planning.tds[1].width;
         proxy = div(this.title, {
           "class": 'audiofile_proxy'
         });
@@ -465,7 +474,7 @@ ListAudiomodel.prototype.view_events = {
             hour: parseInt(previous_top / 60),
             minute: previous_top % 60
           },
-          day: column
+          day: column - 1
         }));
       }, this));
     }
@@ -834,12 +843,15 @@ PlaylistComponent = (function() {
     this.inputs.tags.autocomplete(multicomplete_params(json.tag_list));
     this.inputs.tags.unbind('blur.autocomplete');
     if (this.action === "edition") {
+      this.submit_button.text("Editer la playlist");
       this.tags_table = new TagsTable(json.audiosource.tags_by_category);
       this.fields.tags.append(this.tags_table.ui);
       for (_i = 0, _len = (_ref = json.audiosource.sorted_audiofiles).length; _i < _len; _i++) {
         audiofile = _ref[_i];
         this.tracklist.append(audiofile, false);
       }
+    } else {
+      this.submit_button.text("Créer la playlist");
     }
     this.submit_button.button();
     this.submit_button.click(__bind(function(e) {
@@ -1039,7 +1051,8 @@ PlanningComponent.prototype.el_pos = function(el, pos) {
 PlanningComponent.prototype.create_element = function(json_model) {
   var planning_element;
   planning_element = new PlanningElement(this, json_model);
-  return this.planning_elements.add(planning_element);
+  this.planning_elements.add(planning_element);
+  return planning_element;
 };
 PlanningComponent.prototype.delete_element = function(planning_element) {
   this.planning_elements.remove(planning_element);
@@ -1102,6 +1115,17 @@ PlanningElement = (function() {
   return PlanningElement;
 })();
 __extends(PlanningElement, Audiomodel);
+PlanningElement.prototype.make_model = function() {
+  return {
+    time_start: this.time_start,
+    time_end: this.time_end,
+    type: this.type,
+    random: this.random,
+    day: this.day,
+    audiosource: this.audiosource,
+    planning_id: this.planning_id
+  };
+};
 PlanningElement.prototype.init_components = function() {
   this.ui_head = this.ui.find('.planning_element_head');
   this.ui_foot = this.ui.find('.planning_element_foot');
@@ -1137,22 +1161,29 @@ PlanningElement.prototype.make_single = function() {
   return this.ui.height(this.audiosource.length / 60);
 };
 PlanningElement.prototype.bind_events = function() {
-  var color, orig_height, orig_top, td_positions, z_index;
+  var color, element, orig_height, orig_top, td_positions, z_index;
   color = null;
   z_index = null;
   td_positions = [];
+  element = null;
   $(window).resize(__bind(function() {
     return this.ui.width(this.column.width());
   }, this));
   this.ui.bind('dragstart', __bind(function(e, dd) {
     e.stopPropagation();
     e.preventDefault();
-    color = this.ui.css('background-color');
-    z_index = this.ui.css('z-index');
-    this.ui.css({
+    if (Application.is_ctrl_pressed) {
+      console.log("CTRL PRESSED");
+      element = this.planning.create_element(this.make_model());
+    } else {
+      element = this;
+    }
+    color = element.ui.css('background-color');
+    z_index = element.ui.css('z-index');
+    element.ui.css({
       'background-color': '#EBC'
     });
-    this.ui.css({
+    element.ui.css({
       'z-index': z_index + 10
     });
     return (td_positions = new GridPositionner(this.planning.tds));
@@ -1161,27 +1192,27 @@ PlanningElement.prototype.bind_events = function() {
     var column, rel_cpos, top;
     e.stopPropagation();
     e.preventDefault();
-    rel_cpos = this.planning.pos({
+    rel_cpos = element.planning.pos({
       top: dd.offsetY,
       left: dd.offsetX
     });
     top = step(rel_cpos.top, 10);
     top = top > 0 ? top : 0;
     column = td_positions.closest(rel_cpos.left)[0];
-    if (column !== this.day) {
-      this.set_day_from_column(column);
-      this.ui.width(this.column.width());
+    if (column - 1 !== this.day && column > 0) {
+      element.set_day_from_column(column);
+      element.ui.width(element.column.width());
     }
-    this.set_time_from_pos(top);
-    return this.type === "continuous" ? this.refresh_time_end() : undefined;
+    element.set_time_from_pos(top);
+    return element.type === "continuous" ? element.refresh_time_end() : undefined;
   }, this));
   this.ui.bind('dragend', __bind(function(e, dd) {
     e.stopPropagation();
     e.preventDefault();
-    this.ui.css({
+    element.ui.css({
       'background-color': color
     });
-    return this.ui.css({
+    return element.ui.css({
       "z-index": z_index
     });
   }, this));
@@ -1218,11 +1249,12 @@ PlanningElement.prototype.bind_events = function() {
   }, this));
 };
 PlanningElement.prototype.set_day_from_column = function(column) {
-  this.day = column;
+  this.day = column - 1;
+  console.log("day: " + (this.day) + ", column: " + column);
   return this.set_column_from_day();
 };
 PlanningElement.prototype.set_column_from_day = function() {
-  this.column = $(this.planning.tds[this.day]);
+  this.column = $(this.planning.tds[this.day + 1]);
   return this.column.append(this.ui);
 };
 PlanningElement.prototype.set_time_from_pos = function(top_pos) {
@@ -1302,6 +1334,10 @@ GridPositionner.prototype.closest = function(num) {
       col = 0;
     }
   }
+  if (col === 0) {
+    col = 1;
+    ret = this.steps[col];
+  }
   return [col, ret];
 };
 step = function(num, step) {
@@ -1309,6 +1345,7 @@ step = function(num, step) {
 };
 $(function() {
   var _ref, cname, widget;
+  Application.init();
   for (cname in _ref = Widgets) {
     if (!__hasProp.call(_ref, cname)) continue;
     widget = _ref[cname];
