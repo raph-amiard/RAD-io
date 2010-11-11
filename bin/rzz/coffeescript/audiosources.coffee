@@ -620,7 +620,7 @@ class PlaylistComponent extends AppComponent
         @fields =
             title: $ '#playlist_edit_title'
             audiofiles: @tracklist.container
-            tags: $ '#tags_table_container'
+            tags: $ '.tags_table_container'
             file_forms: $ '#audiofile_forms'
         @form = $ '#audiosource_form'
         @submit_button = $ "#audiosource_form_submit"

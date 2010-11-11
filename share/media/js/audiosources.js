@@ -873,7 +873,7 @@ PlaylistComponent.prototype.init_components = function() {
   this.fields = {
     title: $('#playlist_edit_title'),
     audiofiles: this.tracklist.container,
-    tags: $('#tags_table_container'),
+    tags: $('.tags_table_container'),
     file_forms: $('#audiofile_forms')
   };
   this.form = $('#audiosource_form');

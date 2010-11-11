@@ -54,6 +54,7 @@ p {
 
 .audiomodel-box, .tag-box {
   background-color:#E0E4CC;
+  padding-left:5px;
 }
 
 #tag_selector .tag-box.ui-selected {
@@ -499,4 +500,5 @@ input[type=text] {
 .cat_name {
     font-weight:bold;
     font-size:12px;
+    margin-left:5px;
 }
