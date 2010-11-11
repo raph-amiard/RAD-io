@@ -56,8 +56,16 @@ p {
   background-color:#E0E4CC;
 }
 
+#tag_selector .tag-box.ui-selected {
+  background: #F39814;
+}
+
 .selected-box {
   background: #F39814;
+}
+
+.selected-box * {
+  color:#FFF;
 }
 
 .audiomodel-box {
@@ -487,4 +495,8 @@ input[type=text] {
 
 #track_selector li.planning_active {
   background-color: #C8B;
+}
+.cat_name {
+    font-weight:bold;
+    font-size:12px;
 }
