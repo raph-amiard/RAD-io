@@ -126,8 +126,6 @@ Widgets.audiomodels =
             @container.html ''
             @container.append ul
 
-            console.log "Time : #{(new Date).getTime() - start}"
-            console.log "Before rendering list"
             start = (new Date).getTime()
             for json_audiomodel in audiomodels_list
                 audiomodel = new ListAudiomodel(@current_model, json_audiomodel)
@@ -135,8 +133,6 @@ Widgets.audiomodels =
                 @by_id[audiomodel.id] = audiomodel
                 ul.append audiomodel.ui
                 audiomodel.bind_events()
-            console.log "After rendering list"
-            console.log "Time : #{(new Date).getTime() - start}"
 
             ul.make_selectable
                 select_class: 'selected-box'
@@ -897,7 +893,6 @@ class PlanningElement extends Audiomodel
             e.stopPropagation(); e.preventDefault()
 
             if Application.is_ctrl_pressed
-                console.log "CTRL PRESSED"
                 element = @planning.create_element @make_model()
             else
                 element = @
@@ -952,7 +947,6 @@ class PlanningElement extends Audiomodel
 
     set_day_from_column: (column) ->
         @day = column - 1
-        console.log "day: #{@day}, column: #{column}"
         @set_column_from_day()
 
     set_column_from_day: ->

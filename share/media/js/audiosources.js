@@ -170,8 +170,6 @@ Widgets.audiomodels = {
       ul = tag('ul');
       this.container.html('');
       this.container.append(ul);
-      console.log("Time : " + ((new Date).getTime() - start));
-      console.log("Before rendering list");
       start = (new Date).getTime();
       for (_i = 0, _len = audiomodels_list.length; _i < _len; _i++) {
         json_audiomodel = audiomodels_list[_i];
@@ -181,8 +179,6 @@ Widgets.audiomodels = {
         ul.append(audiomodel.ui);
         audiomodel.bind_events();
       }
-      console.log("After rendering list");
-      console.log("Time : " + ((new Date).getTime() - start));
       ul.make_selectable({
         select_class: 'selected-box',
         handler: __bind(function() {
@@ -1180,7 +1176,6 @@ PlanningElement.prototype.bind_events = function() {
     e.stopPropagation();
     e.preventDefault();
     if (Application.is_ctrl_pressed) {
-      console.log("CTRL PRESSED");
       element = this.planning.create_element(this.make_model());
     } else {
       element = this;
@@ -1257,7 +1252,6 @@ PlanningElement.prototype.bind_events = function() {
 };
 PlanningElement.prototype.set_day_from_column = function(column) {
   this.day = column - 1;
-  console.log("day: " + (this.day) + ", column: " + column);
   return this.set_column_from_day();
 };
 PlanningElement.prototype.set_column_from_day = function() {
