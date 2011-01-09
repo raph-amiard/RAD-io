@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import telnetlib
 import subprocess
 import logging
@@ -7,6 +9,7 @@ from threading import Thread, Timer, Event
 
 from django.conf import settings
 from django.core.cache import cache
+from django.utils.encoding import smart_unicode
 
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file, RandomAudioSourceWrapper
 from rzz.audiosources.models import Planning, PlanningElement
@@ -17,9 +20,8 @@ from rzz.utils.cron import CronTab, CronEvent
 audiofiles = {}
 
 def log(strn):
-    strn = datetime.now().strftime("[%d/%m/%Y %H:%M:%S]") + " " + str(strn)
-    print strn
-    logging.debug(strn)
+    strn = u"{0} -- {1}".format(datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"), smart_unicode(strn))
+    print strn.encode('utf-8')
 
 def connection():
     return telnetlib.Telnet(settings.LIQUIDSOAP_HOST, settings.LIQUIDSOAP_TELNET_PORT, 1000)
@@ -310,22 +312,22 @@ class Scheduler(object):
 
             source = self.TYPES_TO_CLASSES[pe.type](self.queues[pe.type], pe)
 
-            log("TREATING SOURCE {0}".format(pe.source.title.encode('utf8','replace')))
-            log("TYPE : {0}".format(pe.type))
-            log("TIME_START : {0}".format(pe.time_start))
+            log(u"TREATING SOURCE {0}".format(pe.source.title))
+            log(u"TYPE : {0}".format(pe.type))
+            log(u"TIME_START : {0}".format(pe.time_start))
 
             if pe.type in ["continuous", "jingle"] \
                     and pe.time_start < time_now < pe.time_end \
                     and pe.day == now.weekday() :
 
-                log("PUTTING ON PLAY NOW")
+                log(u"PUTTING ON PLAY NOW")
                 if pe.type == "jingle":
                     now_jingle_source = source
                 else:
                     now_back_source = source
             else:
 
-                log("ADDING CRON JOB FOR TIME START")
+                log(u"ADDING CRON JOB FOR TIME START")
                 self.cron_tab.add_event(CronEvent(
                     source.set_active, min=pe.time_start.minute, hour=pe.time_start.hour, dow=pe.day))
 
@@ -338,10 +340,10 @@ class Scheduler(object):
 
     def watch_planning_changes(self):
         while 1:
-            log("WATCHING FOR PLANNING CHANGES")
+            log(u"WATCHING FOR PLANNING CHANGES")
 
             if cache.get('planning_change'):
-                log("PLANNING CHANGED: RELOADING ELEMENTS")
+                log(u"PLANNING CHANGED: RELOADING ELEMENTS")
 
                 # Reset the cache key
                 cache.delete('planning_change')
