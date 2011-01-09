@@ -122,6 +122,10 @@ INSTALLED_APPS = (
     'sorl.thumbnail',
 )
 
+#######################
+# Liquidsoap settings #
+#######################
+
 LIQUIDSOAP_LOG_PATH = os.path.join(LOG_PATH, "liquidsoap.log")
 LIQUIDSOAP_TELNET_PORT = 1234
 LIQUIDSOAP_HOST = 'localhost'
@@ -132,13 +136,19 @@ LIQUIDSOAP_SECURITY_AUDIOFILE = os.path.join(PROJECT_PATH, "share/media/security
 LIQUIDSOAP_WORKING_DIRECTORY = os.path.join(PROJECT_PATH, "liquidsoap/")
 LIQUIDSOAP_BIN = "liquidsoap"
 
+
+##################
+# Radio settings #
+##################
+
 RADIO_OUTPUTS = [
     { 'format':'ogg', 'quality':8.0 },
     { 'format':'mp3', 'bitrate':128 }
 ]
-
 RADIO_MOUNT_NAME = "zero"
-RADIO_JINGLES_FREQUENCY = 60
+# Jingle frequency in seconds
+RADIO_JINGLES_FREQUENCY = 20 * 60
+
 
 LOGIN_URL = "/login/"
 
