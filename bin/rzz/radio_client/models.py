@@ -1,3 +1,8 @@
 from django.db import models
 
-# Create your models here.
+class RadioStats(models.Model):
+    """
+    Represents the number of listeners at a given point in time
+    """
+    when = models.DateTimeField()
+    listeners = models.IntegerField()
