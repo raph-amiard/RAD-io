@@ -466,18 +466,22 @@ ListAudiomodel = (function() {
           }
         }, this));
         return this.ui.bind('drop', __bind(function(e, dd) {
-          var el, p_el;
+          var el, p_el, proxy_in_board, rel_pos;
           el = $(proxy);
+          rel_pos = planning.el_pos(el);
+          proxy_in_board = rel_pos.top + (el.height() / 2) > 0 && rel_pos.left + (el.width() / 2) > 0;
           el.remove();
-          return p_el = planning.create_element({
-            audiosource: this.audiomodel_base,
-            type: planning.active_type,
-            time_start: {
-              hour: parseInt(previous_top / 60),
-              minute: previous_top % 60
-            },
-            day: column - 1
-          });
+          if (proxy_in_board) {
+            return p_el = planning.create_element({
+              audiosource: this.audiomodel_base,
+              type: planning.active_type,
+              time_start: {
+                hour: parseInt(previous_top / 60),
+                minute: previous_top % 60
+              },
+              day: column - 1
+            });
+          }
         }, this));
       }
     }
@@ -942,13 +946,16 @@ PlanningComponent = (function() {
   };
   PlanningComponent.prototype.bind_events = function() {
     this.submit_button.click(__bind(function() {
-      var success_function, tjs;
+      var diff, start, success_function, tjs;
+      start = (new Date).getTime();
       success_function = __bind(function() {
         return __bind(function() {
-          var name;
+          var diff, name;
           name = this.title_input.val();
           Application.load("main");
-          return post_message("Le planning " + name + " a été " + (this.mode === "creation" ? "créé" : "édité") + " avec succes");
+          post_message("Le planning " + name + " a été " + (this.mode === "creation" ? "créé" : "édité") + " avec succes");
+          diff = (new Date).getTime() - start;
+          return console.log("Time on server : " + diff);
         }, this);
       }, this);
       if (this.mode === "creation") {
@@ -957,6 +964,9 @@ PlanningComponent = (function() {
         }, success_function());
       } else if (this.mode === "edition") {
         tjs = this.to_json();
+        diff = (new Date).getTime() - start;
+        console.log("Time on client " + diff);
+        start = (new Date).getTime();
         return $.post("" + this.edit_link + "/" + this.id, {
           planning_data: tjs
         }, success_function());
@@ -1081,7 +1091,7 @@ PlanningComponent = (function() {
     return planning_element.ui.remove();
   };
   PlanningComponent.prototype.to_json = function() {
-    var el, pl_els, to_stringify;
+    var el, pl_els, planning;
     pl_els = (function() {
       var _i, _len, _ref, _results;
       _ref = this.planning_elements.values();
@@ -1092,15 +1102,15 @@ PlanningComponent = (function() {
       }
       return _results;
     }).call(this);
-    to_stringify = {
+    planning = {
       planning_elements: pl_els,
       title: this.title_input.val(),
       tags: this.tags_input.val()
     };
     if (this.mode === "edition") {
-      to_stringify.to_delete_tags = this.tags_table.to_delete_tags_array();
+      planning.to_delete_tags = this.tags_table.to_delete_tags_array();
     }
-    return JSON.stringify(to_stringify);
+    return JSON.stringify(planning);
   };
   return PlanningComponent;
 })();
@@ -1140,8 +1150,8 @@ PlanningElement = (function() {
   }
   PlanningElement.prototype.make_model = function() {
     return {
-      time_start: this.time_start,
-      time_end: this.time_end,
+      time_start: $.extend({}, this.time_start),
+      time_end: $.extend({}, this.time_end),
       type: this.type,
       random: this.random,
       day: this.day,
@@ -1236,9 +1246,11 @@ PlanningElement = (function() {
       element.ui.css({
         'background-color': color
       });
-      return element.ui.css({
+      element.ui.css({
         "z-index": z_index
       });
+      console.log("" + element.time_start.hour + " " + element.time_start.minute);
+      return console.log(element);
     }, this));
     orig_height = null;
     orig_top = null;
