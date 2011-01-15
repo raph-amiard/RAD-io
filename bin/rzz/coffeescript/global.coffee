@@ -46,7 +46,7 @@ class Set
         delete @map[el]
 
     has: (el) -> @map[el]?
-    values: () -> return value for key,value of @map
+    values: () -> return (value for key,value of @map)
 
 multicomplete_params = (list) ->
     minLength:0

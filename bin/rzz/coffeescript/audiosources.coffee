@@ -1,5 +1,6 @@
+# Main Application singleton
+# Regroups all the global mechanisms and window variables
 Application =
-    # Main application singleton, regroups global mechanics
 
     views_components: (name) ->
         cmap =
@@ -31,6 +32,9 @@ Application =
         else
             @current_view
 
+# Widgets
+# =======
+
 Widgets = {}
 
 Widgets.tags =
@@ -54,16 +58,18 @@ Widgets.audiomodel_selector =
 
     load: ->
         for model_name, button_name of Widgets.audiomodels.models
-            dom = tag 'span', button_name, class:@button_class
-            @container.append(dom)
-            $(dom).button()
-            dom.click (e) ->
-                Widgets.audiomodels.current_model = model_name
-                Widgets.tags.clear()
-                Widgets.audiomodels.clear_filter()
-                Widgets.audiomodels.load()
-                Widgets.tags.load()
-                Widgets.footer_actions.update()
+            do (model_name, button_name) =>
+                dom = tag 'span', button_name, class:@button_class
+                @container.append(dom)
+                $(dom).button()
+
+                dom.click (e) ->
+                    Widgets.audiomodels.current_model = model_name
+                    Widgets.tags.clear()
+                    Widgets.audiomodels.clear_filter()
+                    Widgets.audiomodels.load()
+                    Widgets.tags.load()
+                    Widgets.footer_actions.update()
 
         @container.make_selectable
             unique_select: yes
@@ -431,24 +437,24 @@ class TagsTable
             tags.remaining = 0
 
             for ctag in tags
+                do (ctag) =>
+                    # Build the tag column
+                    tag_span = tag "span", "#{ctag.name} ",
+                        class:"audiofile_tag", id:"tag_#{ctag.id}"
+                    delete_link = tag "a", "x ", class:"audiofile_tag_delete", href:""
+                    tag_span.append delete_link
+                    tags_td.append tag_span
+                    tags.remaining += 1
 
-                # Build the tag column
-                tag_span = tag "span", "#{ctag.name} ",
-                    class:"audiofile_tag", id:"tag_#{ctag.id}"
-                delete_link = tag "a", "x ", class:"audiofile_tag_delete", href:""
-                tag_span.append delete_link
-                tags_td.append tag_span
-                tags.remaining += 1
-
-                delete_link.click (e) =>
-                    # On click on the delete link
-                    # Remove the tag
-                    e.preventDefault()
-                    tag_span.remove()
-                    tags.remaining -= 1
-                    if tags.remaining == 0
-                        category_tr.remove()
-                    @to_delete_tags["to_delete_tag_#{ctag.id}"] = ctag.id
+                    delete_link.click (e) =>
+                        # On click on the delete link
+                        # Remove the tag
+                        e.preventDefault()
+                        tag_span.remove()
+                        tags.remaining -= 1
+                        if tags.remaining == 0
+                            category_tr.remove()
+                        @to_delete_tags["to_delete_tag_#{ctag.id}"] = ctag.id
 
 
             category_tr.append(tag "td", category).append(tags_td)
@@ -810,7 +816,7 @@ class PlanningComponent extends AppComponent
         planning_element.ui.remove()
 
     to_json: ->
-        pl_els = el.serialize() for el in @planning_elements.values()
+        pl_els = (el.serialize() for el in @planning_elements.values())
         to_stringify =
             planning_elements: pl_els
             title: @title_input.val()
@@ -987,15 +993,14 @@ class PlanningElement extends Audiomodel
 class GridPositionner
 
     constructor: (tds) ->
-        @steps = Math.round($(el).position().left) for el in tds
+        @steps = (Math.round($(el).position().left) for el in tds)
 
     closest: (num) ->
-
         ret = null; col = null
 
         $.each @steps, (i) =>
-            if @steps[i] <= num < @steps[i +1]
-                if num - @steps[i] < @steps[i + 1] - num
+            if @steps[i] <= num < @steps[i+1]
+                if num - @steps[i] < @steps[i+1] - num
                     ret = @steps[i]
                     col = i
                 else
