@@ -339,15 +339,22 @@ class ListAudiomodel extends Audiomodel
                         el.css top:dd.offsetY, left:dd.offsetX
 
                 @ui.bind 'drop', (e, dd) =>
+
                     el = $ proxy
+                    rel_pos = planning.el_pos(el)
+                    proxy_in_board = (rel_pos.top + (el.height() / 2) > 0 and rel_pos.left + (el.width() / 2) > 0)
+
                     el.remove()
-                    p_el = planning.create_element
-                        audiosource:@audiomodel_base
-                        type: planning.active_type
-                        time_start:
-                            hour: parseInt(previous_top /60)
-                            minute: previous_top % 60
-                        day: column-1
+
+                    # Only create an element if the proxy is inside the planning board
+                    if proxy_in_board
+                        p_el = planning.create_element
+                            audiosource:@audiomodel_base
+                            type: planning.active_type
+                            time_start:
+                                hour: parseInt(previous_top /60)
+                                minute: previous_top % 60
+                            day: column-1
 
 
     constructor: (type, json_model) ->
@@ -708,15 +715,22 @@ class PlanningComponent extends AppComponent
     bind_events: ->
 
         @submit_button.click =>
+            start = (new Date).getTime()
             success_function = => =>
+
                 name = @title_input.val()
                 Application.load "main"
                 post_message "Le planning #{name} a été #{if @mode=="creation" then "créé" else "édité"} avec succes"
+                diff = (new Date).getTime() - start
+                console.log "Time on server : #{diff}"
 
             if @mode == "creation"
                 $.post @create_link, {planning_data:@to_json()}, success_function()
             else if @mode == "edition"
                 tjs = @to_json()
+                diff = (new Date).getTime() - start
+                console.log "Time on client #{diff}"
+                start = (new Date).getTime()
                 $.post "#{@edit_link}/#{@id}", {planning_data:tjs}, success_function()
 
         @show_choices.find("input").click (e) =>
@@ -779,7 +793,6 @@ class PlanningComponent extends AppComponent
         @show_hide()
 
     pos: (el_pos) ->
-
         # Takes a coordinates object as input -> {left:int, top:int}
         # Returns a coordinate object relative to the planning board
 
@@ -789,7 +802,6 @@ class PlanningComponent extends AppComponent
         return el_pos
 
     el_pos: (el, pos) ->
-
         # If only el is given, returns the position of el on the planning board
         # If pos is given as pos = {top:int, left:int},
         # then place el at the given pos relative to the board
@@ -807,6 +819,8 @@ class PlanningComponent extends AppComponent
             return el_off
 
     create_element: (json_model) ->
+        # Create a planning element
+        # With current planning object as parent
         planning_element = new PlanningElement @, json_model
         @planning_elements.add planning_element
         planning_element
@@ -816,14 +830,18 @@ class PlanningComponent extends AppComponent
         planning_element.ui.remove()
 
     to_json: ->
+        # Returns a string JSON representation of the planning
+        # Including all the planning elements, the tags, and the planning title
         pl_els = (el.serialize() for el in @planning_elements.values())
-        to_stringify =
+        planning =
             planning_elements: pl_els
             title: @title_input.val()
             tags: @tags_input.val()
+
         if @mode == "edition"
-            to_stringify.to_delete_tags = @tags_table.to_delete_tags_array()
-        return JSON.stringify to_stringify
+            planning.to_delete_tags = @tags_table.to_delete_tags_array()
+
+        return JSON.stringify planning
 
 
 class PlanningElement extends Audiomodel
@@ -847,7 +865,6 @@ class PlanningElement extends Audiomodel
             @ui.height @audiosource.length / 60
             @make_single()
         else
-
             if not @time_end
                 @time_end = {}
                 @ui.height @audiosource.length / 60
@@ -859,8 +876,10 @@ class PlanningElement extends Audiomodel
         @bind_events()
 
     make_model: () ->
-        time_start:@time_start
-        time_end:@time_end
+        # Returns every piece of information about the planning element
+        # As a map of values
+        time_start: $.extend {}, @time_start
+        time_end: $.extend {}, @time_end
         type:@type
         random:@random
         day:@day
@@ -879,7 +898,7 @@ class PlanningElement extends Audiomodel
     make_continuous: ->
         @ui_head.show(); @ui_foot.show()
         @ui.css opacity:0.75
-        @ui.css 'z-index': 200
+        @ui.css 'z-index':200
 
     make_single: ->
         @ui_head.hide(); @ui_foot.hide()
@@ -893,9 +912,19 @@ class PlanningElement extends Audiomodel
         td_positions = []
         element = null
 
+        # Bind the resizing of the window 
+        # to the resizing of the planning window
         $(window).resize => @ui.width @column.width()
 
+        # Planning drag routines
+        # ----------------------
+        #
+        # These are the functions handling the dragging and dropping of elements in a planning
+        # Doesn't use jquery ui draggable, but the lower level jquery.drag plugin
+
         @ui.bind 'dragstart', (e, dd) =>
+            # Drag start function. 
+            # It has the responsibility of creating a new element if ctrl is pressed
             e.stopPropagation(); e.preventDefault()
 
             if Application.is_ctrl_pressed
@@ -905,11 +934,15 @@ class PlanningElement extends Audiomodel
 
             color = element.ui.css 'background-color'
             z_index = element.ui.css 'z-index'
+
+            # TODO: Remove hard-coded color element
             element.ui.css 'background-color':'#EBC'
             element.ui.css 'z-index': z_index + 10
             td_positions = new GridPositionner(@planning.tds)
 
         @ui.bind 'drag', (e, dd) =>
+            # Drag function
+            # Called while the button's pressed and the mouse moves
             e.stopPropagation();e.preventDefault()
             rel_cpos = element.planning.pos top:dd.offsetY, left:dd.offsetX
             top = step(rel_cpos.top, 10)
@@ -922,9 +955,13 @@ class PlanningElement extends Audiomodel
             if element.type == "continuous" then element.refresh_time_end()
 
         @ui.bind 'dragend', (e, dd) =>
+            # Drag end function
+            # Called when the user releases the button
             e.stopPropagation();e.preventDefault()
             element.ui.css 'background-color':color
             element.ui.css "z-index": z_index
+            console.log "#{element.time_start.hour} #{element.time_start.minute}"
+            console.log element
 
         orig_height = null; orig_top = null
 
