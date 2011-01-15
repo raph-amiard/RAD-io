@@ -1,6 +1,6 @@
 from os import path
 
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
@@ -166,6 +166,7 @@ class Planning(TaggedModel):
         d.update({'form_url':self.form_url()})
         return d
 
+    @transaction.commit_on_success()
     def add_elements(self, elements):
         from datetime import time as Time
 
@@ -174,12 +175,12 @@ class Planning(TaggedModel):
             type = element["type"]
             planning_element = PlanningElement(
                 planning = self,
-                source = AudioSource.objects.get(id=element["audiosource_id"]),
                 type = 'single',
                 time_start = Time(time_start["hour"], time_start["minute"]),
                 day = element["day"],
                 random = False
             )
+            planning_element.source_id = element["audiosource_id"]
 
             if type in ["continuous", "jingle"]:
                 time_end = element["time_end"]
