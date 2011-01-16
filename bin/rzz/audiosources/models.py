@@ -14,9 +14,10 @@ from rzz.audiosources.manager import PlanningManager
 from rzz.artists.models import Artist
 
 def tag_list():
+    # TODO: Cache this shit
     output = []
     for cat in TagCategory.objects.all():
-        output += ['{0}:{1}'.format(cat.name, tag.name)
+        output += [u'{0}:{1}'.format(cat.name, tag.name)
                    for tag in cat.tag_set.all()]
     return output
 
