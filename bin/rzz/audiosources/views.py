@@ -168,7 +168,7 @@ def audio_models_list(request,audiomodel_klass, page):
     AJAX
     Displays a list of audio files depending on filter clauses
     """
-    nb_items = 150
+    nb_items = 50
     bottom = nb_items * page
     top = bottom + nb_items
     text_filter = request.GET['text_filter'] if request.GET.has_key('text_filter') else None
@@ -186,8 +186,6 @@ def audio_models_list(request,audiomodel_klass, page):
     if tags:
         for tag in tags:
             audiomodels = audiomodels.filter(tags=tag)
-    else:
-        audiomodels = audiomodels.filter(tags=None)
 
     cnt = audiomodels.count()
     if bottom > cnt:
