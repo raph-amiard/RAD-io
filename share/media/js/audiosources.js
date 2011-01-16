@@ -946,16 +946,13 @@ PlanningComponent = (function() {
   };
   PlanningComponent.prototype.bind_events = function() {
     this.submit_button.click(__bind(function() {
-      var diff, start, success_function, tjs;
-      start = (new Date).getTime();
+      var success_function, tjs;
       success_function = __bind(function() {
         return __bind(function() {
-          var diff, name;
+          var name;
           name = this.title_input.val();
           Application.load("main");
-          post_message("Le planning " + name + " a été " + (this.mode === "creation" ? "créé" : "édité") + " avec succes");
-          diff = (new Date).getTime() - start;
-          return console.log("Time on server : " + diff);
+          return post_message("Le planning " + name + " a été " + (this.mode === "creation" ? "créé" : "édité") + " avec succes");
         }, this);
       }, this);
       if (this.mode === "creation") {
@@ -964,9 +961,6 @@ PlanningComponent = (function() {
         }, success_function());
       } else if (this.mode === "edition") {
         tjs = this.to_json();
-        diff = (new Date).getTime() - start;
-        console.log("Time on client " + diff);
-        start = (new Date).getTime();
         return $.post("" + this.edit_link + "/" + this.id, {
           planning_data: tjs
         }, success_function());
@@ -984,6 +978,9 @@ PlanningComponent = (function() {
     this.board = $('#main_planning_board');
     this.container = $('#main_planning_board_container');
     this.tds = $('#planning_board td');
+    this.tds_width = this.tds.map(function(i, el) {
+      return $(el).width();
+    });
     this.board_table = $('#planning_board');
     this.submit_button = $('#planning_submit');
     this.title_input = $('#planning_title');
@@ -1039,22 +1036,29 @@ PlanningComponent = (function() {
     return _results;
   };
   function PlanningComponent(data) {
+    var start;
+    start = (new Date).getTime();
     PlanningComponent.__super__.constructor.call(this, {
       template: "planning"
     });
     this.planning_elements = new Set();
     this.init_components();
     this.add_grid();
+    console.log("First phase : " + ((new Date).getTime() - start));
+    start = (new Date).getTime();
     this.bind_events();
+    console.log("Binding events: " + ((new Date).getTime() - start));
     if (data) {
       this.tags_table = new TagsTable(data.tags_by_category);
       this.tags_table_container.append(tag('p', 'Tags')).append(this.tags_table.ui);
       this.id = data.id;
       this.mode = "edition";
+      start = (new Date).getTime();
       this.init_data(data);
     } else {
       this.mode = "creation";
     }
+    console.log("Adding data: " + ((new Date).getTime() - start));
     this.active_type = "single";
     this.show_hide();
   }
@@ -1117,21 +1121,18 @@ PlanningComponent = (function() {
 PlanningElement = (function() {
   __extends(PlanningElement, Audiomodel);
   function PlanningElement(planning, json_model) {
-    PlanningElement.__super__.constructor.call(this, {
-      template: "planning_element",
-      context: json_model
-    });
     this.string_id = "planning_element_" + (gen_uuid());
     this.planning = planning;
     this.type = "single";
     $.extend(this, json_model);
+    this._set_column_from_day();
+    this.top = this.time_start.minute + this.time_start.hour * 60;
+    this.dom = "        <div class='planning_element' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;'>          <div class='planning_element_container'>            <div class='planning_element_head'></div>            <p>" + json_model.audiosource.title + "</p>            <div class='planning_element_foot'></div>            <button type='button' class='delete_button'>x</button>          </div>        </div> ";
+    this.ui = $(this.dom);
     this.init_components();
     if (this.time_end === null) {
       this.time_end = {};
     }
-    this.set_column_from_day();
-    this.set_pos_from_time();
-    this.ui.width(this.column.width());
     if (this.type === "single") {
       this.ui.height(this.audiosource.length / 60);
       this.make_single();
@@ -1147,6 +1148,7 @@ PlanningElement = (function() {
       this.make_continuous();
     }
     this.bind_events();
+    this.column.append(this.ui);
   }
   PlanningElement.prototype.make_model = function() {
     return {
@@ -1162,8 +1164,7 @@ PlanningElement = (function() {
   PlanningElement.prototype.init_components = function() {
     this.ui_head = this.ui.find('.planning_element_head');
     this.ui_foot = this.ui.find('.planning_element_foot');
-    this.delete_button = this.ui.find('.delete_button');
-    return this.delete_button.button();
+    return this.delete_button = this.ui.find('.delete_button');
   };
   PlanningElement.prototype.edit_properties = function() {
     return __bind(function() {
@@ -1246,11 +1247,9 @@ PlanningElement = (function() {
       element.ui.css({
         'background-color': color
       });
-      element.ui.css({
+      return element.ui.css({
         "z-index": z_index
       });
-      console.log("" + element.time_start.hour + " " + element.time_start.minute);
-      return console.log(element);
     }, this));
     orig_height = null;
     orig_top = null;
@@ -1287,6 +1286,9 @@ PlanningElement = (function() {
   PlanningElement.prototype.set_day_from_column = function(column) {
     this.day = column - 1;
     return this.set_column_from_day();
+  };
+  PlanningElement.prototype._set_column_from_day = function() {
+    return this.column = $(this.planning.tds[this.day + 1]);
   };
   PlanningElement.prototype.set_column_from_day = function() {
     this.column = $(this.planning.tds[this.day + 1]);

@@ -44,7 +44,7 @@ tag = function(node, content, attrs) {
     attrs = content;
     content = false;
   }
-  tag = $("<" + node + "></" + node + ">");
+  tag = $("<" + node + ">");
   for (attr_name in attrs) {
     attr_value = attrs[attr_name];
     tag.attr(attr_name, attr_value);

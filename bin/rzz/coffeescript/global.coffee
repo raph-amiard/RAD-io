@@ -24,7 +24,7 @@ tag = (node, content, attrs) ->
         attrs = content
         content = no
 
-    tag = $("<#{node}></#{node}>")
+    tag = $("<#{node}>")
 
     for attr_name, attr_value of attrs
         tag.attr(attr_name, attr_value)

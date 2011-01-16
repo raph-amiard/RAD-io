@@ -715,22 +715,16 @@ class PlanningComponent extends AppComponent
     bind_events: ->
 
         @submit_button.click =>
-            start = (new Date).getTime()
             success_function = => =>
 
                 name = @title_input.val()
                 Application.load "main"
                 post_message "Le planning #{name} a été #{if @mode=="creation" then "créé" else "édité"} avec succes"
-                diff = (new Date).getTime() - start
-                console.log "Time on server : #{diff}"
 
             if @mode == "creation"
                 $.post @create_link, {planning_data:@to_json()}, success_function()
             else if @mode == "edition"
                 tjs = @to_json()
-                diff = (new Date).getTime() - start
-                console.log "Time on client #{diff}"
-                start = (new Date).getTime()
                 $.post "#{@edit_link}/#{@id}", {planning_data:tjs}, success_function()
 
         @show_choices.find("input").click (e) =>
@@ -743,6 +737,7 @@ class PlanningComponent extends AppComponent
         @board = $ '#main_planning_board'
         @container = $ '#main_planning_board_container'
         @tds = $ '#planning_board td'
+        @tds_width = @tds.map (i, el) -> $(el).width()
         @board_table = $ '#planning_board'
         @submit_button = $ '#planning_submit'
         @title_input = $ '#planning_title'
@@ -776,19 +771,26 @@ class PlanningComponent extends AppComponent
             @create_element planning_element
 
     constructor: (data) ->
+        start = (new Date).getTime()
         super template: "planning"
         @planning_elements = new Set()
         @init_components()
         @add_grid()
+        console.log "First phase : #{(new Date).getTime() - start}"
+        start = (new Date).getTime()
         @bind_events()
+        console.log "Binding events: #{(new Date).getTime() - start}"
+
         if data
             @tags_table = new TagsTable(data.tags_by_category)
             @tags_table_container.append(tag 'p' , 'Tags').append @tags_table.ui
             @id = data.id
             @mode = "edition"
+            start = (new Date).getTime()
             @init_data data
         else
             @mode = "creation"
+        console.log "Adding data: #{(new Date).getTime() - start}"
         @active_type = "single"
         @show_hide()
 
@@ -843,23 +845,31 @@ class PlanningComponent extends AppComponent
 
         return JSON.stringify planning
 
-
 class PlanningElement extends Audiomodel
 
     constructor: (planning, json_model) ->
-        super template: "planning_element", context: json_model
+        
         @string_id = "planning_element_#{gen_uuid()}"
 
         @planning = planning
         @type = "single"
         $.extend this, json_model
 
+        @_set_column_from_day()
+        @top = @time_start.minute + @time_start.hour * 60
+        @dom = "
+        <div class='planning_element' style='top:#{@top}px;width:#{@planning.tds_width[@day + 1]}px;'>
+          <div class='planning_element_container'>
+            <div class='planning_element_head'></div>
+            <p>#{json_model.audiosource.title}</p>
+            <div class='planning_element_foot'></div>
+            <button type='button' class='delete_button'>x</button>
+          </div>
+        </div> "
+        @ui = $(@dom)
+
         @init_components()
         if @time_end == null then @time_end = {}
-
-        @set_column_from_day()
-        @set_pos_from_time()
-        @ui.width @column.width()
 
         if @type == "single"
             @ui.height @audiosource.length / 60
@@ -872,8 +882,8 @@ class PlanningElement extends Audiomodel
             if @time_end.hour == 0 then @time_end.hour = 24
             @set_height_from_time_end()
             @make_continuous()
-
         @bind_events()
+        @column.append(@ui)
 
     make_model: () ->
         # Returns every piece of information about the planning element
@@ -887,10 +897,10 @@ class PlanningElement extends Audiomodel
         planning_id:@planning_id
 
     init_components: ->
+        # TODO : Rework this, construct the ui manually and don't use selectors
         @ui_head = @ui.find('.planning_element_head')
         @ui_foot = @ui.find('.planning_element_foot')
         @delete_button = @ui.find('.delete_button')
-        @delete_button.button()
 
     edit_properties: -> =>
         form = div ""
@@ -960,8 +970,6 @@ class PlanningElement extends Audiomodel
             e.stopPropagation();e.preventDefault()
             element.ui.css 'background-color':color
             element.ui.css "z-index": z_index
-            console.log "#{element.time_start.hour} #{element.time_start.minute}"
-            console.log element
 
         orig_height = null; orig_top = null
 
@@ -991,6 +999,9 @@ class PlanningElement extends Audiomodel
     set_day_from_column: (column) ->
         @day = column - 1
         @set_column_from_day()
+
+    _set_column_from_day: ->
+        @column = $(@planning.tds[@day + 1])
 
     set_column_from_day: ->
         @column = $(@planning.tds[@day + 1])
