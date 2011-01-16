@@ -845,9 +845,11 @@ class PlanningComponent extends AppComponent
 
         return JSON.stringify planning
 
+
 class PlanningElement extends Audiomodel
 
     constructor: (planning, json_model) ->
+        height = 0; handles = no; cl=""
         
         @string_id = "planning_element_#{gen_uuid()}"
 
@@ -855,14 +857,25 @@ class PlanningElement extends Audiomodel
         @type = "single"
         $.extend this, json_model
 
+        if @type == "single"
+            height = @audiosource.length /60
+        else
+            handles = yes
+            if not @time_end
+                @time_end = {}
+                height = @audiosource.length /60
+            else
+                if @time_end.hour == 0 then @time_end.hour = 24
+                height = @height_from_time_end()
+
         @_set_column_from_day()
         @top = @time_start.minute + @time_start.hour * 60
         @dom = "
-        <div class='planning_element' style='top:#{@top}px;width:#{@planning.tds_width[@day + 1]}px;'>
-          <div class='planning_element_container'>
-            <div class='planning_element_head'></div>
+        <div class='planning_element #{@type}' style='top:#{@top}px;width:#{@planning.tds_width[@day + 1]}px;height:#{height}px;'>
+          <div class='planning_element_container' >
+            #{if handles then "<div class='planning_element_head'></div>" else ""}
             <p>#{json_model.audiosource.title}</p>
-            <div class='planning_element_foot'></div>
+            #{if handles then "<div class='planning_element_foot'></div>" else ""}
             <button type='button' class='delete_button'>x</button>
           </div>
         </div> "
@@ -871,17 +884,6 @@ class PlanningElement extends Audiomodel
         @init_components()
         if @time_end == null then @time_end = {}
 
-        if @type == "single"
-            @ui.height @audiosource.length / 60
-            @make_single()
-        else
-            if not @time_end
-                @time_end = {}
-                @ui.height @audiosource.length / 60
-
-            if @time_end.hour == 0 then @time_end.hour = 24
-            @set_height_from_time_end()
-            @make_continuous()
         @bind_events()
         @column.append(@ui)
 
@@ -1021,10 +1023,10 @@ class PlanningElement extends Audiomodel
         @time_end.minute = (height + @time_start.minute) % 60
         @ui.height height
 
-    set_height_from_time_end: ->
+    height_from_time_end: ->
         height = (@time_end.hour - @time_start.hour) * 60
         height += @time_end.minute - @time_start.minute
-        @ui.height height
+        return height
 
     refresh_time_end: -> @set_time_end_from_height @ui.height()
 

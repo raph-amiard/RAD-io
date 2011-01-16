@@ -1121,31 +1121,35 @@ PlanningComponent = (function() {
 PlanningElement = (function() {
   __extends(PlanningElement, Audiomodel);
   function PlanningElement(planning, json_model) {
+    var cl, handles, height;
+    height = 0;
+    handles = false;
+    cl = "";
     this.string_id = "planning_element_" + (gen_uuid());
     this.planning = planning;
     this.type = "single";
     $.extend(this, json_model);
+    if (this.type === "single") {
+      height = this.audiosource.length / 60;
+    } else {
+      handles = true;
+      if (!this.time_end) {
+        this.time_end = {};
+        height = this.audiosource.length / 60;
+      } else {
+        if (this.time_end.hour === 0) {
+          this.time_end.hour = 24;
+        }
+        height = this.height_from_time_end();
+      }
+    }
     this._set_column_from_day();
     this.top = this.time_start.minute + this.time_start.hour * 60;
-    this.dom = "        <div class='planning_element' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;'>          <div class='planning_element_container'>            <div class='planning_element_head'></div>            <p>" + json_model.audiosource.title + "</p>            <div class='planning_element_foot'></div>            <button type='button' class='delete_button'>x</button>          </div>        </div> ";
+    this.dom = "        <div class='planning_element " + this.type + "' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;height:" + height + "px;'>          <div class='planning_element_container' >            " + (handles ? "<div class='planning_element_head'></div>" : "") + "            <p>" + json_model.audiosource.title + "</p>            " + (handles ? "<div class='planning_element_foot'></div>" : "") + "            <button type='button' class='delete_button'>x</button>          </div>        </div> ";
     this.ui = $(this.dom);
     this.init_components();
     if (this.time_end === null) {
       this.time_end = {};
-    }
-    if (this.type === "single") {
-      this.ui.height(this.audiosource.length / 60);
-      this.make_single();
-    } else {
-      if (!this.time_end) {
-        this.time_end = {};
-        this.ui.height(this.audiosource.length / 60);
-      }
-      if (this.time_end.hour === 0) {
-        this.time_end.hour = 24;
-      }
-      this.set_height_from_time_end();
-      this.make_continuous();
     }
     this.bind_events();
     this.column.append(this.ui);
@@ -1310,11 +1314,11 @@ PlanningElement = (function() {
     this.time_end.minute = (height + this.time_start.minute) % 60;
     return this.ui.height(height);
   };
-  PlanningElement.prototype.set_height_from_time_end = function() {
+  PlanningElement.prototype.height_from_time_end = function() {
     var height;
     height = (this.time_end.hour - this.time_start.hour) * 60;
     height += this.time_end.minute - this.time_start.minute;
-    return this.ui.height(height);
+    return height;
   };
   PlanningElement.prototype.refresh_time_end = function() {
     return this.set_time_end_from_height(this.ui.height());

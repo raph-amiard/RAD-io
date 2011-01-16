@@ -451,7 +451,6 @@ input[type=text] {
   background-color:#B69;
   width:100%;
   height:5px;
-  display:none;
 }
 .planning_element_head {
   top:0;
@@ -501,4 +500,12 @@ input[type=text] {
     font-weight:bold;
     font-size:12px;
     margin-left:5px;
+}
+.continuous {
+  opacity:0.75;
+  z-index:200;
+}
+.single {
+  opacity:0.9;
+  z-index:400;
 }
