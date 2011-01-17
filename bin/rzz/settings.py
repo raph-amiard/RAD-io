@@ -150,11 +150,21 @@ LIQUIDSOAP_BIN = "liquidsoap"
 
 LOGIN_URL = "/login/"
 
+
+# TODO : Factorize the two for loops into a function
+
 # Set every other key defined in host_settings
 # So you can redefine anything per host in the host_settings file
 for el_name in dir(host_settings):
     if not(el_name in REQUIRED_KEYS) and not el_name.startswith('__'):
         # Get the element in the module
         el = getattr(host_settings, el_name)
+        # Set a similar element in the current module
+        globals()[el_name] = el
+
+for el_name in dir(radio_settings):
+    if not(el_name in REQUIRED_RADIO_KEYS) and not el_name.startswith('__'):
+        # Get the element in the module
+        el = getattr(radio_settings, el_name)
         # Set a similar element in the current module
         globals()[el_name] = el
