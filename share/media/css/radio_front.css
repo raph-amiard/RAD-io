@@ -13,7 +13,6 @@ body a:visited {
 
 #logo {
     position:absolute;
-    background-image:url("/site_media/img/site_content/logo_supreme.jpg");
     width:300px;
     height:200px;
 }
@@ -98,19 +97,15 @@ p, ul {
 }
 
 .back_four {
-    background-image:url("/site_media/img/site_content/font_four.jpg");
 }
 
 .back_three {
-    background-image:url("/site_media/img/site_content/font_three.jpg");
 }
 
 .back_one {
-    background-image:url("/site_media/img/site_content/font_one.jpg");
 }
 
 .back_two {
-    background-image:url("/site_media/img/site_content/font_two.jpg");
 }
 
 .clear_div {
