@@ -3,6 +3,7 @@ from django.conf import global_settings
 import logging
 
 REQUIRED_KEYS = ["PROJECT_PATH", "ICECAST_HOST", "ICECAST_PORT", "ICECAST_PWD", "RADIO_HOST"]
+REQUIRED_RADIO_KEYS = ["RADIO_OUTPUTS", "RADIO_MOUNT_NAME", "RADIO_JINGLES_FREQUENCY", "RADIO_SHORT_NAME", "RADIO_LONG_NAME"]
 
 # Import local settings
 try:
@@ -16,6 +17,16 @@ except ImportError, e:
 try:
     for key in REQUIRED_KEYS:
         globals()[key] = getattr(host_settings, key)
+except AttributeError, e:
+    raise e
+
+try:
+    import radio_settings
+    for key in REQUIRED_RADIO_KEYS:
+        globals()[key] = getattr(radio_settings, key)
+except ImportError, e:
+    print "Please make sure you have a radio_settings.py file defining the necessary settings for your radio"
+    raise e
 except AttributeError, e:
     raise e
 
@@ -85,7 +96,8 @@ TEMPLATE_LOADERS = (
 
 TEMPLATE_CONTEXT_PROCESSORS = (
 	'django.core.context_processors.auth',
-    'django.core.context_processors.media'
+    'django.core.context_processors.media',
+    'rzz.utils.context_processors.radio_settings',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -135,20 +147,6 @@ LIQUIDSOAP_PROGRAM_QUEUE_NAME = "program_queue"
 LIQUIDSOAP_SECURITY_AUDIOFILE = os.path.join(PROJECT_PATH, "share/media/security.mp3")
 LIQUIDSOAP_WORKING_DIRECTORY = os.path.join(PROJECT_PATH, "liquidsoap/")
 LIQUIDSOAP_BIN = "liquidsoap"
-
-
-##################
-# Radio settings #
-##################
-
-RADIO_OUTPUTS = [
-    { 'format':'ogg', 'quality':8.0 },
-    { 'format':'mp3', 'bitrate':128 }
-]
-RADIO_MOUNT_NAME = "zero"
-# Jingle frequency in seconds
-RADIO_JINGLES_FREQUENCY = 20 * 60
-
 
 LOGIN_URL = "/login/"
 
