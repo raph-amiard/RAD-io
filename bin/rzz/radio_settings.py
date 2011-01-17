@@ -2,8 +2,8 @@
 # Radio settings #
 ##################
 
-RADIO_SHORT_NAME = "RZZ"
-RADIO_LONG_NAME = "radiozerozero"
+RADIO_SHORT_NAME = "SHORTRADIONAME"
+RADIO_LONG_NAME = "LONG RADIO NAME"
 RADIO_OUTPUTS = [
     { 'format':'ogg', 'quality':8.0 },
     { 'format':'mp3', 'bitrate':128 }
