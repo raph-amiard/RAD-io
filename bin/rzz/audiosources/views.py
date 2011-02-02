@@ -295,22 +295,26 @@ def tags_list(request, audiomodel_klass):
                               extra_context={'categories':categories})
 
 
-def get_elements_by_day():
+def show_active_planning(request):
     import locale
     from calendar import day_name
+    from datetime import date
+
     locale.setlocale(locale.LC_ALL, '')
     planning = Planning.objects.active_planning()
     planning_elements = list(planning.planningelement_set.all())
-
-    byday = dict([
-        ( day_name[i], [p for p in planning_elements if p.day == i]) for i in range(7)
-    ])
-
-    return byday
-
-
-def show_active_planning(request):
+    elements = [
+        (
+            day_name[i],
+            sorted([p for p in planning_elements if p.day == i and p.type == 'single'],
+                   key=lambda p: p.time_start)
+        )
+         for i in range(7)
+    ]
 
     return direct_to_template(request,
                               'audiosources/show_active_planning.html',
-                              extra_context={'planning':planning})
+                              extra_context={
+                                  'days':elements,
+                                  'today':day_name[date.today().weekday()]
+                              })

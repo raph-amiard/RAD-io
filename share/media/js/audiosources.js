@@ -906,6 +906,7 @@ PlaylistComponent = (function() {
     var data;
     data = this.action === "edition" ? this.tags_table.to_delete_tags : {};
     $.extend(data, this.tracklist.get_tracks_map());
+    console.log(data);
     return this.form.ajaxSubmit({
       data: data,
       success: function(r) {

@@ -19,6 +19,8 @@
           <h3>Informations:</h3>
           <p> Nom de la playlist</p>
           <input type="text" id="playlist_title" name="title" value="<%= action == "edition" ? audiosource.title : "" %>"/>
+          <p> Description de la playlist </p>
+          <textarea id="playlist_description" name="description"><%= action == "edition" ? audiosource.description : "" %></textarea>
           <p>Ajouter des tags</p> <input type="text" id="audiosource_tags" name="tags" value=""/> 
           <p>Tags existants</p>
           <div class="tags_table_container"></div>

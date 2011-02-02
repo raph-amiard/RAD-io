@@ -38,5 +38,6 @@ urlpatterns = patterns('',
     url(r'^audiofile/(?P<audiofile_id>\d+)/edit/$', views.edit_audio_file, name='audio-file-edit'),
     url(r'^audiofile/tag/list/$', views.tags_list,{'audiomodel_klass':AudioFile}, name='audiofile-tags-list'),
     url(r'^planning/tag/list/$', views.tags_list,{'audiomodel_klass':Planning}, name='audiofile-tags-list'),
-    url(r'^audiosource/tag/list/$', views.tags_list,{'audiomodel_klass':AudioSource}, name='audiosource-tags-list')
-    )
+    url(r'^audiosource/tag/list/$', views.tags_list,{'audiomodel_klass':AudioSource}, name='audiosource-tags-list'),
+    url(r'playing/', views.show_active_planning, name='show-active-planning'),
+)
