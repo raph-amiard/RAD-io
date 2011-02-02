@@ -235,11 +235,7 @@ Widgets.footer_actions = {
           }
         }
       },
-      global: {
-        "Uploader des tracks": {
-          action: function() {}
-        }
-      }
+      global: {}
     },
     audiosource: {
       global: {

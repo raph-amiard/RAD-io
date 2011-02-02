@@ -165,9 +165,8 @@ Widgets.footer_actions =
                         menu = new AudioFileGroupEditForm(Widgets.audiomodels.selected_audiomodels)
                         menu.show()
 
-            global:
-                "Uploader des tracks":
-                    action: ->
+            global:{}
+
         audiosource:
             global:
                 "Créer une playlist":
