@@ -1,0 +1,38 @@
+{% extends "radio_front.html" %}
+
+{% block content %}
+
+  <script type="text/javascript">
+    function show_day(day, el) {
+        $('.day_elements').hide();
+        $('#' + day + '_element').show();
+        $(".day").attr('href', '#')
+        $(el).removeAttr('href')
+    }
+  </script>
+
+  <div class="content_holder">
+    <div id="planning_show">
+      <ul id="planning_days_list">
+        {% for day, _ in days %}
+          <li>
+            <a {% if day != today %} href="#"{% endif %} class="day" onclick='show_day("{{ day }}", this);'>{{ day }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      {% for day, elements in days %}
+        <div class="day_elements" id="{{ day }}_element" {% if day == today %}{% else %}style="display:none;"{% endif %}>
+          {% for element in elements %}
+            {% with element.source as source %}
+              <div class="planning_element">
+                <h4>{{ element.time_start }} - {{ source.title }}</h4>
+                <p>{{ source.description }}</p>
+              </div>
+            {% endwith %}
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
