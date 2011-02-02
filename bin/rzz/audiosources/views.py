@@ -105,8 +105,10 @@ def edit_audio_source(request, audiosource_id):
     """
     audio_source = get_object_or_404(AudioSource, id=audiosource_id)
     if request.method == 'POST':
+        print request.POST
         audio_source.sourceelement_set.all().delete()
         audio_source.title = request.POST['title']
+        audio_source.description = request.POST['description']
         audio_source.length = 0
         add_tags_to_model(request.POST['tags'], audio_source)
         # Save to be able to add audiofiles to source
@@ -291,3 +293,24 @@ def tags_list(request, audiomodel_klass):
     return direct_to_template(request,
                               'audiosources/tags_list.html',
                               extra_context={'categories':categories})
+
+
+def get_elements_by_day():
+    import locale
+    from calendar import day_name
+    locale.setlocale(locale.LC_ALL, '')
+    planning = Planning.objects.active_planning()
+    planning_elements = list(planning.planningelement_set.all())
+
+    byday = dict([
+        ( day_name[i], [p for p in planning_elements if p.day == i]) for i in range(7)
+    ])
+
+    return byday
+
+
+def show_active_planning(request):
+
+    return direct_to_template(request,
+                              'audiosources/show_active_planning.html',
+                              extra_context={'planning':planning})

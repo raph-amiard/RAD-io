@@ -680,6 +680,7 @@ class PlaylistComponent extends AppComponent
     submit: () ->
         data = if @action == "edition" then @tags_table.to_delete_tags else {}
         $.extend data, @tracklist.get_tracks_map()
+        console.log data
         @form.ajaxSubmit
             data: data
             success: (r) ->
