@@ -1,7 +1,7 @@
 {% extends "base_jquery.html" %}
 
 {% block css %}
-  <link href='{{ MEDIA_URL }}css/radio_front.css' rel='stylesheet' type='text/css'/>
+  <link href='{{ MEDIA_URL }}css/{% if custom_css %}{{ custom_css }}{% else %}radio_front.css{% endif %}' rel='stylesheet' type='text/css'/>
   <link href='http://fonts.googleapis.com/css?family=Cantarell&subset=latin' rel='stylesheet' type='text/css' />
 {% endblock %}
 
