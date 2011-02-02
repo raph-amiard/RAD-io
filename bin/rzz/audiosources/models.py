@@ -119,6 +119,7 @@ class AudioFile(AudioModel):
 
 class AudioSource(AudioModel):
     title = models.CharField('AudioSource title', max_length=400)
+    description = models.TextField()
     rzz_artist = models.ForeignKey(Artist, null=True)
     audio_files = models.ManyToManyField(AudioFile, through='SourceElement')
 
