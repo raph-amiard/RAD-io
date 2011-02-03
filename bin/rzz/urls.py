@@ -8,6 +8,7 @@ from rzz.admin.views import admin_root
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    (r'^grappelli/', include('grappelli.urls')),
 	(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 	(r'^admin/', include(admin.site.urls)),
 	(r'^audiosources/', include('rzz.audiosources.urls')),

@@ -6,5 +6,5 @@ def dict_union(*args, **kwargs):
         d[key] = val
     return d
 
-def dict_revert(d):                            
+def dict_revert(d):
     return dict([(val, key) for key, val in d.items()])
