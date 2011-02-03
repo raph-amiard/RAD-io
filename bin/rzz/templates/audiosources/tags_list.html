@@ -2,7 +2,9 @@
   <p class="cat_name"> {{ cat_name }} </p>
   <ul>
     {% for tag in tags %}
-      <li class="tag-box unselectable ui-widget-content"> {{ tag.name }} <input type="hidden" value="{{ tag.id}}"/> </li>
+      <li class="tag-box unselectable"> 
+        <p class="description"><span class="mdesc">{{ tag.name }} </span> <input type="hidden" value="{{ tag.id}}"/></p>
+      </li>
     {% endfor %}
   </ul>
 {% endfor %}

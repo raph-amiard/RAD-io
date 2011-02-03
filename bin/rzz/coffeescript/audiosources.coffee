@@ -61,7 +61,6 @@ Widgets.audiomodel_selector =
             do (model_name, button_name) =>
                 dom = tag 'span', button_name, class:@button_class
                 @container.append(dom)
-                $(dom).button()
 
                 dom.click (e) ->
                     Widgets.audiomodels.current_model = model_name
@@ -672,14 +671,12 @@ class PlaylistComponent extends AppComponent
         else
             @submit_button.text("Créer la playlist")
 
-        @submit_button.button()
         @submit_button.click (e) =>
             e.preventDefault();@submit()
 
     submit: () ->
         data = if @action == "edition" then @tags_table.to_delete_tags else {}
         $.extend data, @tracklist.get_tracks_map()
-        console.log data
         @form.ajaxSubmit
             data: data
             success: (r) ->
@@ -695,7 +692,7 @@ handle_audiofile_play = (e) ->
 
     e.preventDefault(); e.stopPropagation()
     player = document.getElementById 'audiofile_player'
-    if player then player.dewset e.target.href
+    if player then player.dewset e.currentTarget.href
 
 
 # ================================ PLANNINGS PART ================================= #
@@ -712,6 +709,10 @@ class PlanningComponent extends AppComponent
             else
                 planning_element.ui.hide()
 
+    close: ->
+        super
+        $("body").css overflow:"auto"
+
     bind_events: ->
 
         @submit_button.click =>
@@ -727,6 +728,13 @@ class PlanningComponent extends AppComponent
                 tjs = @to_json()
                 $.post "#{@edit_link}/#{@id}", {planning_data:tjs}, success_function()
 
+        str1 = "Montrer détails"
+        str2 = "Cacher détails"
+        @show_details_button.click =>
+            @planning_more.toggle('fast', =>
+                @update_height())
+            @show_details_button.text(if @show_details_button.text() == str1 then str2 else str1)
+
         @show_choices.find("input").click (e) =>
             @active_type = e.target.id.split(/planning_show_/)[1]
             @show_hide()
@@ -740,17 +748,18 @@ class PlanningComponent extends AppComponent
         @tds_width = @tds.map (i, el) -> $(el).width()
         @board_table = $ '#planning_board'
         @submit_button = $ '#planning_submit'
+        @show_details_button = $ '#planning_show_details'
         @title_input = $ '#planning_title'
         @tags_input = $ '#planning_tags'
         @tags_table_container = $ '#planning_edit_content .tags_table_container'
         @show_choices = $ '#planning_show_choices'
         @show_choices.buttonset()
         @show_choices.disableTextSelect()
-        @submit_button.button()
+        @planning_more = $ "#planning_more"
         @update_height()
 
     update_height: ->
-        @container.height $(document).height() - @container.offset().top - 20
+        @container.height $(window).height() - @container.offset().top - 20
 
     add_grid: ->
         for h in [0...24]
@@ -776,10 +785,9 @@ class PlanningComponent extends AppComponent
         @planning_elements = new Set()
         @init_components()
         @add_grid()
-        console.log "First phase : #{(new Date).getTime() - start}"
         start = (new Date).getTime()
         @bind_events()
-        console.log "Binding events: #{(new Date).getTime() - start}"
+        $("body").css overflow:"hidden"
 
         if data
             @tags_table = new TagsTable(data.tags_by_category)
@@ -790,7 +798,6 @@ class PlanningComponent extends AppComponent
             @init_data data
         else
             @mode = "creation"
-        console.log "Adding data: #{(new Date).getTime() - start}"
         @active_type = "single"
         @show_hide()
 

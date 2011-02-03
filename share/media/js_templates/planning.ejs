@@ -1,20 +1,53 @@
-<div id="planning_edit" class="edit_div">
-  <div id="planning_header">
-    <div id="planning_edit_content" class="content_div">
-      <div style="float:left;">
-        <p> Nom du planning </p>
-        <input type="text" id="planning_title" name="title" value=""/>
-        <p>Ajouter des tags</p> <input type="text" id="planning_tags" name="tags" value=""/> 
-      </div>
-      <div class="tags_table_container" style="margin-left:10px;float:left;"></div>
-      <button id="planning_submit" type="button" style="float:right;">Envoyer</button>
+<div id="planning_edit" class="module">
 
-      <div id="planning_show_choices" >
-        <input type="radio" name="planning_show_radio" id="planning_show_single" checked><label for="planning_show_single">Playlists</label></input>
-        <input type="radio" name="planning_show_radio" id="planning_show_continuous"><label for="planning_show_continuous">Megashuffle</label></input>
-        <input type="radio" name="planning_show_radio" id="planning_show_jingle"><label for="planning_show_jingle">Jingles</label></input>
+  <div id="planning_header">
+    <h2 style="height:23px;">Edition du planning
+      <span class="bbutton" id="planning_submit" style="float:right;">Envoyer</span>
+      <span class="bbutton" id="planning_show_details" style="float:right;margin-right:15px;">Montrer détails</span>
+    </h2>
+
+    <div style="display:none;" id="planning_more">
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="planning_title">Nom du planning</label>
+          </div>
+          <div class="column span-flexible">
+            <input class="input" type="text" id="planning_title" name="title" value=""/>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="planning_tags">Ajouter des tags</label>
+          </div>
+          <div class="column span-flexible">
+            <input class="input" type="text" id="planning_tags" name="tags" value=""/> 
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="tags_table_container">Tags existants</label>
+          </div>
+
+          <div class="column span">
+            <div class="tags_table_container input"></div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <div id="planning_show_choices" >
+      <input type="radio" name="planning_show_radio" id="planning_show_single" checked><label for="planning_show_single">Playlists</label></input>
+      <input type="radio" name="planning_show_radio" id="planning_show_continuous"><label for="planning_show_continuous">Megashuffle</label></input>
+      <input type="radio" name="planning_show_radio" id="planning_show_jingle"><label for="planning_show_jingle">Jingles</label></input>
+    </div>
+
     <table id="planning_board_header" class="planning_table">
       <tr>
         <th class="hours_td"></th>
@@ -27,7 +60,9 @@
         <th class="day_td">Dimanche</th>
       </tr>
     </table> 
+
   </div>
+
   <div id="main_planning_board_container">
     <div id="main_planning_board">
       <table id="planning_board" class="planning_table">
@@ -44,4 +79,5 @@
       </table>
     </div>
   </div>
+
 </div>

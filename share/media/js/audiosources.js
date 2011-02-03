@@ -95,7 +95,6 @@ Widgets.audiomodel_selector = {
         "class": this.button_class
       });
       this.container.append(dom);
-      $(dom).button();
       return dom.click(function(e) {
         Widgets.audiomodels.current_model = model_name;
         Widgets.tags.clear();
@@ -892,7 +891,6 @@ PlaylistComponent = (function() {
     } else {
       this.submit_button.text("Créer la playlist");
     }
-    this.submit_button.button();
     this.submit_button.click(__bind(function(e) {
       e.preventDefault();
       return this.submit();
@@ -902,7 +900,6 @@ PlaylistComponent = (function() {
     var data;
     data = this.action === "edition" ? this.tags_table.to_delete_tags : {};
     $.extend(data, this.tracklist.get_tracks_map());
-    console.log(data);
     return this.form.ajaxSubmit({
       data: data,
       success: function(r) {
@@ -924,7 +921,7 @@ handle_audiofile_play = function(e) {
   e.stopPropagation();
   player = document.getElementById('audiofile_player');
   if (player) {
-    return player.dewset(e.target.href);
+    return player.dewset(e.currentTarget.href);
   }
 };
 PlanningComponent = (function() {
@@ -941,7 +938,14 @@ PlanningComponent = (function() {
     }
     return _results;
   };
+  PlanningComponent.prototype.close = function() {
+    PlanningComponent.__super__.close.apply(this, arguments);
+    return $("body").css({
+      overflow: "auto"
+    });
+  };
   PlanningComponent.prototype.bind_events = function() {
+    var str1, str2;
     this.submit_button.click(__bind(function() {
       var success_function, tjs;
       success_function = __bind(function() {
@@ -963,6 +967,14 @@ PlanningComponent = (function() {
         }, success_function());
       }
     }, this));
+    str1 = "Montrer détails";
+    str2 = "Cacher détails";
+    this.show_details_button.click(__bind(function() {
+      this.planning_more.toggle('fast', __bind(function() {
+        return this.update_height();
+      }, this));
+      return this.show_details_button.text(this.show_details_button.text() === str1 ? str2 : str1);
+    }, this));
     this.show_choices.find("input").click(__bind(function(e) {
       this.active_type = e.target.id.split(/planning_show_/)[1];
       return this.show_hide();
@@ -980,17 +992,18 @@ PlanningComponent = (function() {
     });
     this.board_table = $('#planning_board');
     this.submit_button = $('#planning_submit');
+    this.show_details_button = $('#planning_show_details');
     this.title_input = $('#planning_title');
     this.tags_input = $('#planning_tags');
     this.tags_table_container = $('#planning_edit_content .tags_table_container');
     this.show_choices = $('#planning_show_choices');
     this.show_choices.buttonset();
     this.show_choices.disableTextSelect();
-    this.submit_button.button();
+    this.planning_more = $("#planning_more");
     return this.update_height();
   };
   PlanningComponent.prototype.update_height = function() {
-    return this.container.height($(document).height() - this.container.offset().top - 20);
+    return this.container.height($(window).height() - this.container.offset().top - 20);
   };
   PlanningComponent.prototype.add_grid = function() {
     var content, div_class, gridiv, h, i, _results;
@@ -1041,10 +1054,11 @@ PlanningComponent = (function() {
     this.planning_elements = new Set();
     this.init_components();
     this.add_grid();
-    console.log("First phase : " + ((new Date).getTime() - start));
     start = (new Date).getTime();
     this.bind_events();
-    console.log("Binding events: " + ((new Date).getTime() - start));
+    $("body").css({
+      overflow: "hidden"
+    });
     if (data) {
       this.tags_table = new TagsTable(data.tags_by_category);
       this.tags_table_container.append(tag('p', 'Tags')).append(this.tags_table.ui);
@@ -1055,7 +1069,6 @@ PlanningComponent = (function() {
     } else {
       this.mode = "creation";
     }
-    console.log("Adding data: " + ((new Date).getTime() - start));
     this.active_type = "single";
     this.show_hide();
   }
