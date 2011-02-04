@@ -171,6 +171,7 @@ Widgets.footer_actions =
                 "Créer une playlist":
                     action: ->
                         $.getJSON "/audiosources/json/create-audio-source", (data) ->
+                            console.log data
                             Application.load "playlist", data
             selection:
                 "Supprimer":
@@ -191,13 +192,15 @@ Widgets.footer_actions =
     load: ->
         for model, actions_types of @actions
             footer = @footers[model] = div "", class:"head_and_foot"
+            footer_container = div "", class:"footer_container"
+            footer.append footer_container
             for action_type, actions of actions_types
                 for action_name, properties of actions
                     if properties.predicate and not properties.predicate()
                         continue
-                    action_button = tag "button", action_name, class:"footer_button"
+                    action_button = tag "span", action_name, class:"bbutton"
                     action_button.click properties.action
-                    footer.append action_button
+                    footer_container.append action_button
 
         for footer_model, footer of @footers
             @container.append footer
@@ -210,7 +213,6 @@ Widgets.footer_actions =
         @active_footer?.hide()
         @active_footer = @footers[audiomodel]
         @active_footer.show()
-        @active_footer.find(".footer_button").button()
 
 
 class TemplateComponent
@@ -308,8 +310,10 @@ class ListAudiomodel extends Audiomodel
                 @ui.bind 'dragstart', (e, dd) =>
 
                     height = @length / 60
-                    width = planning.tds[1].width
-                    proxy = div @title, class:'audiofile_proxy'
+                    width = $(planning.tds[1]).width()
+                    console.log planning
+                    console.log "WIDTH: #{width}"
+                    proxy = div @title, class:'planning_element'
 
                     proxy.css top:dd.offsetY, left:dd.offsetX, position:'absolute'
                     $('body').append proxy
@@ -857,6 +861,8 @@ class PlanningComponent extends AppComponent
 
 class PlanningElement extends Audiomodel
 
+    is_dragged:no
+
     constructor: (planning, json_model) ->
         height = 0; handles = no; cl=""
         
@@ -882,7 +888,6 @@ class PlanningElement extends Audiomodel
         @dom = "
         <div class='planning_element #{@type}' style='top:#{@top}px;width:#{@planning.tds_width[@day + 1]}px;height:#{height}px;'>
           <div class='planning_element_container' >
-            #{if handles then "<div class='planning_element_head'></div>" else ""}
             <div class='phead'>
                 <div style='position:relative;top:-3px;'>
                     <span class='planning_element_time'>#{format_time @time_start}</span>
@@ -900,6 +905,7 @@ class PlanningElement extends Audiomodel
 
         @bind_events()
         @column.append(@ui)
+        @update_width()
 
     make_model: () ->
         # Returns every piece of information about the planning element
@@ -914,6 +920,7 @@ class PlanningElement extends Audiomodel
 
     init_components: ->
         @ui_head = @ui.find('.planning_element_head')
+        @ui_phead = @ui.find('.phead')
         @ui_foot = @ui.find('.planning_element_foot')
         @delete_button = @ui.find('.delete_button')
         @time_span = @ui.find('.planning_element_time')
@@ -933,14 +940,34 @@ class PlanningElement extends Audiomodel
         @ui.css 'z-index':400
         @ui.height @audiosource.length / 60
 
+    update_width: -> @ui.width @column.width()
+
     bind_events: ->
         color = null; z_index=null
         td_positions = []
         element = null
 
+        phead_set_normal_size = => @ui_phead.animate {height:"10px"}, 200
+
+        @ui.hover =>
+            if not @is_dragged then @ui.addClass "planning_element_hover"
+        , => @ui.removeClass "planning_element_hover"
+
+        timeout = null
+        @ui_phead.hover =>
+            if not @is_dragged
+                timeout = setTimeout (=>
+                    height = @ui_phead.find('div').height() + 4
+                    if (not @is_dragged) and height > 20 then @ui_phead.animate {height:"#{height}px"}, 200
+                    timeout = null
+                ), 400
+        , =>
+            if timeout then clearTimeout timeout
+            else phead_set_normal_size()
+
         # Bind the resizing of the window 
         # to the resizing of the planning window
-        $(window).resize => @ui.width @column.width()
+        $(window).resize => @update_width()
 
         # Planning drag routines
         # ----------------------
@@ -949,9 +976,12 @@ class PlanningElement extends Audiomodel
         # Doesn't use jquery ui draggable, but the lower level jquery.drag plugin
 
         @ui.bind 'dragstart', (e, dd) =>
+            phead_set_normal_size()
             # Drag start function. 
             # It has the responsibility of creating a new element if ctrl is pressed
             e.stopPropagation(); e.preventDefault()
+
+            @is_dragged = yes
 
             if Application.is_ctrl_pressed
                 element = @planning.create_element @make_model()
@@ -983,24 +1013,35 @@ class PlanningElement extends Audiomodel
         @ui.bind 'dragend', (e, dd) =>
             # Drag end function
             # Called when the user releases the button
+
+            @is_dragged = no
+
             e.stopPropagation();e.preventDefault()
             element.ui.removeClass "planning_element_dragged"
             element.ui.css "z-index": z_index
 
         orig_height = null; orig_top = null
 
-        @ui_head.bind 'dragstart', (e, dd) =>
-            e.stopPropagation();e.preventDefault()
-            orig_height = @ui.height()
-            orig_top = @top
+        if @type == "continuous"
+            @ui_phead.css cursor:"s-resize"
+            @ui_phead.bind 'dragstart', (e, dd) =>
+                phead_set_normal_size()
+                @is_dragged = yes
+                e.stopPropagation();e.preventDefault()
+                orig_height = @ui.height()
+                orig_top = @top
 
-        @ui_head.bind 'drag', (e, dd) =>
-            e.stopPropagation();e.preventDefault()
-            difference = step(dd.deltaY, 10)
-            @set_time_from_pos(orig_top + difference)
-            @set_time_end_from_height orig_height - difference
+            @ui_phead.bind 'drag', (e, dd) =>
+                e.stopPropagation();e.preventDefault()
+                difference = step(dd.deltaY, 10)
+                @set_time_from_pos(orig_top + difference)
+                @set_time_end_from_height orig_height - difference
+
+            @ui_phead.bind 'dragend', (e, dd) => @is_dragged = no
 
         @ui_foot.bind 'dragstart', (e, dd) =>
+            phead_set_normal_size()
+            @is_dragged = yes
             e.stopPropagation();e.preventDefault()
             orig_height = @ui.height()
 
@@ -1008,6 +1049,8 @@ class PlanningElement extends Audiomodel
             e.stopPropagation();e.preventDefault()
             difference = step(dd.deltaY, 10)
             @set_time_end_from_height orig_height + difference
+
+        @ui_foot.bind 'dragend', (e, dd) => @is_dragged = no
 
         @delete_button.click (e, dd) =>
             @planning.delete_element @

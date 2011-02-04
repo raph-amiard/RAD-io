@@ -241,6 +241,7 @@ Widgets.footer_actions = {
         "Créer une playlist": {
           action: function() {
             return $.getJSON("/audiosources/json/create-audio-source", function(data) {
+              console.log(data);
               return Application.load("playlist", data);
             });
           }
@@ -270,13 +271,17 @@ Widgets.footer_actions = {
   container: d$("#track_selector_footer"),
   active_footer: void 0,
   load: function() {
-    var action_button, action_name, action_type, actions, actions_types, footer, footer_model, model, properties, _ref, _ref2;
+    var action_button, action_name, action_type, actions, actions_types, footer, footer_container, footer_model, model, properties, _ref, _ref2;
     _ref = this.actions;
     for (model in _ref) {
       actions_types = _ref[model];
       footer = this.footers[model] = div("", {
         "class": "head_and_foot"
       });
+      footer_container = div("", {
+        "class": "footer_container"
+      });
+      footer.append(footer_container);
       for (action_type in actions_types) {
         actions = actions_types[action_type];
         for (action_name in actions) {
@@ -284,11 +289,11 @@ Widgets.footer_actions = {
           if (properties.predicate && !properties.predicate()) {
             continue;
           }
-          action_button = tag("button", action_name, {
-            "class": "footer_button"
+          action_button = tag("span", action_name, {
+            "class": "bbutton"
           });
           action_button.click(properties.action);
-          footer.append(action_button);
+          footer_container.append(action_button);
         }
       }
     }
@@ -307,8 +312,7 @@ Widgets.footer_actions = {
       _ref.hide();
     }
     this.active_footer = this.footers[audiomodel];
-    this.active_footer.show();
-    return this.active_footer.find(".footer_button").button();
+    return this.active_footer.show();
   }
 };
 TemplateComponent = (function() {
@@ -417,9 +421,11 @@ ListAudiomodel = (function() {
         this.ui.bind('dragstart', __bind(function(e, dd) {
           var height, width;
           height = this.length / 60;
-          width = planning.tds[1].width;
+          width = $(planning.tds[1]).width();
+          console.log(planning);
+          console.log("WIDTH: " + width);
           proxy = div(this.title, {
-            "class": 'audiofile_proxy'
+            "class": 'planning_element'
           });
           proxy.css({
             top: dd.offsetY,
@@ -1132,6 +1138,7 @@ PlanningComponent = (function() {
 })();
 PlanningElement = (function() {
   __extends(PlanningElement, Audiomodel);
+  PlanningElement.prototype.is_dragged = false;
   function PlanningElement(planning, json_model) {
     var cl, handles, height;
     height = 0;
@@ -1157,7 +1164,7 @@ PlanningElement = (function() {
     }
     this._set_column_from_day();
     this.top = this.time_start.minute + this.time_start.hour * 60;
-    this.dom = "        <div class='planning_element " + this.type + "' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;height:" + height + "px;'>          <div class='planning_element_container' >            " + (handles ? "<div class='planning_element_head'></div>" : "") + "            <div class='phead'>                <div style='position:relative;top:-3px;'>                    <span class='planning_element_time'>" + (format_time(this.time_start)) + "</span>                    <span>" + this.audiosource.title + "</span>                    <span class='delete_button'>x</span>                </div>            </div>            " + (handles ? "<div class='planning_element_foot'></div>" : "") + "          </div>        </div> ";
+    this.dom = "        <div class='planning_element " + this.type + "' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;height:" + height + "px;'>          <div class='planning_element_container' >            <div class='phead'>                <div style='position:relative;top:-3px;'>                    <span class='planning_element_time'>" + (format_time(this.time_start)) + "</span>                    <span>" + this.audiosource.title + "</span>                    <span class='delete_button'>x</span>                </div>            </div>            " + (handles ? "<div class='planning_element_foot'></div>" : "") + "          </div>        </div> ";
     this.ui = $(this.dom);
     this.init_components();
     if (this.time_end === null) {
@@ -1165,6 +1172,7 @@ PlanningElement = (function() {
     }
     this.bind_events();
     this.column.append(this.ui);
+    this.update_width();
   }
   PlanningElement.prototype.make_model = function() {
     return {
@@ -1179,6 +1187,7 @@ PlanningElement = (function() {
   };
   PlanningElement.prototype.init_components = function() {
     this.ui_head = this.ui.find('.planning_element_head');
+    this.ui_phead = this.ui.find('.phead');
     this.ui_foot = this.ui.find('.planning_element_foot');
     this.delete_button = this.ui.find('.delete_button');
     return this.time_span = this.ui.find('.planning_element_time');
@@ -1211,18 +1220,56 @@ PlanningElement = (function() {
     });
     return this.ui.height(this.audiosource.length / 60);
   };
+  PlanningElement.prototype.update_width = function() {
+    return this.ui.width(this.column.width());
+  };
   PlanningElement.prototype.bind_events = function() {
-    var color, element, orig_height, orig_top, td_positions, z_index;
+    var color, element, orig_height, orig_top, phead_set_normal_size, td_positions, timeout, z_index;
     color = null;
     z_index = null;
     td_positions = [];
     element = null;
+    phead_set_normal_size = __bind(function() {
+      return this.ui_phead.animate({
+        height: "10px"
+      }, 200);
+    }, this);
+    this.ui.hover(__bind(function() {
+      if (!this.is_dragged) {
+        return this.ui.addClass("planning_element_hover");
+      }
+    }, this), __bind(function() {
+      return this.ui.removeClass("planning_element_hover");
+    }, this));
+    timeout = null;
+    this.ui_phead.hover(__bind(function() {
+      if (!this.is_dragged) {
+        return timeout = setTimeout((__bind(function() {
+          var height;
+          height = this.ui_phead.find('div').height() + 4;
+          if ((!this.is_dragged) && height > 20) {
+            this.ui_phead.animate({
+              height: "" + height + "px"
+            }, 200);
+          }
+          return timeout = null;
+        }, this)), 400);
+      }
+    }, this), __bind(function() {
+      if (timeout) {
+        return clearTimeout(timeout);
+      } else {
+        return phead_set_normal_size();
+      }
+    }, this));
     $(window).resize(__bind(function() {
-      return this.ui.width(this.column.width());
+      return this.update_width();
     }, this));
     this.ui.bind('dragstart', __bind(function(e, dd) {
+      phead_set_normal_size();
       e.stopPropagation();
       e.preventDefault();
+      this.is_dragged = true;
       if (Application.is_ctrl_pressed) {
         element = this.planning.create_element(this.make_model());
       } else {
@@ -1257,6 +1304,7 @@ PlanningElement = (function() {
       }
     }, this));
     this.ui.bind('dragend', __bind(function(e, dd) {
+      this.is_dragged = false;
       e.stopPropagation();
       e.preventDefault();
       element.ui.removeClass("planning_element_dragged");
@@ -1266,21 +1314,33 @@ PlanningElement = (function() {
     }, this));
     orig_height = null;
     orig_top = null;
-    this.ui_head.bind('dragstart', __bind(function(e, dd) {
-      e.stopPropagation();
-      e.preventDefault();
-      orig_height = this.ui.height();
-      return orig_top = this.top;
-    }, this));
-    this.ui_head.bind('drag', __bind(function(e, dd) {
-      var difference;
-      e.stopPropagation();
-      e.preventDefault();
-      difference = step(dd.deltaY, 10);
-      this.set_time_from_pos(orig_top + difference);
-      return this.set_time_end_from_height(orig_height - difference);
-    }, this));
+    if (this.type === "continuous") {
+      this.ui_phead.css({
+        cursor: "s-resize"
+      });
+      this.ui_phead.bind('dragstart', __bind(function(e, dd) {
+        phead_set_normal_size();
+        this.is_dragged = true;
+        e.stopPropagation();
+        e.preventDefault();
+        orig_height = this.ui.height();
+        return orig_top = this.top;
+      }, this));
+      this.ui_phead.bind('drag', __bind(function(e, dd) {
+        var difference;
+        e.stopPropagation();
+        e.preventDefault();
+        difference = step(dd.deltaY, 10);
+        this.set_time_from_pos(orig_top + difference);
+        return this.set_time_end_from_height(orig_height - difference);
+      }, this));
+      this.ui_phead.bind('dragend', __bind(function(e, dd) {
+        return this.is_dragged = false;
+      }, this));
+    }
     this.ui_foot.bind('dragstart', __bind(function(e, dd) {
+      phead_set_normal_size();
+      this.is_dragged = true;
       e.stopPropagation();
       e.preventDefault();
       return orig_height = this.ui.height();
@@ -1291,6 +1351,9 @@ PlanningElement = (function() {
       e.preventDefault();
       difference = step(dd.deltaY, 10);
       return this.set_time_end_from_height(orig_height + difference);
+    }, this));
+    this.ui_foot.bind('dragend', __bind(function(e, dd) {
+      return this.is_dragged = false;
     }, this));
     return this.delete_button.click(__bind(function(e, dd) {
       return this.planning.delete_element(this);
