@@ -510,6 +510,7 @@ input[type=text] {
 .planning_element:hover .phead {
   overflow:visible;
   height:auto;
+  z-index:10000;
 }
 
 .planning_element_container div span {
