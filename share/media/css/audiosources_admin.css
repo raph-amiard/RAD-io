@@ -489,6 +489,7 @@ input[type=text] {
 .planning_element:hover {
     background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#D3D3D3), to(#C6C6C6));
     background: -moz-linear-gradient(top, #D3D3D3, #C6C6C6);
+    z-index:10000;
 }
 
 .planning_element_dragged {
@@ -510,7 +511,6 @@ input[type=text] {
 .planning_element:hover .phead {
   overflow:visible;
   height:auto;
-  z-index:10000;
 }
 
 .planning_element_container div span {
