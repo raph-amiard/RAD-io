@@ -1006,7 +1006,7 @@ PlanningComponent = (function() {
     return this.container.height($(window).height() - this.container.offset().top - 20);
   };
   PlanningComponent.prototype.add_grid = function() {
-    var content, div_class, gridiv, h, i, _results;
+    var div_class, gridiv, h, i, timediv, _results;
     _results = [];
     for (h = 0; h < 24; h++) {
       _results.push((function() {
@@ -1017,11 +1017,13 @@ PlanningComponent = (function() {
             3: 'half',
             6: 'hour'
           }[i] || 'tenth';
-          content = i === 1 ? "" + (format_number(h, 2)) + "h00" : "";
-          gridiv = div(content, {
+          gridiv = div("", {
             "class": "grid_time grid_" + div_class
           });
-          _results.push(this.board.append(gridiv));
+          this.board.append(gridiv);
+          _results.push(i === 1 ? (timediv = div("" + (format_number(h, 2)) + "h00", {
+            "class": "grid_showtime"
+          }), this.board.find(".hours_td").append(timediv)) : void 0);
         }
         return _results;
       }).call(this));
@@ -1155,7 +1157,7 @@ PlanningElement = (function() {
     }
     this._set_column_from_day();
     this.top = this.time_start.minute + this.time_start.hour * 60;
-    this.dom = "        <div class='planning_element " + this.type + "' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;height:" + height + "px;'>          <div class='planning_element_container' >            " + (handles ? "<div class='planning_element_head'></div>" : "") + "            <p>" + json_model.audiosource.title + "</p>            " + (handles ? "<div class='planning_element_foot'></div>" : "") + "            <button type='button' class='delete_button'>x</button>          </div>        </div> ";
+    this.dom = "        <div class='planning_element " + this.type + "' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;height:" + height + "px;'>          <div class='planning_element_container' >            " + (handles ? "<div class='planning_element_head'></div>" : "") + "            <div>                <span class='planning_element_time'>" + (format_time(this.time_start)) + "</span>                <span>" + json_model.audiosource.title + "</span>                <span class='delete_button'>x</span>            </div>            " + (handles ? "<div class='planning_element_foot'></div>" : "") + "          </div>        </div> ";
     this.ui = $(this.dom);
     this.init_components();
     if (this.time_end === null) {
@@ -1178,7 +1180,8 @@ PlanningElement = (function() {
   PlanningElement.prototype.init_components = function() {
     this.ui_head = this.ui.find('.planning_element_head');
     this.ui_foot = this.ui.find('.planning_element_foot');
-    return this.delete_button = this.ui.find('.delete_button');
+    this.delete_button = this.ui.find('.delete_button');
+    return this.time_span = this.ui.find('.planning_element_time');
   };
   PlanningElement.prototype.edit_properties = function() {
     return __bind(function() {
@@ -1225,11 +1228,8 @@ PlanningElement = (function() {
       } else {
         element = this;
       }
-      color = element.ui.css('background-color');
       z_index = element.ui.css('z-index');
-      element.ui.css({
-        'background-color': '#EBC'
-      });
+      element.ui.addClass("planning_element_dragged");
       element.ui.css({
         'z-index': z_index + 10
       });
@@ -1251,6 +1251,7 @@ PlanningElement = (function() {
         element.ui.width(element.column.width());
       }
       element.set_time_from_pos(top);
+      this.time_span.text(format_time(this.time_start));
       if (element.type === "continuous") {
         return element.refresh_time_end();
       }
@@ -1258,9 +1259,7 @@ PlanningElement = (function() {
     this.ui.bind('dragend', __bind(function(e, dd) {
       e.stopPropagation();
       e.preventDefault();
-      element.ui.css({
-        'background-color': color
-      });
+      element.ui.removeClass("planning_element_dragged");
       return element.ui.css({
         "z-index": z_index
       });

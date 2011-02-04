@@ -68,6 +68,13 @@ format_number = (num, length) ->
     zeroes = if length > len then length - len else 0
     strnum = ("0" for _ in [0...zeroes]).join('') + strnum
 
+format_time = (time) ->
+    fnum = (num) -> format_number num, 2
+    nh = fnum time.hour
+    nm = fnum time.minute
+    "#{nh}h#{nm}"
+
+
 
 format_length = (l) ->
     fnum = (num) -> format_number num, 2

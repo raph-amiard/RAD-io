@@ -765,9 +765,11 @@ class PlanningComponent extends AppComponent
         for h in [0...24]
             for i in [1..6]
                 div_class = {3:'half',6:'hour'}[i] or 'tenth'
-                content = if i == 1 then "#{format_number h, 2}h00" else ""
-                gridiv = div content, class:"grid_time grid_#{div_class}"
+                gridiv = div "", class:"grid_time grid_#{div_class}"
                 @board.append(gridiv)
+                if i == 1
+                    timediv = div "#{format_number h, 2}h00", class:"grid_showtime"
+                    @board.find(".hours_td").append(timediv)
 
     init_data: (data) ->
         if data.name
@@ -881,9 +883,12 @@ class PlanningElement extends Audiomodel
         <div class='planning_element #{@type}' style='top:#{@top}px;width:#{@planning.tds_width[@day + 1]}px;height:#{height}px;'>
           <div class='planning_element_container' >
             #{if handles then "<div class='planning_element_head'></div>" else ""}
-            <p>#{json_model.audiosource.title}</p>
+            <div>
+                <span class='planning_element_time'>#{format_time @time_start}</span>
+                <span>#{json_model.audiosource.title}</span>
+                <span class='delete_button'>x</span>
+            </div>
             #{if handles then "<div class='planning_element_foot'></div>" else ""}
-            <button type='button' class='delete_button'>x</button>
           </div>
         </div> "
         @ui = $(@dom)
@@ -906,10 +911,10 @@ class PlanningElement extends Audiomodel
         planning_id:@planning_id
 
     init_components: ->
-        # TODO : Rework this, construct the ui manually and don't use selectors
         @ui_head = @ui.find('.planning_element_head')
         @ui_foot = @ui.find('.planning_element_foot')
         @delete_button = @ui.find('.delete_button')
+        @time_span = @ui.find('.planning_element_time')
 
     edit_properties: -> =>
         form = div ""
@@ -951,11 +956,10 @@ class PlanningElement extends Audiomodel
             else
                 element = @
 
-            color = element.ui.css 'background-color'
             z_index = element.ui.css 'z-index'
 
             # TODO: Remove hard-coded color element
-            element.ui.css 'background-color':'#EBC'
+            element.ui.addClass "planning_element_dragged"
             element.ui.css 'z-index': z_index + 10
             td_positions = new GridPositionner(@planning.tds)
 
@@ -971,13 +975,14 @@ class PlanningElement extends Audiomodel
                 element.set_day_from_column column
                 element.ui.width element.column.width()
             element.set_time_from_pos top
+            @time_span.text format_time @time_start
             if element.type == "continuous" then element.refresh_time_end()
 
         @ui.bind 'dragend', (e, dd) =>
             # Drag end function
             # Called when the user releases the button
             e.stopPropagation();e.preventDefault()
-            element.ui.css 'background-color':color
+            element.ui.removeClass "planning_element_dragged"
             element.ui.css "z-index": z_index
 
         orig_height = null; orig_top = null
