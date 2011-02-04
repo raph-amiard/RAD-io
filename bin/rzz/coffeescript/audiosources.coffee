@@ -883,10 +883,12 @@ class PlanningElement extends Audiomodel
         <div class='planning_element #{@type}' style='top:#{@top}px;width:#{@planning.tds_width[@day + 1]}px;height:#{height}px;'>
           <div class='planning_element_container' >
             #{if handles then "<div class='planning_element_head'></div>" else ""}
-            <div>
-                <span class='planning_element_time'>#{format_time @time_start}</span>
-                <span>#{json_model.audiosource.title}</span>
-                <span class='delete_button'>x</span>
+            <div class='phead'>
+                <div style='position:relative;top:-3px;'>
+                    <span class='planning_element_time'>#{format_time @time_start}</span>
+                    <span>#{@audiosource.title}</span>
+                    <span class='delete_button'>x</span>
+                </div>
             </div>
             #{if handles then "<div class='planning_element_foot'></div>" else ""}
           </div>
