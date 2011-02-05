@@ -69,6 +69,13 @@ p {
   float:right;
 }
 
+#header a:link, #header a:visited {
+    color: #59AFCC;
+}
+#header a:hover, #header a:active {
+    color: #EEE;
+}
+
 #header .title {
   margin: 0;
   padding: 8px 10px;
@@ -82,6 +89,80 @@ p {
   padding-right: 20px;
 }
 
+#headertools {
+  float:right;
+  border-left: 1px solid #303030;
+  list-style-type: none;
+  margin:0;
+  padding:0;
+  line-height: 14px;
+}
+
+#headertools > li {
+  border-left: 1px solid #444;
+  border-right: 1px solid #333;
+  padding-left:10px;
+  float: right;
+}
+
+#headertools li.menu {
+  padding: 8px 10px;
+  position: relative;
+  width: 200px;
+}
+
+li.menu a.user-options-handler {
+    color: #eee !important;
+}
+li.menu ul.menu-items {
+    border-top: 1px solid #262626;
+    border-bottom-left-radius: 5px; -moz-border-radius-bottomleft: 5px; -webkit-border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px; -moz-border-radius-bottomright: 5px; -webkit-border-bottom-right-radius: 5px;
+    background: #333;
+    display: block;
+    position: absolute;
+    float: none;
+    clear: both;
+    z-index: 1000;
+    margin: 7px -10px 0;
+    width: 221px;
+    list-style-type:none;
+    padding:0px;
+}
+ul.menu-items li {
+    border-top: 1px solid #404040;
+    border-bottom: 1px solid #292929;
+    margin: 0px;
+    padding: 8px 10px;
+    list-style-type:none;
+    float: none !important;
+    clear: both;
+    font-family: inherit;
+    font-size: 100%;
+    font-style: inherit;
+    font-weight: inherit;
+    vertical-align: baseline;
+}
+ul.menu-items li:last-child {
+    border-bottom: 0;
+    border-bottom-left-radius: 5px; -moz-border-radius-bottomleft: 5px; -webkit-border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px; -moz-border-radius-bottomright: 5px; -webkit-border-bottom-right-radius: 5px;
+}
+
+ul.menu-items li.menu_selected {
+  background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#28A9D4), to(#208AAE));
+  background: -moz-linear-gradient(top, #28A9D4, #208AAE);
+  border-top: 1px solid #28A9D4;
+  border-bottom: 1px solid #208AAE;
+}
+
+.menu_selected a:link, .menu_selected a:visited {
+  color:white !important;
+}
+
+ul.menu-items li a {
+    display: block;
+}
 #header {
   color: #eee;
   background: #333;

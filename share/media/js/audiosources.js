@@ -1,4 +1,4 @@
-var AppComponent, Application, AudioFileForm, AudioFileGroupEditForm, Audiomodel, GridPositionner, ListAudiomodel, MainComponent, PlanningComponent, PlanningElement, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, handle_audiofile_play, step;
+var AppComponent, Application, AudioFileForm, AudioFileGroupEditForm, Audiomodel, GridPositionner, ListAudiomodel, MainComponent, Menu, PlanningComponent, PlanningElement, Playlist, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, create_menu, get_player_pos, handle_audiofile_play, play_audiofile, player_stop, step;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
   for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
   function ctor() { this.constructor = child; }
@@ -17,8 +17,10 @@ Application = {
     };
     return cmap[name];
   },
+  active_components: {},
   current_view: 'main',
   current_component: void 0,
+  menu_items: {},
   is_ctrl_pressed: false,
   init: function() {
     $(document).keydown(__bind(function(e) {
@@ -26,20 +28,73 @@ Application = {
         return this.is_ctrl_pressed = true;
       }
     }, this));
-    return $(document).keyup(__bind(function(e) {
+    $(document).keyup(__bind(function(e) {
       if (e.which === 17) {
         return this.is_ctrl_pressed = false;
       }
     }, this));
+    this.views_menu = new Menu("Fenêtres actives", {
+      do_select: true
+    });
+    return this.playlist_menu = new Playlist();
   },
-  load: function(name, view_params) {
-    var klass, _ref;
-    if ((_ref = this.current_component) != null) {
-      _ref.close();
+  load: function(name, view_params, confirm) {
+    var klass, menu, _ref, _ref2, _ref3, _ref4;
+    if (this.current_view === name) {
+      if (((_ref = this.current_component) != null ? _ref.has_changes : void 0) && !confirm) {
+        menu = make_xps_menu({
+          text: "Attention ! vous risquez de perdre le résultat de votre édition, êtes vous sur de vouloir continuer ?",
+          actions: {
+            oui: function() {
+              Application.load(name, view_params, true);
+              return $(this).dialog('close').remove();
+            },
+            non: function() {
+              return $(this).dialog('close').remove();
+            }
+          },
+          show_validate: false
+        });
+        show_menu(menu);
+        return;
+      }
+      if ((_ref2 = this.current_component) != null) {
+        _ref2.close();
+      }
+    } else {
+      if ((_ref3 = this.active_components[name]) != null) {
+        _ref3.close();
+      }
+      this.active_components[this.current_view] = this.current_component;
+      if ((_ref4 = this.current_component) != null) {
+        _ref4.hide();
+      }
     }
     klass = this.views_components(name);
     this.current_component = new klass(view_params);
-    return this.current_view = name;
+    this.current_view = name;
+    if (!this.menu_items[name]) {
+      this.menu_items[name] = this.views_menu.add_link_element(name, (__bind(function() {
+        this.show(name);
+        return true;
+      }, this)), true);
+      this.current_component.menu_el = this.menu_items[name];
+    }
+    return this.current_component.on_close(__bind(function() {
+      return this.menu_items[name] = null;
+    }, this));
+  },
+  show: function(name) {
+    var _ref, _ref2;
+    if (!(this.current_view === name) && this.active_components[name]) {
+      this.active_components[this.current_view] = this.current_component;
+      if ((_ref = this.current_component) != null) {
+        _ref.hide();
+      }
+      this.current_view = name;
+      this.current_component = this.active_components[name];
+      return (_ref2 = this.current_component) != null ? _ref2.show() : void 0;
+    }
   },
   view: function(view_name) {
     if (view_name != null) {
@@ -241,7 +296,6 @@ Widgets.footer_actions = {
         "Créer une playlist": {
           action: function() {
             return $.getJSON("/audiosources/json/create-audio-source", function(data) {
-              console.log(data);
               return Application.load("playlist", data);
             });
           }
@@ -321,6 +375,16 @@ TemplateComponent = (function() {
     this.dom = render_template(opts.template, opts.context);
     this.ui = $(this.dom);
   }
+  TemplateComponent.prototype.show_hook = function() {};
+  TemplateComponent.prototype.hide_hook = function() {};
+  TemplateComponent.prototype.hide = function() {
+    this.hide_hook();
+    return this.ui.hide();
+  };
+  TemplateComponent.prototype.show = function() {
+    this.show_hook();
+    return this.ui.show();
+  };
   return TemplateComponent;
 })();
 Audiomodel = (function() {
@@ -422,8 +486,6 @@ ListAudiomodel = (function() {
           var height, width;
           height = this.length / 60;
           width = $(planning.tds[1]).width();
-          console.log(planning);
-          console.log("WIDTH: " + width);
           proxy = div(this.title, {
             "class": 'planning_element'
           });
@@ -536,7 +598,10 @@ ListAudiomodel = (function() {
     this.ui.find('.audiomodel_delete').click(this.handle_delete());
     if (this.type === "audiofile") {
       this.ui.find('.audiofile_edit').click(this.handle_audiofile_edit());
-      return this.ui.find('.audiofile_play').click(handle_audiofile_play);
+      return this.ui.find('.audiofile_play').click(__bind(function(e) {
+        e.preventDefault();
+        return Application.playlist_menu.add_audiofile(this, true);
+      }, this));
     } else if (this.type === "audiosource") {
       return this.ui.find('.audiosource_edit').click(function(e) {
         e.stopPropagation();
@@ -827,7 +892,16 @@ AppComponent = (function() {
     this.main_content_holder.append(this.ui);
   }
   AppComponent.prototype.close = function() {
-    return this.ui.remove();
+    var _ref;
+    if ((_ref = this.menu_el) != null) {
+      _ref.remove();
+    }
+    this.hide_hook();
+    this.ui.remove();
+    return this.on_close_func();
+  };
+  AppComponent.prototype.on_close = function(func) {
+    return this.on_close_func = func;
   };
   return AppComponent;
 })();
@@ -852,7 +926,7 @@ PlaylistComponent = (function() {
     this.fields = {
       title: $('#playlist_edit_title'),
       audiofiles: this.tracklist.container,
-      tags: $('.tags_table_container'),
+      tags: $('#playlist_edit_content .tags_table_container'),
       file_forms: $('#audiofile_forms')
     };
     this.form = $('#audiosource_form');
@@ -908,26 +982,48 @@ PlaylistComponent = (function() {
     $.extend(data, this.tracklist.get_tracks_map());
     return this.form.ajaxSubmit({
       data: data,
-      success: function(r) {
+      success: __bind(function(r) {
         var action;
         if (Widgets.audiomodels.current_model === "audiosource") {
           Widgets.audiomodels.load();
         }
         Application.load("main");
         action = this.action === "edition" ? "modifiée" : "ajoutée";
-        return post_message("La playlist " + r.audiosource.title + " à été " + action + " avec succès");
-      }
+        post_message("La playlist " + r.audiosource.title + " à été " + action + " avec succès");
+        return this.close();
+      }, this)
     });
   };
   return PlaylistComponent;
 })();
 handle_audiofile_play = function(e) {
-  var player;
   e.preventDefault();
   e.stopPropagation();
+  return play_audiofile(e.currentTarget.href);
+};
+play_audiofile = function(url) {
+  var player;
   player = document.getElementById('audiofile_player');
   if (player) {
-    return player.dewset(e.currentTarget.href);
+    return player.dewset(url);
+  }
+};
+get_player_pos = function() {
+  var player;
+  player = document.getElementById('audiofile_player');
+  if (player) {
+    return player.dewgetpos();
+  } else {
+    return 0;
+  }
+};
+player_stop = function() {
+  var player;
+  player = document.getElementById('audiofile_player');
+  if (player) {
+    return player.dewstop();
+  } else {
+    return 0;
   }
 };
 PlanningComponent = (function() {
@@ -944,8 +1040,7 @@ PlanningComponent = (function() {
     }
     return _results;
   };
-  PlanningComponent.prototype.close = function() {
-    PlanningComponent.__super__.close.apply(this, arguments);
+  PlanningComponent.prototype.hide_hook = function() {
     return $("body").css({
       overflow: "auto"
     });
@@ -959,7 +1054,8 @@ PlanningComponent = (function() {
           var name;
           name = this.title_input.val();
           Application.load("main");
-          return post_message("Le planning " + name + " a été " + (this.mode === "creation" ? "créé" : "édité") + " avec succes");
+          post_message("Le planning " + name + " a été " + (this.mode === "creation" ? "créé" : "édité") + " avec succes");
+          return this.close();
         }, this);
       }, this);
       if (this.mode === "creation") {
@@ -1001,7 +1097,7 @@ PlanningComponent = (function() {
     this.show_details_button = $('#planning_show_details');
     this.title_input = $('#planning_title');
     this.tags_input = $('#planning_tags');
-    this.tags_table_container = $('#planning_edit_content .tags_table_container');
+    this.tags_table_container = $('#planning_edit .tags_table_container');
     this.show_choices = $('#planning_show_choices');
     this.show_choices.buttonset();
     this.show_choices.disableTextSelect();
@@ -1069,7 +1165,7 @@ PlanningComponent = (function() {
     });
     if (data) {
       this.tags_table = new TagsTable(data.tags_by_category);
-      this.tags_table_container.append(tag('p', 'Tags')).append(this.tags_table.ui);
+      this.tags_table_container.append(this.tags_table.ui);
       this.id = data.id;
       this.mode = "edition";
       start = (new Date).getTime();
@@ -1266,6 +1362,7 @@ PlanningElement = (function() {
       return this.update_width();
     }, this));
     this.ui.bind('dragstart', __bind(function(e, dd) {
+      this.planning.has_changes = true;
       phead_set_normal_size();
       e.stopPropagation();
       e.preventDefault();
@@ -1457,6 +1554,142 @@ GridPositionner = (function() {
 })();
 step = function(num, step) {
   return num - (num % step);
+};
+Menu = (function() {
+  __extends(Menu, TemplateComponent);
+  Menu.prototype.header = d$('#headertools');
+  function Menu(name, opts) {
+    if (opts) {
+      $.extend(this, opts);
+    }
+    Menu.__super__.constructor.call(this, {
+      template: 'menu_widget',
+      context: {
+        name: name
+      }
+    });
+    this.header.append(this.ui);
+    this.init_components();
+    this.bind_events();
+  }
+  Menu.prototype.init_components = function() {
+    this.ui_menu = this.ui.find("ul.menu-items");
+    this.ui_menu_head = this.ui.find(".menu_head");
+    return this.ui_menu.hide();
+  };
+  Menu.prototype.set_selected = function(el) {
+    this.ui_menu.find("li").removeClass("menu_selected");
+    return el.addClass("menu_selected");
+  };
+  Menu.prototype.add_link_element = function(name, handler, do_set_selected) {
+    var el, link_el;
+    link_el = tag("a", name, {
+      href: "#"
+    });
+    el = tag("li", link_el);
+    this.ui_menu.append(el);
+    if (do_set_selected) {
+      this.set_selected(el);
+    }
+    if (handler) {
+      el.click(__bind(function(e) {
+        if (handler(e)) {
+          this.ui_menu.hide();
+        }
+        if (this.do_select) {
+          return this.set_selected(el);
+        }
+      }, this));
+    }
+    return el;
+  };
+  Menu.prototype.bind_events = function() {
+    return this.ui_menu_head.click(__bind(function() {
+      return this.ui_menu.toggle();
+    }, this));
+  };
+  return Menu;
+})();
+Playlist = (function() {
+  __extends(Playlist, Menu);
+  function Playlist() {
+    var start_pos, stop_pos;
+    Playlist.__super__.constructor.call(this, "Playlist", {
+      do_select: true
+    });
+    this.dragging = false;
+    this.dont_playnext = false;
+    this.audiofiles = [];
+    start_pos = null;
+    stop_pos = null;
+    this.ui_menu.sortable({
+      start: __bind(function(e, ui) {
+        $.each(this.ui_menu.find("li"), function(i, el) {
+          if (el === ui.item[0]) {
+            return start_pos = i;
+          }
+        });
+        return this.dragging = true;
+      }, this),
+      stop: __bind(function(e, ui) {
+        var el;
+        $.each(this.ui_menu.find("li"), function(i, el) {
+          if (el === ui.item[0]) {
+            return stop_pos = i;
+          }
+        });
+        el = this.audiofiles.splice(start_pos, 1)[0];
+        return this.audiofiles.splice(stop_pos, 0, el);
+      }, this)
+    });
+  }
+  Playlist.prototype.play = function(audiofile) {
+    play_audiofile(audiofile.file_url);
+    this.current = audiofile;
+    if (!this.inter) {
+      return this.inter = setInterval((__bind(function() {
+        var i;
+        if (get_player_pos() === 0) {
+          if (this.dont_playnext) {
+            return this.dont_playnext = false;
+          } else {
+            i = this.audiofiles.indexOf(this.current) + 1;
+            if (i < this.audiofiles.length) {
+              this.current = this.audiofiles[i];
+              play_audiofile(this.current.file_url);
+              return this.set_selected($(this.ui_menu.find("li")[i]));
+            }
+          }
+        }
+      }, this)), 1000);
+    }
+  };
+  Playlist.prototype.add_audiofile = function(audiofile, do_play) {
+    var el, play;
+    do_play != null ? do_play : do_play = false;
+    play = __bind(function() {
+      return this.play(audiofile);
+    }, this);
+    el = this.add_link_element("" + audiofile.title + " - " + audiofile.artist, null, do_play);
+    el.click(__bind(function(e) {
+      if (this.dragging) {
+        return this.dragging = false;
+      } else {
+        this.dont_playnext = true;
+        this.set_selected(el);
+        return play();
+      }
+    }, this));
+    this.audiofiles.push(audiofile);
+    if (do_play) {
+      play();
+    }
+    return this.ui_menu.sortable('refresh');
+  };
+  return Playlist;
+})();
+create_menu = function(name, elements) {
+  return new Menu(name, elements);
 };
 $(function() {
   var cname, widget;

@@ -152,3 +152,9 @@ object_with_keys = (obj, keys) ->
     for key in keys
         new_obj[key] = obj[key]
     new_obj
+
+# Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = (from, to) ->
+  rest = @slice((to || from) + 1 || this.length)
+  @length = if from < 0 then @length + from else from
+  return this.push.apply this, rest

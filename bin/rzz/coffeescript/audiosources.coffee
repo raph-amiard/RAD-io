@@ -9,8 +9,11 @@ Application =
             planning: PlanningComponent
         return cmap[name]
 
+    active_components: {}
+
     current_view: 'main'
     current_component: undefined
+    menu_items: {}
     is_ctrl_pressed: no
 
     init: ->
@@ -20,11 +23,52 @@ Application =
         $(document).keyup (e) =>
             if e.which == 17 then @is_ctrl_pressed = no
 
-    load: (name, view_params) ->
-        @current_component?.close()
+        @views_menu = new Menu "Fenêtres actives", do_select:true
+        @playlist_menu = new Playlist()
+
+    load: (name, view_params, confirm) ->
+
+        # If the view to load is the same, then destroy it
+        if @current_view == name
+            if @current_component?.has_changes and not confirm
+                menu = make_xps_menu
+                    text: "Attention ! vous risquez de perdre le résultat de votre édition, êtes vous sur de vouloir continuer ?"
+                    actions:
+                        oui:->
+                            Application.load name, view_params, yes
+                            $(@).dialog('close').remove()
+                        non:->
+                            $(@).dialog('close').remove()
+                    show_validate:no
+                show_menu menu
+                return
+
+            @current_component?.close()
+        # If the view to load is a different one
+        # Store the current view and hide it
+        else
+            @active_components[name]?.close()
+            @active_components[@current_view] = @current_component
+            @current_component?.hide()
+
         klass = @views_components(name)
         @current_component = new klass(view_params)
         @current_view = name
+
+        if not(@menu_items[name])
+            @menu_items[name] = @views_menu.add_link_element name, (=> @show name;return yes), yes
+            @current_component.menu_el = @menu_items[name]
+
+        @current_component.on_close =>
+            @menu_items[name] = null
+
+    show: (name) ->
+        if not(@current_view == name) and @active_components[name]
+            @active_components[@current_view] = @current_component
+            @current_component?.hide()
+            @current_view = name
+            @current_component = @active_components[name]
+            @current_component?.show()
 
     view: (view_name) ->
         if view_name?
@@ -171,7 +215,6 @@ Widgets.footer_actions =
                 "Créer une playlist":
                     action: ->
                         $.getJSON "/audiosources/json/create-audio-source", (data) ->
-                            console.log data
                             Application.load "playlist", data
             selection:
                 "Supprimer":
@@ -223,6 +266,17 @@ class TemplateComponent
     constructor: (opts) ->
         @dom = render_template opts.template, opts.context
         @ui = $(@dom)
+
+    show_hook: ->
+    hide_hook: ->
+
+    hide: ->
+        @hide_hook()
+        @ui.hide()
+
+    show: ->
+        @show_hook()
+        @ui.show()
 
 
 class Audiomodel extends TemplateComponent
@@ -311,8 +365,6 @@ class ListAudiomodel extends Audiomodel
 
                     height = @length / 60
                     width = $(planning.tds[1]).width()
-                    console.log planning
-                    console.log "WIDTH: #{width}"
                     proxy = div @title, class:'planning_element'
 
                     proxy.css top:dd.offsetY, left:dd.offsetX, position:'absolute'
@@ -400,7 +452,9 @@ class ListAudiomodel extends Audiomodel
 
         if @type == "audiofile"
             @ui.find('.audiofile_edit').click @handle_audiofile_edit()
-            @ui.find('.audiofile_play').click handle_audiofile_play
+            @ui.find('.audiofile_play').click (e) =>
+                e.preventDefault()
+                Application.playlist_menu.add_audiofile @, yes
 
         else if @type == "audiosource"
             @ui.find('.audiosource_edit').click (e) ->
@@ -616,8 +670,15 @@ class AppComponent extends TemplateComponent
     constructor: (opts) ->
         super opts
         @main_content_holder.append(@ui)
+
     close: () ->
+        @menu_el?.remove()
+        @hide_hook()
         @ui.remove()
+        @on_close_func()
+
+    on_close: (func) ->
+        @on_close_func = func
 
 
 class MainComponent extends AppComponent
@@ -637,7 +698,7 @@ class PlaylistComponent extends AppComponent
         @fields =
             title: $ '#playlist_edit_title'
             audiofiles: @tracklist.container
-            tags: $ '.tags_table_container'
+            tags: $ '#playlist_edit_content .tags_table_container'
             file_forms: $ '#audiofile_forms'
         @form = $ '#audiosource_form'
         @submit_button = $ "#audiosource_form_submit"
@@ -683,20 +744,33 @@ class PlaylistComponent extends AppComponent
         $.extend data, @tracklist.get_tracks_map()
         @form.ajaxSubmit
             data: data
-            success: (r) ->
+            success: (r) =>
                 if Widgets.audiomodels.current_model == "audiosource"
                     Widgets.audiomodels.load()
                 Application.load "main"
                 action = if @action=="edition" then "modifiée" else "ajoutée"
                 post_message "La playlist #{r.audiosource.title} à été #{action} avec succès"
+                @close()
 
 
 handle_audiofile_play = (e) ->
     # Plays an audiofile on the flash player 
 
     e.preventDefault(); e.stopPropagation()
+    play_audiofile e.currentTarget.href
+
+
+play_audiofile = (url) ->
     player = document.getElementById 'audiofile_player'
-    if player then player.dewset e.currentTarget.href
+    if player then player.dewset url
+
+get_player_pos = ->
+    player = document.getElementById 'audiofile_player'
+    if player then player.dewgetpos() else 0
+
+player_stop = ->
+    player = document.getElementById 'audiofile_player'
+    if player then player.dewstop() else 0
 
 
 # ================================ PLANNINGS PART ================================= #
@@ -713,9 +787,7 @@ class PlanningComponent extends AppComponent
             else
                 planning_element.ui.hide()
 
-    close: ->
-        super
-        $("body").css overflow:"auto"
+    hide_hook: -> $("body").css overflow:"auto"
 
     bind_events: ->
 
@@ -725,6 +797,7 @@ class PlanningComponent extends AppComponent
                 name = @title_input.val()
                 Application.load "main"
                 post_message "Le planning #{name} a été #{if @mode=="creation" then "créé" else "édité"} avec succes"
+                @close()
 
             if @mode == "creation"
                 $.post @create_link, {planning_data:@to_json()}, success_function()
@@ -755,7 +828,7 @@ class PlanningComponent extends AppComponent
         @show_details_button = $ '#planning_show_details'
         @title_input = $ '#planning_title'
         @tags_input = $ '#planning_tags'
-        @tags_table_container = $ '#planning_edit_content .tags_table_container'
+        @tags_table_container = $ '#planning_edit .tags_table_container'
         @show_choices = $ '#planning_show_choices'
         @show_choices.buttonset()
         @show_choices.disableTextSelect()
@@ -797,7 +870,7 @@ class PlanningComponent extends AppComponent
 
         if data
             @tags_table = new TagsTable(data.tags_by_category)
-            @tags_table_container.append(tag 'p' , 'Tags').append @tags_table.ui
+            @tags_table_container.append @tags_table.ui
             @id = data.id
             @mode = "edition"
             start = (new Date).getTime()
@@ -976,6 +1049,7 @@ class PlanningElement extends Audiomodel
         # Doesn't use jquery ui draggable, but the lower level jquery.drag plugin
 
         @ui.bind 'dragstart', (e, dd) =>
+            @planning.has_changes = yes
             phead_set_normal_size()
             # Drag start function. 
             # It has the responsibility of creating a new element if ctrl is pressed
@@ -1129,6 +1203,102 @@ class GridPositionner
         return [col, ret]
 
 step = (num, step) -> num - (num % step)
+
+
+# ================================================ MENUS =============================================== #
+
+class Menu extends TemplateComponent
+    header: d$ '#headertools'
+    
+    constructor: (name, opts) ->
+        if opts then $.extend this, opts
+        super template:'menu_widget', context: {name:name}
+        @header.append(@ui)
+        @init_components()
+        @bind_events()
+
+    init_components: ->
+        @ui_menu  = @ui.find("ul.menu-items")
+        @ui_menu_head = @ui.find(".menu_head")
+        @ui_menu.hide()
+
+    set_selected: (el) ->
+        @ui_menu.find("li").removeClass "menu_selected"
+        el.addClass "menu_selected"
+
+    add_link_element: (name, handler, do_set_selected) ->
+        link_el = tag "a", name, href:"#"
+        el = tag "li", link_el
+        @ui_menu.append el
+
+        if do_set_selected then @set_selected(el)
+
+        if handler
+            el.click (e) =>
+                if (handler e) then @ui_menu.hide()
+                if @do_select then @set_selected(el)
+
+        return el
+
+    bind_events: ->
+        @ui_menu_head.click => @ui_menu.toggle()
+
+class Playlist extends Menu
+
+    constructor: ->
+        super "Playlist", do_select:true
+        @dragging = no
+        @dont_playnext = false
+        @audiofiles = []
+        start_pos=null;stop_pos=null
+        @ui_menu.sortable
+            start: (e, ui) =>
+                $.each @ui_menu.find("li"), (i, el) -> if el == ui.item[0] then start_pos = i
+                @dragging = yes
+            stop: (e, ui) =>
+                $.each @ui_menu.find("li"), (i, el) -> if el == ui.item[0] then stop_pos = i
+                el = @audiofiles.splice(start_pos, 1)[0]
+                @audiofiles.splice(stop_pos, 0, el)
+
+
+    play: (audiofile) ->
+        play_audiofile audiofile.file_url
+        @current = audiofile
+        if not @inter
+            @inter = setInterval (=>
+                if get_player_pos() == 0
+                    if @dont_playnext then @dont_playnext = false
+                    else
+                        i = @audiofiles.indexOf(@current) + 1
+                        if i < @audiofiles.length
+                            @current = @audiofiles[i]
+                            play_audiofile @current.file_url
+                            @set_selected $(@ui_menu.find("li")[i])
+                ), 1000
+
+    
+    add_audiofile: (audiofile, do_play) ->
+        do_play ?= no
+        play = => @play audiofile
+
+        el = @add_link_element "#{audiofile.title} - #{audiofile.artist}",null , do_play
+
+        el.click (e) =>
+            if @dragging then @dragging = no
+            else
+                @dont_playnext = true
+                @set_selected(el)
+                play()
+
+        @audiofiles.push audiofile
+        if do_play then play()
+        @ui_menu.sortable('refresh')
+
+
+
+create_menu = (name, elements) ->
+    new Menu(name, elements)
+
 
 # ========================================= DOCUMENT READY PART ======================================== #
 

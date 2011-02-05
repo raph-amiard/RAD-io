@@ -18,21 +18,17 @@
 
     <div class="title">{{ radio_long_name }}</div>
 
-    {% comment %}
-    <object data="{{ MEDIA_URL }}/flash/dewplayer-rect.swf" width="240" height="30" name="dewplayer" id="audiofile_player" type="application/x-shockwave-flash"> 
-      <param name="movie" value="{{ MEDIA_URL }}/flash/dewplayer-rect.swf"/> 
-      <param name="flashvars" value="mp3=/site_media/audiofiles/DMX_Krew-You_Cant_Hide_Your_Love.mp3&javascript=on" /> 
-      <param name="wmode" value="transparent" /> 
-    </object> 
-    {% endcomment %}
-
-    <div id="audiofile_player_container">
-      <object type="application/x-shockwave-flash" data="{{ MEDIA_URL }}/flash/dewplayer.swf" width="226" height="20" id="audiofile_player" name="dewplayer">
-      <param name="wmode" value="transparent" />
-      <param name="movie" value="dewplayer.swf" />
-      <param name="flashvars" value="mp3=test.mp3&javascript=on" />
-      </object>
-    </div>
+    <ul id="headertools">
+      <li>
+        <div id="audiofile_player_container">
+          <object type="application/x-shockwave-flash" data="{{ MEDIA_URL }}/flash/dewplayer.swf" width="226" height="20" id="audiofile_player" name="dewplayer">
+          <param name="wmode" value="transparent" />
+          <param name="movie" value="dewplayer.swf" />
+          <param name="flashvars" value="mp3=test.mp3&javascript=on" />
+          </object>
+        </div>
+      </li>
+    </ul>
 
   </div>
 
