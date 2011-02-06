@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.conf import settings
 from rzz.utils.views import upload_progress
 from rzz.admin.views import admin_root
+from rzz.audiosources.views import listen
 
 admin.autodiscover()
 
@@ -20,7 +21,7 @@ urlpatterns = patterns('',
         {'document_root': settings.MEDIA_ROOT,
          'show_indexes': True}),
     url(r'upload-progress/$', upload_progress, name='upload-progress'),
-    url(r'^listen/$', 'audiosources.views.listen', name='listen'),
+    url(r'^listen/$',listen , name='listen'),
     url(r'^$', 'django.views.generic.simple.redirect_to', {'url':'news/'}),
     url(r'^admin_root/$', admin_root, name="admin-root"),
     url(r'^login/$', 'django.contrib.auth.views.login', name="login"),
