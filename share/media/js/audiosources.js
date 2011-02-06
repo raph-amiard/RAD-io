@@ -1,5 +1,5 @@
-var AppComponent, Application, AudioFileForm, AudioFileGroupEditForm, Audiomodel, GridPositionner, ListAudiomodel, MainComponent, Menu, PlanningComponent, PlanningElement, Playlist, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, create_menu, get_player_pos, handle_audiofile_play, play_audiofile, player_stop, step;
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+var AppComponent, Application, AudioFileForm, AudioFileGroupEditForm, Audiomodel, CalendarComponent, GridPositionner, ListAudiomodel, MainComponent, Menu, PlanningComponent, PlanningElement, Playlist, PlaylistComponent, PlaylistElement, TagsTable, TemplateComponent, TrackList, Widgets, get_player_pos, global, handle_audiofile_play, make_actions_menu, play_audiofile, player_stop, prn, step;
+var __slice = Array.prototype.slice, __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
   for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
   function ctor() { this.constructor = child; }
   ctor.prototype = parent.prototype;
@@ -7,13 +7,22 @@ var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments)
   child.__super__ = parent.prototype;
   return child;
 };
+prn = function() {
+  var a, p;
+  p = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+  a = p.join(" ");
+  if (typeof console != "undefined" && console !== null ? console.log : void 0) {
+    return console.log.apply(console, p);
+  }
+};
 Application = {
   views_components: function(name) {
     var cmap;
     cmap = {
       playlist: PlaylistComponent,
       main: MainComponent,
-      planning: PlanningComponent
+      planning: PlanningComponent,
+      calendar: CalendarComponent
     };
     return cmap[name];
   },
@@ -36,6 +45,7 @@ Application = {
     this.views_menu = new Menu("Fenêtres actives", {
       do_select: true
     });
+    this.actions_menu = make_actions_menu();
     return this.playlist_menu = new Playlist();
   },
   load: function(name, view_params, confirm) {
@@ -295,9 +305,7 @@ Widgets.footer_actions = {
       global: {
         "Créer une playlist": {
           action: function() {
-            return $.getJSON("/audiosources/json/create-audio-source", function(data) {
-              return Application.load("playlist", data);
-            });
+            return global.create_playlist();
           }
         }
       },
@@ -314,7 +322,7 @@ Widgets.footer_actions = {
       global: {
         "Creer un planning": {
           action: function() {
-            return Application.load("planning");
+            return global.create_planning();
           }
         }
       },
@@ -459,6 +467,24 @@ Audiomodel = (function() {
 ListAudiomodel = (function() {
   __extends(ListAudiomodel, Audiomodel);
   ListAudiomodel.prototype.view_events = {
+    calendar: function() {
+      var eventObject;
+      if (this.type = "planning") {
+        console.log(this);
+        eventObject = {
+          title: this.name
+        };
+        this.ui.data("eventObject", eventObject);
+        return this.ui.draggable({
+          helper: 'clone',
+          appendTo: 'body',
+          revert: true,
+          revertDuration: 0,
+          scroll: false,
+          zIndex: '257'
+        });
+      }
+    },
     playlist: function() {
       var tracklist;
       tracklist = Application.current_component.tracklist;
@@ -913,6 +939,46 @@ MainComponent = (function() {
     });
   }
   return MainComponent;
+})();
+CalendarComponent = (function() {
+  __extends(CalendarComponent, AppComponent);
+  function CalendarComponent() {
+    var container;
+    CalendarComponent.__super__.constructor.call(this, {
+      template: "calendar"
+    });
+    this.init_components();
+    container = this.container;
+    this.container.fullCalendar({
+      events: [{}],
+      droppable: true,
+      editable: true,
+      drop: function(date, allDay, e, ui) {
+        var my_event, original_event;
+        original_event = $(e.target).data("eventObject");
+        my_event = {
+          start: date,
+          allDay: allDay
+        };
+        $.extend(my_event, original_event);
+        return container.fullCalendar("renderEvent", my_event, true);
+      }
+    });
+    this.bind_events();
+    this.update_height();
+  }
+  CalendarComponent.prototype.init_components = function() {
+    return this.container = this.ui.find("#calendar");
+  };
+  CalendarComponent.prototype.bind_events = function() {
+    return $(window).resize(__bind(function() {
+      return this.update_height();
+    }, this));
+  };
+  CalendarComponent.prototype.update_height = function() {
+    return this.container.height($(window).height() - this.container.offset().top - 40);
+  };
+  return CalendarComponent;
 })();
 PlaylistComponent = (function() {
   __extends(PlaylistComponent, AppComponent);
@@ -1612,6 +1678,13 @@ Menu = (function() {
 })();
 Playlist = (function() {
   __extends(Playlist, Menu);
+  Playlist.prototype.trigger_show_hide = function() {
+    if (this.audiofiles.length === 0) {
+      return this.ui.hide();
+    } else {
+      return this.ui.show();
+    }
+  };
   function Playlist() {
     var start_pos, stop_pos;
     Playlist.__super__.constructor.call(this, "Playlist", {
@@ -1642,6 +1715,7 @@ Playlist = (function() {
         return this.audiofiles.splice(stop_pos, 0, el);
       }, this)
     });
+    this.trigger_show_hide();
   }
   Playlist.prototype.play = function(audiofile) {
     play_audiofile(audiofile.file_url);
@@ -1684,12 +1758,39 @@ Playlist = (function() {
     if (do_play) {
       play();
     }
-    return this.ui_menu.sortable('refresh');
+    this.ui_menu.sortable('refresh');
+    return this.trigger_show_hide();
   };
   return Playlist;
 })();
-create_menu = function(name, elements) {
-  return new Menu(name, elements);
+make_actions_menu = function() {
+  var actions_menu;
+  actions_menu = new Menu("Actions");
+  actions_menu.add_link_element("Creer nouvelle playlist", function() {
+    global.create_playlist();
+    return true;
+  });
+  actions_menu.add_link_element("Creer nouveau planning", function() {
+    global.create_planning();
+    return true;
+  });
+  return actions_menu.add_link_element("Editer le calendrier", function() {
+    global.create_calendar();
+    return true;
+  });
+};
+global = {
+  create_playlist: function() {
+    return $.getJSON("/audiosources/json/create-audio-source", function(data) {
+      return Application.load("playlist", data);
+    });
+  },
+  create_planning: function() {
+    return Application.load("planning");
+  },
+  create_calendar: function() {
+    return Application.load("calendar");
+  }
 };
 $(function() {
   var cname, widget;

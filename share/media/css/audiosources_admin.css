@@ -1022,3 +1022,10 @@ ol.rte ul, ol.rte ol {
 a, a:active, a:focus {outline: 0;}
 
 img, img:active, img:focus {outline: 0;border:0;}
+
+#calendar {
+  overflow-y:auto;
+  overflow-x:hide;
+  margin: 0 auto;
+  width:80%;
+}

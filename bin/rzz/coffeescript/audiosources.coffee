@@ -1,3 +1,7 @@
+prn = (p...) ->
+    a = p.join(" ")
+    if console?.log then console.log(p...)
+
 # Main Application singleton
 # Regroups all the global mechanisms and window variables
 Application =
@@ -7,6 +11,7 @@ Application =
             playlist: PlaylistComponent
             main: MainComponent
             planning: PlanningComponent
+            calendar: CalendarComponent
         return cmap[name]
 
     active_components: {}
@@ -24,6 +29,7 @@ Application =
             if e.which == 17 then @is_ctrl_pressed = no
 
         @views_menu = new Menu "Fenêtres actives", do_select:true
+        @actions_menu = make_actions_menu()
         @playlist_menu = new Playlist()
 
     load: (name, view_params, confirm) ->
@@ -213,9 +219,8 @@ Widgets.footer_actions =
         audiosource:
             global:
                 "Créer une playlist":
-                    action: ->
-                        $.getJSON "/audiosources/json/create-audio-source", (data) ->
-                            Application.load "playlist", data
+                    action: -> global.create_playlist()
+
             selection:
                 "Supprimer":
                     action: ->
@@ -224,8 +229,8 @@ Widgets.footer_actions =
         planning:
             global:
                 "Creer un planning":
-                    action: ->
-                        Application.load "planning"
+                    action: -> global.create_planning()
+
             selection: null
 
     footers: {}
@@ -341,6 +346,20 @@ class ListAudiomodel extends Audiomodel
     # Represents an audiomodel in the audiomodel list
 
     view_events:
+        calendar: ->
+            if @type = "planning"
+                console.log @
+                eventObject = title: @name
+                @ui.data "eventObject", eventObject
+                @ui.draggable
+                    helper:'clone'
+                    appendTo:'body'
+                    revert:yes
+                    revertDuration:0
+                    scroll:no
+                    zIndex:'257'
+
+
         playlist: ->
             tracklist = Application.current_component.tracklist
             tracklist.container.sortable('refresh')
@@ -685,6 +704,35 @@ class MainComponent extends AppComponent
 
     constructor: () ->
         super template:"main_component"
+
+
+class CalendarComponent extends AppComponent
+
+    constructor: () ->
+        super template:"calendar"
+        @init_components()
+        container = @container
+        @container.fullCalendar
+            events: [{}]
+            droppable:yes
+            editable:yes
+            drop: (date, allDay, e, ui) ->
+                original_event = $(e.target).data "eventObject"
+                my_event = {start:date, allDay:allDay}
+                $.extend my_event, original_event
+                container.fullCalendar "renderEvent", my_event, yes
+
+        @bind_events()
+        @update_height()
+
+    init_components: ->
+        @container = @ui.find("#calendar")
+
+    bind_events: ->
+        $(window).resize () => @update_height()
+
+    update_height: ->
+        @container.height $(window).height() - @container.offset().top - 40
 
 
 class PlaylistComponent extends AppComponent
@@ -1245,6 +1293,13 @@ class Menu extends TemplateComponent
 
 class Playlist extends Menu
 
+
+    trigger_show_hide: ->
+        if @audiofiles.length == 0
+            @ui.hide()
+        else
+            @ui.show()
+
     constructor: ->
         super "Playlist", do_select:true
         @dragging = no
@@ -1259,6 +1314,7 @@ class Playlist extends Menu
                 $.each @ui_menu.find("li"), (i, el) -> if el == ui.item[0] then stop_pos = i
                 el = @audiofiles.splice(start_pos, 1)[0]
                 @audiofiles.splice(stop_pos, 0, el)
+        @trigger_show_hide()
 
 
     play: (audiofile) ->
@@ -1293,12 +1349,26 @@ class Playlist extends Menu
         @audiofiles.push audiofile
         if do_play then play()
         @ui_menu.sortable('refresh')
+        @trigger_show_hide()
 
 
+make_actions_menu = () ->
+    actions_menu = new Menu "Actions"
+    actions_menu.add_link_element "Creer nouvelle playlist", -> global.create_playlist();yes
+    actions_menu.add_link_element "Creer nouveau planning", -> global.create_planning();yes
+    actions_menu.add_link_element "Editer le calendrier", -> global.create_calendar();yes
 
-create_menu = (name, elements) ->
-    new Menu(name, elements)
 
+# ========================================= GLOBAL ACTIONS PART ======================================== #
+
+global =
+    create_playlist : ->
+        $.getJSON "/audiosources/json/create-audio-source", (data) ->
+            Application.load "playlist", data
+
+    create_planning : -> Application.load "planning"
+
+    create_calendar : -> Application.load "calendar"
 
 # ========================================= DOCUMENT READY PART ======================================== #
 
