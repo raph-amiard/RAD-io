@@ -17,6 +17,9 @@ from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosou
 from rzz.utils.file import get_mp3_metadata
 
 
+def listen(request):
+    return direct_to_template(request, "listen.html")
+
 @staff_member_required
 def main(request):
     return direct_to_template(request, 'audiosources/main.html')
