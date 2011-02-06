@@ -36,6 +36,7 @@ def generate_script(mount_point_name, outputs):
     base_string = """
         set("log.file.path", "{LOG_PATH}")
         set("server.telnet",true)
+        set("server.telnet.port",{TELNET_PORT})
         program_queue = request.equeue(id="{PROGRAM_QUEUE_NAME}")
         back_queue = request.equeue(id="{BACK_QUEUE_NAME}")
         jingles_queue = request.equeue(id="{JINGLES_QUEUE_NAME}")
@@ -49,8 +50,11 @@ def generate_script(mount_point_name, outputs):
         BACK_QUEUE_NAME = settings.LIQUIDSOAP_BACK_QUEUE_NAME,
         JINGLES_QUEUE_NAME = settings.LIQUIDSOAP_JINGLES_QUEUE_NAME,
         SECURITY = settings.LIQUIDSOAP_SECURITY_AUDIOFILE,
-        JINGLES_FREQUENCY = settings.RADIO_JINGLES_FREQUENCY
+        JINGLES_FREQUENCY = settings.RADIO_JINGLES_FREQUENCY,
+        TELNET_PORT = settings.LIQUIDSOAP_TELNET_PORT
     )
+
+    print "TELNET PORT :", settings.LIQUIDSOAP_TELNET_PORT
 
     for output in outputs:
 
