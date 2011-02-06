@@ -1,5 +1,5 @@
 from django.db import models
-from audiosources.models import Planning
+from rzz.audiosources.models import Planning
 
 class RadioStats(models.Model):
     """
