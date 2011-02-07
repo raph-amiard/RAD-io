@@ -32,7 +32,7 @@ DISPLAY_LOG_CATS = {
     "other":True,
     "planning":True,
 }
-DISPLAY_LOG_INFO = True
+DISPLAY_LOG_INFO = False
 
 def log(strn, category="other", info=False):
     logstrn = u"{0} -- {1}\n".format(datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"), smart_unicode(strn))
@@ -41,7 +41,8 @@ def log(strn, category="other", info=False):
     if category in DISPLAY_LOG_CATS and DISPLAY_LOG_CATS[category]:
         if not(info) or DISPLAY_LOG_INFO:
             print prnstrn.encode('utf-8')
-    log_file.write(logstrn.encode('utf-8'))
+    if not(info) or DISPLAY_LOG_INFO:
+        log_file.write(logstrn.encode('utf-8'))
 
 def connection():
     return telnetlib.Telnet(settings.LIQUIDSOAP_HOST, settings.LIQUIDSOAP_TELNET_PORT, 1000)
@@ -77,19 +78,19 @@ class CommandWrapper(object):
     def __init__(self):
         self.connection = connection()
 
-    def make_command(self, command_str):
+    def make_command(self, command_str, info=False):
 
-        log("command : \"{0}\"".format(command_str), "commands")
+        log("command : \"{0}\"".format(command_str), "commands", info=info)
         self.connection.write(command_str+'\n')
         response = self.connection.read_until('END')[:-3].replace('\n', '')
-        log("reponse : \"{0}\"".format(response), "commands")
+        log("reponse : \"{0}\"".format(response), "commands", info=info)
         return response
 
 
 class RequestCommandWrapper(CommandWrapper):
 
     def on_air(self):
-        response = self.make_command("request.on_air").strip()
+        response = self.make_command("request.on_air", info=True).strip()
         if response:
             try:
                 request_id = int(response.split(' ')[0])
