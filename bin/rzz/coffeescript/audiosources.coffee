@@ -502,7 +502,7 @@ class ListAudiomodel extends Audiomodel
         if @type == "audiofile"
             @ui.find('.audiofile_edit').click @handle_audiofile_edit()
             @ui.find('.audiofile_play').click (e) =>
-                e.preventDefault()
+                e.preventDefault(); e.stopPropagation()
                 Application.playlist_menu.add_audiofile @, yes
 
         else if @type == "audiosource"
@@ -1375,7 +1375,7 @@ class Playlist extends Menu
     constructor: ->
         super "Playlist", do_select:true
         @dragging = no
-        @dont_playnext = false
+        @triggering = no
         @audiofiles = []
         start_pos=null;stop_pos=null
         @ui_menu.sortable
@@ -1392,17 +1392,24 @@ class Playlist extends Menu
     play: (audiofile) ->
         play_audiofile audiofile.file_url
         @current = audiofile
+        @triggering = yes
         if not @inter
             @inter = setInterval (=>
-                if get_player_pos() == 0
-                    if @dont_playnext then @dont_playnext = false
-                    else
-                        i = @audiofiles.indexOf(@current) + 1
-                        if i < @audiofiles.length
-                            @current = @audiofiles[i]
-                            play_audiofile @current.file_url
-                            @set_selected $(@ui_menu.find("li")[i])
-                ), 1000
+                prn "into inter"
+                prn "Triggering: #{@triggering}"
+
+                if @triggering and get_player_pos() > 0
+                    prn "switching trigger"
+                    @triggering = no
+
+                if get_player_pos() == 0 and not(@triggering)
+                    prn "switching track"
+                    i = @audiofiles.indexOf(@current) + 1
+                    if i < @audiofiles.length
+                        @current = @audiofiles[i]
+                        play_audiofile @current.file_url
+                        @set_selected $(@ui_menu.find("li")[i])
+                ), 100
 
     
     add_audiofile: (audiofile, do_play) ->
@@ -1414,7 +1421,6 @@ class Playlist extends Menu
         el.click (e) =>
             if @dragging then @dragging = no
             else
-                @dont_playnext = true
                 @set_selected(el)
                 play()
 

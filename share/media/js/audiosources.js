@@ -672,6 +672,7 @@ ListAudiomodel = (function() {
       this.ui.find('.audiofile_edit').click(this.handle_audiofile_edit());
       return this.ui.find('.audiofile_play').click(__bind(function(e) {
         e.preventDefault();
+        e.stopPropagation();
         return Application.playlist_menu.add_audiofile(this, true);
       }, this));
     } else if (this.type === "audiosource") {
@@ -1813,7 +1814,7 @@ Playlist = (function() {
       do_select: true
     });
     this.dragging = false;
-    this.dont_playnext = false;
+    this.triggering = false;
     this.audiofiles = [];
     start_pos = null;
     stop_pos = null;
@@ -1842,22 +1843,26 @@ Playlist = (function() {
   Playlist.prototype.play = function(audiofile) {
     play_audiofile(audiofile.file_url);
     this.current = audiofile;
+    this.triggering = true;
     if (!this.inter) {
       return this.inter = setInterval((__bind(function() {
         var i;
-        if (get_player_pos() === 0) {
-          if (this.dont_playnext) {
-            return this.dont_playnext = false;
-          } else {
-            i = this.audiofiles.indexOf(this.current) + 1;
-            if (i < this.audiofiles.length) {
-              this.current = this.audiofiles[i];
-              play_audiofile(this.current.file_url);
-              return this.set_selected($(this.ui_menu.find("li")[i]));
-            }
+        prn("into inter");
+        prn("Triggering: " + this.triggering);
+        if (this.triggering && get_player_pos() > 0) {
+          prn("switching trigger");
+          this.triggering = false;
+        }
+        if (get_player_pos() === 0 && !this.triggering) {
+          prn("switching track");
+          i = this.audiofiles.indexOf(this.current) + 1;
+          if (i < this.audiofiles.length) {
+            this.current = this.audiofiles[i];
+            play_audiofile(this.current.file_url);
+            return this.set_selected($(this.ui_menu.find("li")[i]));
           }
         }
-      }, this)), 1000);
+      }, this)), 100);
     }
   };
   Playlist.prototype.add_audiofile = function(audiofile, do_play) {
@@ -1871,7 +1876,6 @@ Playlist = (function() {
       if (this.dragging) {
         return this.dragging = false;
       } else {
-        this.dont_playnext = true;
         this.set_selected(el);
         return play();
       }
