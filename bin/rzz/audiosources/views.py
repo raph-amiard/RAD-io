@@ -9,12 +9,15 @@ from django.template import Context, loader
 from django.shortcuts import get_object_or_404
 
 from rzz.artists.models import Artist
-from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list, Planning, TaggedModel
+
+from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list, Planning, TaggedModel, PlanningStartEvent
 from rzz.audiosources.forms import EditAudioFileForm
+from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource, remove_tags_from_model
+
 from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
 from rzz.utils.queries import Q_or
-from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource, remove_tags_from_model
 from rzz.utils.file import get_mp3_metadata
+from rzz.utils.collections import dict_transform
 
 
 def listen(request):
@@ -109,9 +112,11 @@ def edit_audio_source(request, audiosource_id):
     audio_source = get_object_or_404(AudioSource, id=audiosource_id)
     if request.method == 'POST':
         print request.POST
-        audio_source.sourceelement_set.all().delete()
         audio_source.title = request.POST['title']
         audio_source.description = request.POST['description']
+        share = request.POST['share']
+        audio_source.share = True if share == "yes" else False
+        audio_source.sourceelement_set.all().delete()
         audio_source.length = 0
         add_tags_to_model(request.POST['tags'], audio_source)
         # Save to be able to add audiofiles to source
@@ -205,6 +210,9 @@ def taggedmodel_common_tags(request, taggedmodel_id):
 
 
 def edit_audio_files(request):
+    """
+    Edit several audio files at once
+    """
 
     audiofiles_ids_list = request.POST.getlist("audiofiles")
     audiofiles = AudioFile.objects.filter(id__in=audiofiles_ids_list)
@@ -321,3 +329,26 @@ def show_active_planning(request):
                                   'days':elements,
                                   'today':day_name[date.today().weekday()]
                               })
+
+def edit_calendar(request):
+    from datetime import date
+
+    if request.method == "POST":
+        transform_map = {
+            "start": ("when", lambda x:date(*x)),
+            "planning_id": None
+        }
+        raw_events = json.loads(request.POST["events"])
+        events = [dict_transform(e, transform_map) for e in raw_events]
+        PlanningStartEvent.objects.all().delete()
+        for event in events:
+            PlanningStartEvent(**event).save()
+        return HttpResponse()
+
+
+    events = PlanningStartEvent.objects.values("when", "planning__id", "planning__name")
+    for event in events:
+        w = event["when"]
+        event["when"] = {"day":w.day,"month":w.month,"year":w.year}
+
+    return JSONResponse(list(events))

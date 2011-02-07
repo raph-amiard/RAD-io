@@ -3,25 +3,45 @@
 import telnetlib
 import subprocess
 import logging
+import sys
 from time import sleep
 from datetime import datetime, timedelta
 from threading import Thread, Timer, Event
+from os.path import join as path_join
 
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.encoding import smart_unicode
 
 from rzz.radio_client.liquidsoap_utils import create_temp_script_file, RandomAudioSourceWrapper
-from rzz.audiosources.models import Planning, PlanningElement
+from rzz.audiosources.models import Planning, PlanningElement, PlanningStartEvent
 from rzz.playlist.models import PlaylistElement
 from rzz.utils.cron import CronTab, CronEvent
 
 # TODO : Find something better than a global to handle audiofiles
 audiofiles = {}
 
-def log(strn):
-    strn = u"{0} -- {1}".format(datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"), smart_unicode(strn))
-    print strn.encode('utf-8')
+# Stop event to release all threads on exit
+stop_event = Event()
+
+DISPLAY_LOG_CATS = {
+    "global":True,
+    "errors":True,
+    "sources":True,
+    "commands":False,
+    "other":True,
+    "planning":True,
+}
+DISPLAY_LOG_INFO = True
+
+def log(strn, category="other", info=False):
+    logstrn = u"{0} -- {1}\n".format(datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"), smart_unicode(strn))
+    prnstrn = u"{0} -- {1} -- {2}".format(datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"), category, smart_unicode(strn))
+    log_file = file(path_join(settings.LOG_PATH, "radio_log_{0}".format(category)), "a")
+    if category in DISPLAY_LOG_CATS and DISPLAY_LOG_CATS[category]:
+        if not(info) or DISPLAY_LOG_INFO:
+            print prnstrn.encode('utf-8')
+    log_file.write(logstrn.encode('utf-8'))
 
 def connection():
     return telnetlib.Telnet(settings.LIQUIDSOAP_HOST, settings.LIQUIDSOAP_TELNET_PORT, 1000)
@@ -57,23 +77,19 @@ class CommandWrapper(object):
     def __init__(self):
         self.connection = connection()
 
-    def make_command(self, command_str, do_log=True):
+    def make_command(self, command_str):
 
-        def dprint(arg):
-            if do_log:
-                log(arg)
-
-        dprint("COMMAND : \"{0}\"".format(command_str))
+        log("command : \"{0}\"".format(command_str), "commands")
         self.connection.write(command_str+'\n')
         response = self.connection.read_until('END')[:-3].replace('\n', '')
-        dprint("REPONSE : \"{0}\"".format(response))
+        log("reponse : \"{0}\"".format(response), "commands")
         return response
 
 
 class RequestCommandWrapper(CommandWrapper):
 
     def on_air(self):
-        response = self.make_command("request.on_air", do_log=False).strip()
+        response = self.make_command("request.on_air").strip()
         if response:
             try:
                 request_id = int(response.split(' ')[0])
@@ -95,6 +111,9 @@ class PlaylistLogger(object):
         cursor = connection.cursor()
 
         while True:
+            if stop_event.isSet():
+                log(u"EXITING: playlist logger thread", "main")
+                return
             rid, playlist_element = self.request_handler.on_air()
 
             if not(rid is None) and rid != self.current_rid and\
@@ -103,7 +122,7 @@ class PlaylistLogger(object):
                 audiosource = playlist_element["audiosource"]
                 self.current_rid = rid
 
-                log("Logging a file in the playlist")
+                log("LOGGING a file in the playlist", "playlist")
                 cursor.execute("""
                     INSERT INTO playlist_playlistelement
                     (audiofile_id, on_air, audiosource_id)
@@ -112,12 +131,14 @@ class PlaylistLogger(object):
                 )
                 cursor = connection.cursor()
                 transaction.commit_unless_managed()
-                log("Logging done")
+                log("LOGGING done", "playlist")
 
             sleep(0.5)
 
     def start(self):
-        Thread(target=self.log).start()
+        t = Thread(target=self.log)
+        t.start()
+        return t
 
 
 class QueueCommandWrapper(CommandWrapper):
@@ -155,7 +176,7 @@ class QueueCommandWrapper(CommandWrapper):
         response = response.strip()
         return [int(t) for t in response.split(' ')] if response else []
         if not response == 'OK':
-            log('There is no source with the given id')
+            log('ERROR: get_queue - There is no source with the given id', "errors")
 
     def get_secondary_queue(self):
         """
@@ -187,10 +208,8 @@ class RadioQueue(QueueCommandWrapper):
 
     def insert(self, position, audiofile):
 
-        log(len(self.queue_list))
-
         if position >= len(self.queue_list):
-            log('You inserted beyond the queue size. uri appended at the end')
+            log('You inserted beyond the queue size. uri appended at the end', "errors")
             return self.push(audiofile)
 
         id = super(RadioQueue, self).insert(position, audiofile.file.path)
@@ -217,7 +236,7 @@ class RadioSource(object):
 
     def set_active(self):
         self.refresh()
-        log(self.queue.get_secondary_queue())
+        log("SECONDARY QUEUE : {0}".format(self.queue.get_secondary_queue()), "sources")
         self.queue.flush()
 
     def push_in_queue(self, audiofile):
@@ -232,16 +251,17 @@ class RadioSource(object):
 class ProgramSource(RadioSource):
 
     def set_active(self):
-        log(u"Program source {0} set active".format(self.audiosource.title))
+        log(u"Program source {0} - BEGIN SET ACTIVE".format(self.audiosource.title), "sources")
         super(ProgramSource, self).set_active()
         for audiofile in self.audiosource.sorted_audiofiles():
             self.push_in_queue(audiofile)
+        log(u"Program source {0} - END SET ACTIVE".format(self.audiosource.title), "sources")
 
 
 class BackSource(RadioSource):
 
     def set_active(self):
-        log(u"Back source {0} set active".format(self.audiosource.title))
+        log(u"Back source {0} - BEGIN SET ACTIVE".format(self.audiosource.title), "sources")
         super(BackSource, self).set_active()
         audiofiles = RandomAudioSourceWrapper(self.audiosource)
         now = datetime.now()
@@ -252,6 +272,8 @@ class BackSource(RadioSource):
             self.push_in_queue(audiofile)
             now = now + timedelta(seconds=audiofile.length)
 
+        log(u"Back source {0} - END SET ACTIVE".format(self.audiosource.title), "sources")
+
 
 class JingleSource(RadioSource):
 
@@ -259,7 +281,7 @@ class JingleSource(RadioSource):
     CALLBACK_TIME = 60
 
     def set_active(self):
-        log(u"Jingle source {0} set active".format(self.audiosource.title))
+        log(u"Jingle source {0} SET ACTIVE".format(self.audiosource.title), "sources")
         super(JingleSource, self).set_active()
 
         self.audiofiles = RandomAudioSourceWrapper(self.audiosource)
@@ -269,11 +291,11 @@ class JingleSource(RadioSource):
         time_current = datetime.now()
 
         while time_current.time() < self.planning_element.time_end:
-            log("INSERT JINGLES CALLBACK")
+            log("insert jingles callback", "sources")
             time_current = datetime.now()
 
             if len(self.queue.get_secondary_queue()) <= 1:
-                log("JINGLES QUEUE EMPTY")
+                log("jingles queue empty", "sources")
                 for i in range(0, self.CHUNK_SIZE):
                     self.push_in_queue(self.audiofiles.get_next_random_audiofile())
 
@@ -312,26 +334,24 @@ class Scheduler(object):
 
             source = self.TYPES_TO_CLASSES[pe.type](self.queues[pe.type], pe)
 
-            log(u"TREATING SOURCE {0}".format(pe.source.title))
-            log(u"TYPE : {0}".format(pe.type))
-            log(u"TIME_START : {0}".format(pe.time_start))
+            log(u"treating source {0}".format(pe.source.title), "sources")
+            log(u"type : {0}".format(pe.type), "sources")
+            log(u"time_start : {0}".format(pe.time_start), "sources")
 
             if pe.type in ["continuous", "jingle"] \
                     and pe.time_start < time_now < pe.time_end \
                     and pe.day == now.weekday() :
 
-                log(u"PUTTING ON PLAY NOW")
+                log(u"putting on play now", "sources")
                 if pe.type == "jingle":
                     now_jingle_source = source
                 else:
                     now_back_source = source
             else:
 
-                log(u"ADDING CRON JOB FOR TIME START")
+                log(u"adding cron job for time start", "sources")
                 self.cron_tab.add_event(CronEvent(
                     source.set_active, min=pe.time_start.minute, hour=pe.time_start.hour, dow=pe.day))
-
-            print "\n"
 
         if now_jingle_source:
             now_jingle_source.set_active()
@@ -339,11 +359,24 @@ class Scheduler(object):
             now_back_source.set_active()
 
     def watch_planning_changes(self):
-        while 1:
-            log(u"WATCHING FOR PLANNING CHANGES")
+        from datetime import date
 
-            if cache.get('planning_change'):
-                log(u"PLANNING CHANGED: RELOADING ELEMENTS")
+        while True:
+            planning_start_event = None
+            if stop_event.isSet():
+                log(u"EXITING: watch planning changes thread", "global")
+                return
+            log(u"WATCHING for planning changes", "planning", info=True)
+
+            pse = PlanningStartEvent.objects.filter(when=date.today(), triggered=False)
+            if len(pse) > 0:
+                planning_start_event = pse[0]
+                planning_start_event.planning.set_active()
+                planning_start_event.triggered = True
+                planning_start_event.save()
+
+            if cache.get('planning_change') or planning_start_event:
+                log(u"PLANNING CHANGED: reloading elements", "planning")
 
                 # Reset the cache key
                 cache.delete('planning_change')
@@ -357,19 +390,28 @@ class Scheduler(object):
                 # Reload all cron events
                 self.reload_cron_events()
 
-            sleep(60)
+            sleep(10)
 
     def start(self):
         self.cron_tab = CronTab()
 
+        log(u"Begin events creation", "global")
         # Create all crons events
         self.create_cron_events()
 
         # Watch for any planning changes, for dynamic crons reloading
-        Thread(target=self.watch_planning_changes).start()
+        thread_wpc = Thread(target=self.watch_planning_changes)
+        thread_wpc.start()
 
         # Record events for the playlist
-        PlaylistLogger().start()
+        thread_plogger = PlaylistLogger().start()
 
-        self.cron_tab.run()
+        try:
+            self.cron_tab.run()
+        except KeyboardInterrupt:
+            log(u"EXIT: Shutting down all threads", "global")
+            stop_event.set()
+            thread_wpc.join()
+            thread_plogger.join()
+            log(u"EXIT: Threads shut down, exiting ...", "global")
 

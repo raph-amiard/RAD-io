@@ -94,6 +94,19 @@
         </div>
       </div>
 
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="shared">Partager avec le public</label>
+          </div>
+
+          <div class="column span">
+            <input type="radio" name="share" value="yes" <% if (audiosource.share) { %> checked <% } %>/> <span>Oui</span>
+            <input type="radio" name="share" value="no" <% if (!audiosource.share) { %> checked <% } %>/> <span>Non</span>
+          </div>
+        </div>
+      </div>
+
     </form>
 
     <div class="row last">

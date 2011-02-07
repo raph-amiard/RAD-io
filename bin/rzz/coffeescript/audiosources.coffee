@@ -33,6 +33,7 @@ Application =
         @playlist_menu = new Playlist()
 
     load: (name, view_params, confirm) ->
+        reload_events = no
 
         # If the view to load is the same, then destroy it
         if @current_view == name
@@ -56,6 +57,7 @@ Application =
             @active_components[name]?.close()
             @active_components[@current_view] = @current_component
             @current_component?.hide()
+            reload_events = yes
 
         klass = @views_components(name)
         @current_component = new klass(view_params)
@@ -68,6 +70,9 @@ Application =
         @current_component.on_close =>
             @menu_items[name] = null
 
+        if reload_events then Widgets.audiomodels.reload_events()
+
+
     show: (name) ->
         if not(@current_view == name) and @active_components[name]
             @active_components[@current_view] = @current_component
@@ -75,6 +80,7 @@ Application =
             @current_view = name
             @current_component = @active_components[name]
             @current_component?.show()
+            Widgets.audiomodels.reload_events()
 
     view: (view_name) ->
         if view_name?
@@ -178,6 +184,7 @@ Widgets.audiomodels =
             @by_id = {}
 
             ul = tag 'ul'
+            @ul = ul
             @container.html ''
             @container.append ul
 
@@ -189,13 +196,15 @@ Widgets.audiomodels =
                 ul.append audiomodel.ui
                 audiomodel.bind_events()
 
-            ul.make_selectable
-                select_class: 'selected-box'
-                handler: =>
-                    @selected_audiomodels = (parseInt(i.value) for i in ul.find('li.selected-box input'))
-
             $('[id$="select_footer"]').hide()
             $("##{@current_model}_select_footer").show()
+
+    reload_events: ->
+        for audiomodel in @all
+            audiomodel.rebind_global_events()
+
+    refresh_selected_audiomodels: ->
+        @selected_audiomodels = (el for el in @all when el.selected)
 
 Widgets.footer_actions =
 
@@ -345,11 +354,27 @@ class Audiomodel extends TemplateComponent
 class ListAudiomodel extends Audiomodel
     # Represents an audiomodel in the audiomodel list
 
+    clear_events: ->
+        @ui.draggable "destroy"
+        for event_name, event of @handlers
+            @ui.unbind event_name, event
+
+    rebind_global_events: ->
+        @clear_events()
+        @bind_global_events()
+
+    bind_global_events: ->
+        @view_events[Application.current_view]?.apply(@, [])
+        @handlers.click = =>
+            @ui.toggleClass "selected-box"
+            @selected = not(@selected)
+            Widgets.audiomodels.refresh_selected_audiomodels()
+        @ui.click @handlers.click
+
     view_events:
         calendar: ->
-            if @type = "planning"
-                console.log @
-                eventObject = title: @name
+            if @type == "planning"
+                eventObject = title: @name, planning_id:@id
                 @ui.data "eventObject", eventObject
                 @ui.draggable
                     helper:'clone'
@@ -362,7 +387,6 @@ class ListAudiomodel extends Audiomodel
 
         playlist: ->
             tracklist = Application.current_component.tracklist
-            tracklist.container.sortable('refresh')
             if @type == "audiofile"
                 @ui.draggable
                     connectToSortable: tracklist.container
@@ -380,7 +404,7 @@ class ListAudiomodel extends Audiomodel
                 proxy = null
                 previous_top = 0; previous_left = 0; column=0
 
-                @ui.bind 'dragstart', (e, dd) =>
+                @handlers.dragstart = (e, dd) =>
 
                     height = @length / 60
                     width = $(planning.tds[1]).width()
@@ -391,8 +415,7 @@ class ListAudiomodel extends Audiomodel
                     proxy.width(width).height(height)
                     td_positions = new GridPositionner(planning.tds)
 
-                @ui.bind 'drag', (e, dd) =>
-
+                @handlers.drag = (e, dd) =>
                     el = $ proxy
                     rel_pos = planning.el_pos(el)
                     proxy_in_board = (rel_pos.top + (el.height() / 2) > 0 and rel_pos.left + (el.width() / 2) > 0)
@@ -411,7 +434,7 @@ class ListAudiomodel extends Audiomodel
                     else
                         el.css top:dd.offsetY, left:dd.offsetX
 
-                @ui.bind 'drop', (e, dd) =>
+                @handlers.drop = (e, dd) =>
 
                     el = $ proxy
                     rel_pos = planning.el_pos(el)
@@ -429,18 +452,25 @@ class ListAudiomodel extends Audiomodel
                                 minute: previous_top % 60
                             day: column-1
 
+                @ui.bind "drop", @handlers.drop
+                @ui.bind "drag", @handlers.drag
+                @ui.bind "dragstart", @handlers.dragstart
+
+
 
     constructor: (type, json_model) ->
 
         @type = type
         $.extend this, json_model
         @audiomodel_base = json_model
+        @handlers = {}
+        @selected = no
 
         super
             template: "#{@type}_list_element"
             context: {audiomodel:json_model}
 
-        @view_events[Application.current_view]?.apply(@, [])
+        @bind_global_events()
 
     handle_delete: ->
         audiomodel = @
@@ -549,17 +579,22 @@ class AudioFileGroupEditForm extends TemplateComponent
     constructor: (selected_audiofiles) ->
         super template:'audiofile_group_edit_form'
 
-        url = @url
+        url = @url;ui = @ui
+
         @menu = make_xps_menu
-            name: "group_edit_audiomodels"
+            name: "group_edit_audiomodels#{gen_uuid()}"
             text: @ui
             title: "Edition en groupe"
             validate_action: ->
                 $(@).find('form').ajaxSubmit
                     dataType:'json'
-                    data: {'audiofiles': selected_audiofiles}
+                    data: {'audiofiles': (s.id for s in selected_audiofiles)}
                     url: url
-                    success: (json) -> return null
+                    success: (json) =>
+                        post_message "Elements édités avec succes"
+                        artist = ui.find("#id_artist").val()
+                        for af in selected_audiofiles
+                            af.set_artist artist
 
     show: () ->
         show_menu @menu
@@ -708,6 +743,8 @@ class MainComponent extends AppComponent
 
 class CalendarComponent extends AppComponent
 
+    url: "/audiosources/json/edit-calendar/"
+
     constructor: () ->
         super template:"calendar"
         @init_components()
@@ -718,18 +755,49 @@ class CalendarComponent extends AppComponent
             editable:yes
             drop: (date, allDay, e, ui) ->
                 original_event = $(e.target).data "eventObject"
-                my_event = {start:date, allDay:allDay}
+                my_event = start:date, allDay:allDay
                 $.extend my_event, original_event
                 container.fullCalendar "renderEvent", my_event, yes
 
         @bind_events()
+        @fetch_cal_events()
         @update_height()
+
+    fetch_cal_events: () ->
+        console.log "in fetch_cal_events"
+        $.getJSON @url, (data) =>
+            for e in data
+                my_event =
+                    start: new Date(e.when.year, e.when.month - 1, e.when.day)
+                    allDay:yes
+                    title:e.planning__name
+                    planning_id:e.planning__id
+                console.log my_event
+                @container.fullCalendar "renderEvent", my_event, yes
 
     init_components: ->
         @container = @ui.find("#calendar")
+        @submit_button = @ui.find("#calendar_submit")
+
+    to_json: ->
+        keys = ["planning_id", "start"]
+        events = for e in @container.fullCalendar("clientEvents") when e.planning_id
+            object_transform e,
+                planning_id: null
+                start: (x) -> [x.getFullYear(), x.getMonth() + 1, x.getDate()]
+
+        prn events
+        prn JSON.stringify events
+
+        return JSON.stringify events
 
     bind_events: ->
         $(window).resize () => @update_height()
+        @submit_button.click =>
+            $.post @url, events:@to_json(), =>
+                Application.load "main"
+                post_message "Le calendrier a été édité avec succes"
+
 
     update_height: ->
         @container.height $(window).height() - @container.offset().top - 40
@@ -768,18 +836,20 @@ class PlaylistComponent extends AppComponent
             }
 
         @fields.file_forms.append gen_audiofile_form().ui
-
         @inputs.tags.autocomplete(multicomplete_params json.tag_list)
         @inputs.tags.unbind 'blur.autocomplete'
+
+        if json.audiosource
+            @audiosource = json.audiosource
 
         # Add Necessary information for playlist, if in edition mode
         if @action == "edition"
 
             @submit_button.text("Editer la playlist")
-            @tags_table = new TagsTable(json.audiosource.tags_by_category)
+            @tags_table = new TagsTable(@audiosource.tags_by_category)
             @fields.tags.append(@tags_table.ui)
 
-            for audiofile in json.audiosource.sorted_audiofiles
+            for audiofile in @audiosource.sorted_audiofiles
                 @tracklist.append(audiofile, no)
         else
             @submit_button.text("Créer la playlist")
@@ -847,6 +917,7 @@ class PlanningComponent extends AppComponent
                 post_message "Le planning #{name} a été #{if @mode=="creation" then "créé" else "édité"} avec succes"
                 @close()
 
+            # TODO : REfactor
             if @mode == "creation"
                 $.post @create_link, {planning_data:@to_json()}, success_function()
             else if @mode == "edition"

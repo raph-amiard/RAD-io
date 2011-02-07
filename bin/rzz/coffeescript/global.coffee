@@ -152,3 +152,14 @@ object_with_keys = (obj, keys) ->
     for key in keys
         new_obj[key] = obj[key]
     new_obj
+
+object_transform = (obj, mappings) ->
+    new_obj = {}
+    for key, val of mappings
+        if $.isArray(val)
+            [out_key, func] = val
+        else
+            func = if val? then val else (x) -> x
+            out_key = key
+        new_obj[out_key] = func(obj[key])
+    return new_obj

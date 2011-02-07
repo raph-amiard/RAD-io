@@ -13,8 +13,8 @@ def serialize(element):
 
 def instance_to_dict(instance, *args, **kwargs):
     fields = [f.attname for f in instance._meta._fields()]
-    return dict([(f, serialize(instance.__dict__[f])) 
-                 for f in fields 
+    return dict([(f, serialize(instance.__dict__[f]))
+                 for f in fields
                  if type(instance.__dict__[f]) != FieldFile] + kwargs.items())
 
 def instance_to_json(instance, *args, **kwargs):

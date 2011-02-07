@@ -1,4 +1,4 @@
-<li class="unselectable audiosource">
+<li class="unselectable audiosource<% if (audiomodel.share) { %> shared_audiosource <% } %>">
   <input type="hidden" value="<%= audiomodel.id %>"/> 
   <p class="description"> 
       <span class="audiosource_title mdesc"> <%= audiomodel.title %> </span> 

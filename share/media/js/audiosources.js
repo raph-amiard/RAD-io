@@ -49,7 +49,8 @@ Application = {
     return this.playlist_menu = new Playlist();
   },
   load: function(name, view_params, confirm) {
-    var klass, menu, _ref, _ref2, _ref3, _ref4;
+    var klass, menu, reload_events, _ref, _ref2, _ref3, _ref4;
+    reload_events = false;
     if (this.current_view === name) {
       if (((_ref = this.current_component) != null ? _ref.has_changes : void 0) && !confirm) {
         menu = make_xps_menu({
@@ -79,6 +80,7 @@ Application = {
       if ((_ref4 = this.current_component) != null) {
         _ref4.hide();
       }
+      reload_events = true;
     }
     klass = this.views_components(name);
     this.current_component = new klass(view_params);
@@ -90,9 +92,12 @@ Application = {
       }, this)), true);
       this.current_component.menu_el = this.menu_items[name];
     }
-    return this.current_component.on_close(__bind(function() {
+    this.current_component.on_close(__bind(function() {
       return this.menu_items[name] = null;
     }, this));
+    if (reload_events) {
+      return Widgets.audiomodels.reload_events();
+    }
   },
   show: function(name) {
     var _ref, _ref2;
@@ -103,7 +108,10 @@ Application = {
       }
       this.current_view = name;
       this.current_component = this.active_components[name];
-      return (_ref2 = this.current_component) != null ? _ref2.show() : void 0;
+      if ((_ref2 = this.current_component) != null) {
+        _ref2.show();
+      }
+      return Widgets.audiomodels.reload_events();
     }
   },
   view: function(view_name) {
@@ -243,6 +251,7 @@ Widgets.audiomodels = {
       this.all = [];
       this.by_id = {};
       ul = tag('ul');
+      this.ul = ul;
       this.container.html('');
       this.container.append(ul);
       start = (new Date).getTime();
@@ -254,25 +263,34 @@ Widgets.audiomodels = {
         ul.append(audiomodel.ui);
         audiomodel.bind_events();
       }
-      ul.make_selectable({
-        select_class: 'selected-box',
-        handler: __bind(function() {
-          var i;
-          return this.selected_audiomodels = (function() {
-            var _i, _len, _ref, _results;
-            _ref = ul.find('li.selected-box input');
-            _results = [];
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              i = _ref[_i];
-              _results.push(parseInt(i.value));
-            }
-            return _results;
-          })();
-        }, this)
-      });
       $('[id$="select_footer"]').hide();
       return $("#" + this.current_model + "_select_footer").show();
     }, this));
+  },
+  reload_events: function() {
+    var audiomodel, _i, _len, _ref, _results;
+    _ref = this.all;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      audiomodel = _ref[_i];
+      _results.push(audiomodel.rebind_global_events());
+    }
+    return _results;
+  },
+  refresh_selected_audiomodels: function() {
+    var el;
+    return this.selected_audiomodels = (function() {
+      var _i, _len, _ref, _results;
+      _ref = this.all;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        el = _ref[_i];
+        if (el.selected) {
+          _results.push(el);
+        }
+      }
+      return _results;
+    }).call(this);
   }
 };
 Widgets.footer_actions = {
@@ -466,13 +484,40 @@ Audiomodel = (function() {
 })();
 ListAudiomodel = (function() {
   __extends(ListAudiomodel, Audiomodel);
+  ListAudiomodel.prototype.clear_events = function() {
+    var event, event_name, _ref, _results;
+    this.ui.draggable("destroy");
+    _ref = this.handlers;
+    _results = [];
+    for (event_name in _ref) {
+      event = _ref[event_name];
+      _results.push(this.ui.unbind(event_name, event));
+    }
+    return _results;
+  };
+  ListAudiomodel.prototype.rebind_global_events = function() {
+    this.clear_events();
+    return this.bind_global_events();
+  };
+  ListAudiomodel.prototype.bind_global_events = function() {
+    var _ref;
+    if ((_ref = this.view_events[Application.current_view]) != null) {
+      _ref.apply(this, []);
+    }
+    this.handlers.click = __bind(function() {
+      this.ui.toggleClass("selected-box");
+      this.selected = !this.selected;
+      return Widgets.audiomodels.refresh_selected_audiomodels();
+    }, this);
+    return this.ui.click(this.handlers.click);
+  };
   ListAudiomodel.prototype.view_events = {
     calendar: function() {
       var eventObject;
-      if (this.type = "planning") {
-        console.log(this);
+      if (this.type === "planning") {
         eventObject = {
-          title: this.name
+          title: this.name,
+          planning_id: this.id
         };
         this.ui.data("eventObject", eventObject);
         return this.ui.draggable({
@@ -488,7 +533,6 @@ ListAudiomodel = (function() {
     playlist: function() {
       var tracklist;
       tracklist = Application.current_component.tracklist;
-      tracklist.container.sortable('refresh');
       if (this.type === "audiofile") {
         return this.ui.draggable({
           connectToSortable: tracklist.container,
@@ -508,7 +552,7 @@ ListAudiomodel = (function() {
         previous_top = 0;
         previous_left = 0;
         column = 0;
-        this.ui.bind('dragstart', __bind(function(e, dd) {
+        this.handlers.dragstart = __bind(function(e, dd) {
           var height, width;
           height = this.length / 60;
           width = $(planning.tds[1]).width();
@@ -523,8 +567,8 @@ ListAudiomodel = (function() {
           $('body').append(proxy);
           proxy.width(width).height(height);
           return td_positions = new GridPositionner(planning.tds);
-        }, this));
-        this.ui.bind('drag', __bind(function(e, dd) {
+        }, this);
+        this.handlers.drag = __bind(function(e, dd) {
           var col_width, el, left, proxy_in_board, rel_cpos, rel_pos, top, _ref;
           el = $(proxy);
           rel_pos = planning.el_pos(el);
@@ -553,8 +597,8 @@ ListAudiomodel = (function() {
               left: dd.offsetX
             });
           }
-        }, this));
-        return this.ui.bind('drop', __bind(function(e, dd) {
+        }, this);
+        this.handlers.drop = __bind(function(e, dd) {
           var el, p_el, proxy_in_board, rel_pos;
           el = $(proxy);
           rel_pos = planning.el_pos(el);
@@ -571,24 +615,26 @@ ListAudiomodel = (function() {
               day: column - 1
             });
           }
-        }, this));
+        }, this);
+        this.ui.bind("drop", this.handlers.drop);
+        this.ui.bind("drag", this.handlers.drag);
+        return this.ui.bind("dragstart", this.handlers.dragstart);
       }
     }
   };
   function ListAudiomodel(type, json_model) {
-    var _ref;
     this.type = type;
     $.extend(this, json_model);
     this.audiomodel_base = json_model;
+    this.handlers = {};
+    this.selected = false;
     ListAudiomodel.__super__.constructor.call(this, {
       template: "" + this.type + "_list_element",
       context: {
         audiomodel: json_model
       }
     });
-    if ((_ref = this.view_events[Application.current_view]) != null) {
-      _ref.apply(this, []);
-    }
+    this.bind_global_events();
   }
   ListAudiomodel.prototype.handle_delete = function() {
     var audiomodel, delete_menu, msg;
@@ -723,25 +769,43 @@ AudioFileGroupEditForm = (function() {
   __extends(AudioFileGroupEditForm, TemplateComponent);
   AudioFileGroupEditForm.prototype.url = "/audiosources/json/edit-audio-files";
   function AudioFileGroupEditForm(selected_audiofiles) {
-    var url;
+    var ui, url;
     AudioFileGroupEditForm.__super__.constructor.call(this, {
       template: 'audiofile_group_edit_form'
     });
     url = this.url;
+    ui = this.ui;
     this.menu = make_xps_menu({
-      name: "group_edit_audiomodels",
+      name: "group_edit_audiomodels" + (gen_uuid()),
       text: this.ui,
       title: "Edition en groupe",
       validate_action: function() {
+        var s;
         return $(this).find('form').ajaxSubmit({
           dataType: 'json',
           data: {
-            'audiofiles': selected_audiofiles
+            'audiofiles': (function() {
+              var _i, _len, _results;
+              _results = [];
+              for (_i = 0, _len = selected_audiofiles.length; _i < _len; _i++) {
+                s = selected_audiofiles[_i];
+                _results.push(s.id);
+              }
+              return _results;
+            })()
           },
           url: url,
-          success: function(json) {
-            return null;
-          }
+          success: __bind(function(json) {
+            var af, artist, _i, _len, _results;
+            post_message("Elements édités avec succes");
+            artist = ui.find("#id_artist").val();
+            _results = [];
+            for (_i = 0, _len = selected_audiofiles.length; _i < _len; _i++) {
+              af = selected_audiofiles[_i];
+              _results.push(af.set_artist(artist));
+            }
+            return _results;
+          }, this)
         });
       }
     });
@@ -942,6 +1006,7 @@ MainComponent = (function() {
 })();
 CalendarComponent = (function() {
   __extends(CalendarComponent, AppComponent);
+  CalendarComponent.prototype.url = "/audiosources/json/edit-calendar/";
   function CalendarComponent() {
     var container;
     CalendarComponent.__super__.constructor.call(this, {
@@ -965,14 +1030,67 @@ CalendarComponent = (function() {
       }
     });
     this.bind_events();
+    this.fetch_cal_events();
     this.update_height();
   }
+  CalendarComponent.prototype.fetch_cal_events = function() {
+    console.log("in fetch_cal_events");
+    return $.getJSON(this.url, __bind(function(data) {
+      var e, my_event, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = data.length; _i < _len; _i++) {
+        e = data[_i];
+        my_event = {
+          start: new Date(e.when.year, e.when.month - 1, e.when.day),
+          allDay: true,
+          title: e.planning__name,
+          planning_id: e.planning__id
+        };
+        console.log(my_event);
+        _results.push(this.container.fullCalendar("renderEvent", my_event, true));
+      }
+      return _results;
+    }, this));
+  };
   CalendarComponent.prototype.init_components = function() {
-    return this.container = this.ui.find("#calendar");
+    this.container = this.ui.find("#calendar");
+    return this.submit_button = this.ui.find("#calendar_submit");
+  };
+  CalendarComponent.prototype.to_json = function() {
+    var e, events, keys;
+    keys = ["planning_id", "start"];
+    events = (function() {
+      var _i, _len, _ref, _results;
+      _ref = this.container.fullCalendar("clientEvents");
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        e = _ref[_i];
+        if (e.planning_id) {
+          _results.push(object_transform(e, {
+            planning_id: null,
+            start: function(x) {
+              return [x.getFullYear(), x.getMonth() + 1, x.getDate()];
+            }
+          }));
+        }
+      }
+      return _results;
+    }).call(this);
+    prn(events);
+    prn(JSON.stringify(events));
+    return JSON.stringify(events);
   };
   CalendarComponent.prototype.bind_events = function() {
-    return $(window).resize(__bind(function() {
+    $(window).resize(__bind(function() {
       return this.update_height();
+    }, this));
+    return this.submit_button.click(__bind(function() {
+      return $.post(this.url, {
+        events: this.to_json()
+      }, __bind(function() {
+        Application.load("main");
+        return post_message("Le calendrier a été édité avec succes");
+      }, this));
     }, this));
   };
   CalendarComponent.prototype.update_height = function() {
@@ -1025,11 +1143,14 @@ PlaylistComponent = (function() {
     this.fields.file_forms.append(gen_audiofile_form().ui);
     this.inputs.tags.autocomplete(multicomplete_params(json.tag_list));
     this.inputs.tags.unbind('blur.autocomplete');
+    if (json.audiosource) {
+      this.audiosource = json.audiosource;
+    }
     if (this.action === "edition") {
       this.submit_button.text("Editer la playlist");
-      this.tags_table = new TagsTable(json.audiosource.tags_by_category);
+      this.tags_table = new TagsTable(this.audiosource.tags_by_category);
       this.fields.tags.append(this.tags_table.ui);
-      _ref = json.audiosource.sorted_audiofiles;
+      _ref = this.audiosource.sorted_audiofiles;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         audiofile = _ref[_i];
         this.tracklist.append(audiofile, false);
