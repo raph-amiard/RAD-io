@@ -1390,6 +1390,7 @@ class Playlist extends Menu
 
 
     play: (audiofile) ->
+        player_stop()
         play_audiofile audiofile.file_url
         prn audiofile.file_url
         @current = audiofile

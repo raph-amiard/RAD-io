@@ -1841,6 +1841,7 @@ Playlist = (function() {
     this.trigger_show_hide();
   }
   Playlist.prototype.play = function(audiofile) {
+    player_stop();
     play_audiofile(audiofile.file_url);
     prn(audiofile.file_url);
     this.current = audiofile;
