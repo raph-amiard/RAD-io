@@ -1391,19 +1391,16 @@ class Playlist extends Menu
 
     play: (audiofile) ->
         play_audiofile audiofile.file_url
+        prn audiofile.file_url
         @current = audiofile
         @triggering = yes
         if not @inter
             @inter = setInterval (=>
-                prn "into inter"
-                prn "Triggering: #{@triggering}"
 
                 if @triggering and get_player_pos() > 0
-                    prn "switching trigger"
                     @triggering = no
 
                 if get_player_pos() == 0 and not(@triggering)
-                    prn "switching track"
                     i = @audiofiles.indexOf(@current) + 1
                     if i < @audiofiles.length
                         @current = @audiofiles[i]

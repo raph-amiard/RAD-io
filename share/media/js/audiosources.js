@@ -1842,19 +1842,16 @@ Playlist = (function() {
   }
   Playlist.prototype.play = function(audiofile) {
     play_audiofile(audiofile.file_url);
+    prn(audiofile.file_url);
     this.current = audiofile;
     this.triggering = true;
     if (!this.inter) {
       return this.inter = setInterval((__bind(function() {
         var i;
-        prn("into inter");
-        prn("Triggering: " + this.triggering);
         if (this.triggering && get_player_pos() > 0) {
-          prn("switching trigger");
           this.triggering = false;
         }
         if (get_player_pos() === 0 && !this.triggering) {
-          prn("switching track");
           i = this.audiofiles.indexOf(this.current) + 1;
           if (i < this.audiofiles.length) {
             this.current = this.audiofiles[i];
