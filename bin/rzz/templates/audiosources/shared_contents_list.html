@@ -8,7 +8,7 @@
     <h2>{{ shared_content.title }}</h2>
     {{ shared_content.description|markdown }}
     <p>
-      <object type="application/x-shockwave-flash" data="{{ MEDIA_URL }}/flash/dewplayer-multi.swf" width="226" height="20" id="audiofile_player" name="dewplayer">
+      <object type="application/x-shockwave-flash" data="{{ MEDIA_URL }}/flash/dewplayer-multi.swf" width="240" height="20" id="audiofile_player" name="dewplayer">
       <param name="wmode" value="transparent" />
       <param name="movie" value="{{ MEDIA_URL }}/flash/dewplayer-multi.swf" />
       <param name="flashvars" value="mp3={% for audio_file in shared_content.audio_files.all %}{{ audio_file.file.url }}{% if not forloop.last %}|{% endif %}{% endfor %}&javascript=on" />
