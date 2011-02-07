@@ -41,4 +41,6 @@ urlpatterns = patterns('',
     url(r'^planning/tag/list/$', views.tags_list,{'audiomodel_klass':Planning}, name='audiofile-tags-list'),
     url(r'^audiosource/tag/list/$', views.tags_list,{'audiomodel_klass':AudioSource}, name='audiosource-tags-list'),
     url(r'playing/', views.show_active_planning, name='show-active-planning'),
+    url(r'shared/list/$', views.shared_contents_list, {'page':1}),
+    url(r'shared/list/(?P<page>\d+)$', views.shared_contents_list, name="shared-contents-list"),
 )

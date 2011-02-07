@@ -3,6 +3,7 @@ import json
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.simple import direct_to_template
+from django.views.generic.list_detail import object_list, object_detail
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.template import Context, loader
@@ -352,3 +353,13 @@ def edit_calendar(request):
         event["when"] = {"day":w.day,"month":w.month,"year":w.year}
 
     return JSONResponse(list(events))
+
+def shared_contents_list(request, page):
+    return object_list(request,
+        queryset = AudioSource.objects.filter(share=True),
+        paginate_by = 20,
+        page = page,
+        template_name="audiosources/shared_contents_list.html",
+        template_object_name="shared_contents"
+    )
+
