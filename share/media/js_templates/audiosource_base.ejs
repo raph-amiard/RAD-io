@@ -101,8 +101,8 @@
           </div>
 
           <div class="column span">
-            <input type="radio" name="share" value="yes" <% if (audiosource.share) { %> checked <% } %>/> <span>Oui</span>
-            <input type="radio" name="share" value="no" <% if (!audiosource.share) { %> checked <% } %>/> <span>Non</span>
+            <input type="radio" name="share" value="yes" <% if (action == "edition" && audiosource.share) { %> checked <% } %>/> <span>Oui</span>
+          <input type="radio" name="share" value="no" <% if (!(action == "edition" && audiosource.share)) { %> checked <% } %>/> <span>Non</span>
           </div>
         </div>
       </div>

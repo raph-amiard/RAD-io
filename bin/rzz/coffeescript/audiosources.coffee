@@ -820,6 +820,7 @@ class PlaylistComponent extends AppComponent
         @submit_button = $ "#audiosource_form_submit"
 
     constructor: (json) ->
+        console.log json
         super template: "audiosource_base", context: json
         @init_components()
 

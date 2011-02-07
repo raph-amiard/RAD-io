@@ -1118,6 +1118,7 @@ PlaylistComponent = (function() {
   };
   function PlaylistComponent(json) {
     var audiofile, gen_audiofile_form, _i, _len, _ref;
+    console.log(json);
     PlaylistComponent.__super__.constructor.call(this, {
       template: "audiosource_base",
       context: json
