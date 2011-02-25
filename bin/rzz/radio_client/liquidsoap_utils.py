@@ -43,7 +43,7 @@ def generate_script(mount_point_name, outputs):
         timed_jingles = delay({JINGLES_FREQUENCY}., jingles_queue)
         security = single("{SECURITY}")
         radio = fallback(track_sensitive = true, [timed_jingles, program_queue, back_queue])
-        with_live = fallback(track_sensitive=false, [input.http("{RADIO_HOST}/live.mp3"), radio])
+        with_live = fallback(track_sensitive=false, [input.http("http://{RADIO_HOST}/live.mp3"), radio])
         full = fallback(track_sensitive = false, [with_live, security])
     """.format(
         LOG_PATH = settings.LIQUIDSOAP_LOG_PATH,
