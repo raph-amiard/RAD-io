@@ -43,7 +43,8 @@ def generate_script(mount_point_name, outputs):
         timed_jingles = delay({JINGLES_FREQUENCY}., jingles_queue)
         security = single("{SECURITY}")
         radio = fallback(track_sensitive = true, [timed_jingles, program_queue, back_queue])
-        full = fallback(track_sensitive = false, [radio, security])
+        with_live = fallback(track_sensitive=false, [input.http("{RADIO_HOST}/live.mp3"), radio])
+        full = fallback(track_sensitive = false, [with_live, security])
     """.format(
         LOG_PATH = settings.LIQUIDSOAP_LOG_PATH,
         PROGRAM_QUEUE_NAME = settings.LIQUIDSOAP_PROGRAM_QUEUE_NAME,
@@ -51,7 +52,8 @@ def generate_script(mount_point_name, outputs):
         JINGLES_QUEUE_NAME = settings.LIQUIDSOAP_JINGLES_QUEUE_NAME,
         SECURITY = settings.LIQUIDSOAP_SECURITY_AUDIOFILE,
         JINGLES_FREQUENCY = settings.RADIO_JINGLES_FREQUENCY,
-        TELNET_PORT = settings.LIQUIDSOAP_TELNET_PORT
+        TELNET_PORT = settings.LIQUIDSOAP_TELNET_PORT,
+        RADIO_HOST = settings.RADIO_HOST
     )
 
     print "TELNET PORT :", settings.LIQUIDSOAP_TELNET_PORT
