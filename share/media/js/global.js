@@ -1,4 +1,4 @@
-var Set, d$, debug, div, extractLast, format_length, format_number, gen_uuid, js_template, make_xps_menu, multicomplete_params, object_with_keys, print, render_template, show_menu, split, tag, template;
+var Set, d$, debug, div, extractLast, format_length, format_number, format_time, gen_uuid, js_template, make_xps_menu, multicomplete_params, object_transform, object_with_keys, print, render_template, show_menu, split, tag, template;
 debug = true;
 print = debug && (typeof console != "undefined" && console !== null) ? console.log : function() {
   return false;
@@ -121,6 +121,15 @@ format_number = function(num, length) {
     return _results;
   })()).join('') + strnum;
 };
+format_time = function(time) {
+  var fnum, nh, nm;
+  fnum = function(num) {
+    return format_number(num, 2);
+  };
+  nh = fnum(time.hour);
+  nm = fnum(time.minute);
+  return "" + nh + "h" + nm;
+};
 format_length = function(l) {
   var fnum, hours, minutes, num_hours, seconds;
   fnum = function(num) {
@@ -212,6 +221,23 @@ object_with_keys = function(obj, keys) {
   for (_i = 0, _len = keys.length; _i < _len; _i++) {
     key = keys[_i];
     new_obj[key] = obj[key];
+  }
+  return new_obj;
+};
+object_transform = function(obj, mappings) {
+  var func, key, new_obj, out_key, val;
+  new_obj = {};
+  for (key in mappings) {
+    val = mappings[key];
+    if ($.isArray(val)) {
+      out_key = val[0], func = val[1];
+    } else {
+      func = val != null ? val : function(x) {
+        return x;
+      };
+      out_key = key;
+    }
+    new_obj[out_key] = func(obj[key]);
   }
   return new_obj;
 };

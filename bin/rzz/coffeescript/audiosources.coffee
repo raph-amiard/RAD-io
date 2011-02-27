@@ -1,3 +1,7 @@
+prn = (p...) ->
+    a = p.join(" ")
+    if console?.log then console.log(p...)
+
 # Main Application singleton
 # Regroups all the global mechanisms and window variables
 Application =
@@ -7,10 +11,14 @@ Application =
             playlist: PlaylistComponent
             main: MainComponent
             planning: PlanningComponent
+            calendar: CalendarComponent
         return cmap[name]
+
+    active_components: {}
 
     current_view: 'main'
     current_component: undefined
+    menu_items: {}
     is_ctrl_pressed: no
 
     init: ->
@@ -20,11 +28,59 @@ Application =
         $(document).keyup (e) =>
             if e.which == 17 then @is_ctrl_pressed = no
 
-    load: (name, view_params) ->
-        @current_component?.close()
+        @views_menu = new Menu "Fenêtres actives", do_select:true
+        @actions_menu = make_actions_menu()
+        @playlist_menu = new Playlist()
+
+    load: (name, view_params, confirm) ->
+        reload_events = no
+
+        # If the view to load is the same, then destroy it
+        if @current_view == name
+            if @current_component?.has_changes and not confirm
+                menu = make_xps_menu
+                    text: "Attention ! vous risquez de perdre le résultat de votre édition, êtes vous sur de vouloir continuer ?"
+                    actions:
+                        oui:->
+                            Application.load name, view_params, yes
+                            $(@).dialog('close').remove()
+                        non:->
+                            $(@).dialog('close').remove()
+                    show_validate:no
+                show_menu menu
+                return
+
+            @current_component?.close()
+        # If the view to load is a different one
+        # Store the current view and hide it
+        else
+            @active_components[name]?.close()
+            @active_components[@current_view] = @current_component
+            @current_component?.hide()
+            reload_events = yes
+
         klass = @views_components(name)
         @current_component = new klass(view_params)
         @current_view = name
+
+        if not(@menu_items[name])
+            @menu_items[name] = @views_menu.add_link_element name, (=> @show name;return yes), yes
+            @current_component.menu_el = @menu_items[name]
+
+        @current_component.on_close =>
+            @menu_items[name] = null
+
+        if reload_events then Widgets.audiomodels.reload_events()
+
+
+    show: (name) ->
+        if not(@current_view == name) and @active_components[name]
+            @active_components[@current_view] = @current_component
+            @current_component?.hide()
+            @current_view = name
+            @current_component = @active_components[name]
+            @current_component?.show()
+            Widgets.audiomodels.reload_events()
 
     view: (view_name) ->
         if view_name?
@@ -61,7 +117,6 @@ Widgets.audiomodel_selector =
             do (model_name, button_name) =>
                 dom = tag 'span', button_name, class:@button_class
                 @container.append(dom)
-                $(dom).button()
 
                 dom.click (e) ->
                     Widgets.audiomodels.current_model = model_name
@@ -129,6 +184,7 @@ Widgets.audiomodels =
             @by_id = {}
 
             ul = tag 'ul'
+            @ul = ul
             @container.html ''
             @container.append ul
 
@@ -140,13 +196,15 @@ Widgets.audiomodels =
                 ul.append audiomodel.ui
                 audiomodel.bind_events()
 
-            ul.make_selectable
-                select_class: 'selected-box'
-                handler: =>
-                    @selected_audiomodels = (parseInt(i.value) for i in ul.find('li.selected-box input'))
-
             $('[id$="select_footer"]').hide()
             $("##{@current_model}_select_footer").show()
+
+    reload_events: ->
+        for audiomodel in @all
+            audiomodel.rebind_global_events()
+
+    refresh_selected_audiomodels: ->
+        @selected_audiomodels = (el for el in @all when el.selected)
 
 Widgets.footer_actions =
 
@@ -165,15 +223,13 @@ Widgets.footer_actions =
                         menu = new AudioFileGroupEditForm(Widgets.audiomodels.selected_audiomodels)
                         menu.show()
 
-            global:
-                "Uploader des tracks":
-                    action: ->
+            global:{}
+
         audiosource:
             global:
                 "Créer une playlist":
-                    action: ->
-                        $.getJSON "/audiosources/json/create-audio-source", (data) ->
-                            Application.load "playlist", data
+                    action: -> global.create_playlist()
+
             selection:
                 "Supprimer":
                     action: ->
@@ -182,8 +238,8 @@ Widgets.footer_actions =
         planning:
             global:
                 "Creer un planning":
-                    action: ->
-                        Application.load "planning"
+                    action: -> global.create_planning()
+
             selection: null
 
     footers: {}
@@ -193,13 +249,15 @@ Widgets.footer_actions =
     load: ->
         for model, actions_types of @actions
             footer = @footers[model] = div "", class:"head_and_foot"
+            footer_container = div "", class:"footer_container"
+            footer.append footer_container
             for action_type, actions of actions_types
                 for action_name, properties of actions
                     if properties.predicate and not properties.predicate()
                         continue
-                    action_button = tag "button", action_name, class:"footer_button"
+                    action_button = tag "span", action_name, class:"bbutton"
                     action_button.click properties.action
-                    footer.append action_button
+                    footer_container.append action_button
 
         for footer_model, footer of @footers
             @container.append footer
@@ -212,7 +270,6 @@ Widgets.footer_actions =
         @active_footer?.hide()
         @active_footer = @footers[audiomodel]
         @active_footer.show()
-        @active_footer.find(".footer_button").button()
 
 
 class TemplateComponent
@@ -223,6 +280,17 @@ class TemplateComponent
     constructor: (opts) ->
         @dom = render_template opts.template, opts.context
         @ui = $(@dom)
+
+    show_hook: ->
+    hide_hook: ->
+
+    hide: ->
+        @hide_hook()
+        @ui.hide()
+
+    show: ->
+        @show_hook()
+        @ui.show()
 
 
 class Audiomodel extends TemplateComponent
@@ -286,10 +354,39 @@ class Audiomodel extends TemplateComponent
 class ListAudiomodel extends Audiomodel
     # Represents an audiomodel in the audiomodel list
 
+    clear_events: ->
+        @ui.draggable "destroy"
+        for event_name, event of @handlers
+            @ui.unbind event_name, event
+
+    rebind_global_events: ->
+        @clear_events()
+        @bind_global_events()
+
+    bind_global_events: ->
+        @view_events[Application.current_view]?.apply(@, [])
+        @handlers.click = =>
+            @ui.toggleClass "selected-box"
+            @selected = not(@selected)
+            Widgets.audiomodels.refresh_selected_audiomodels()
+        @ui.click @handlers.click
+
     view_events:
+        calendar: ->
+            if @type == "planning"
+                eventObject = title: @name, planning_id:@id
+                @ui.data "eventObject", eventObject
+                @ui.draggable
+                    helper:'clone'
+                    appendTo:'body'
+                    revert:yes
+                    revertDuration:0
+                    scroll:no
+                    zIndex:'257'
+
+
         playlist: ->
             tracklist = Application.current_component.tracklist
-            tracklist.container.sortable('refresh')
             if @type == "audiofile"
                 @ui.draggable
                     connectToSortable: tracklist.container
@@ -307,19 +404,18 @@ class ListAudiomodel extends Audiomodel
                 proxy = null
                 previous_top = 0; previous_left = 0; column=0
 
-                @ui.bind 'dragstart', (e, dd) =>
+                @handlers.dragstart = (e, dd) =>
 
                     height = @length / 60
-                    width = planning.tds[1].width
-                    proxy = div @title, class:'audiofile_proxy'
+                    width = $(planning.tds[1]).width()
+                    proxy = div @title, class:'planning_element'
 
                     proxy.css top:dd.offsetY, left:dd.offsetX, position:'absolute'
                     $('body').append proxy
                     proxy.width(width).height(height)
                     td_positions = new GridPositionner(planning.tds)
 
-                @ui.bind 'drag', (e, dd) =>
-
+                @handlers.drag = (e, dd) =>
                     el = $ proxy
                     rel_pos = planning.el_pos(el)
                     proxy_in_board = (rel_pos.top + (el.height() / 2) > 0 and rel_pos.left + (el.width() / 2) > 0)
@@ -338,7 +434,7 @@ class ListAudiomodel extends Audiomodel
                     else
                         el.css top:dd.offsetY, left:dd.offsetX
 
-                @ui.bind 'drop', (e, dd) =>
+                @handlers.drop = (e, dd) =>
 
                     el = $ proxy
                     rel_pos = planning.el_pos(el)
@@ -356,18 +452,25 @@ class ListAudiomodel extends Audiomodel
                                 minute: previous_top % 60
                             day: column-1
 
+                @ui.bind "drop", @handlers.drop
+                @ui.bind "drag", @handlers.drag
+                @ui.bind "dragstart", @handlers.dragstart
+
+
 
     constructor: (type, json_model) ->
 
         @type = type
         $.extend this, json_model
         @audiomodel_base = json_model
+        @handlers = {}
+        @selected = no
 
         super
             template: "#{@type}_list_element"
             context: {audiomodel:json_model}
 
-        @view_events[Application.current_view]?.apply(@, [])
+        @bind_global_events()
 
     handle_delete: ->
         audiomodel = @
@@ -398,7 +501,9 @@ class ListAudiomodel extends Audiomodel
 
         if @type == "audiofile"
             @ui.find('.audiofile_edit').click @handle_audiofile_edit()
-            @ui.find('.audiofile_play').click handle_audiofile_play
+            @ui.find('.audiofile_play').click (e) =>
+                e.preventDefault(); e.stopPropagation()
+                Application.playlist_menu.add_audiofile @, yes
 
         else if @type == "audiosource"
             @ui.find('.audiosource_edit').click (e) ->
@@ -474,17 +579,22 @@ class AudioFileGroupEditForm extends TemplateComponent
     constructor: (selected_audiofiles) ->
         super template:'audiofile_group_edit_form'
 
-        url = @url
+        url = @url;ui = @ui
+
         @menu = make_xps_menu
-            name: "group_edit_audiomodels"
+            name: "group_edit_audiomodels#{gen_uuid()}"
             text: @ui
             title: "Edition en groupe"
             validate_action: ->
                 $(@).find('form').ajaxSubmit
                     dataType:'json'
-                    data: {'audiofiles': selected_audiofiles}
+                    data: {'audiofiles': (s.id for s in selected_audiofiles)}
                     url: url
-                    success: (json) -> return null
+                    success: (json) =>
+                        post_message "Elements édités avec succes"
+                        artist = ui.find("#id_artist").val()
+                        for af in selected_audiofiles
+                            af.set_artist artist
 
     show: () ->
         show_menu @menu
@@ -614,14 +724,83 @@ class AppComponent extends TemplateComponent
     constructor: (opts) ->
         super opts
         @main_content_holder.append(@ui)
+
     close: () ->
+        @menu_el?.remove()
+        @hide_hook()
         @ui.remove()
+        @on_close_func()
+
+    on_close: (func) ->
+        @on_close_func = func
 
 
 class MainComponent extends AppComponent
 
     constructor: () ->
         super template:"main_component"
+
+
+class CalendarComponent extends AppComponent
+
+    url: "/audiosources/json/edit-calendar/"
+
+    constructor: () ->
+        super template:"calendar"
+        @init_components()
+        container = @container
+        @container.fullCalendar
+            events: [{}]
+            droppable:yes
+            editable:yes
+            drop: (date, allDay, e, ui) ->
+                original_event = $(e.target).data "eventObject"
+                my_event = start:date, allDay:allDay
+                $.extend my_event, original_event
+                container.fullCalendar "renderEvent", my_event, yes
+
+        @bind_events()
+        @fetch_cal_events()
+        @update_height()
+
+    fetch_cal_events: () ->
+        console.log "in fetch_cal_events"
+        $.getJSON @url, (data) =>
+            for e in data
+                my_event =
+                    start: new Date(e.when.year, e.when.month - 1, e.when.day)
+                    allDay:yes
+                    title:e.planning__name
+                    planning_id:e.planning__id
+                console.log my_event
+                @container.fullCalendar "renderEvent", my_event, yes
+
+    init_components: ->
+        @container = @ui.find("#calendar")
+        @submit_button = @ui.find("#calendar_submit")
+
+    to_json: ->
+        keys = ["planning_id", "start"]
+        events = for e in @container.fullCalendar("clientEvents") when e.planning_id
+            object_transform e,
+                planning_id: null
+                start: (x) -> [x.getFullYear(), x.getMonth() + 1, x.getDate()]
+
+        prn events
+        prn JSON.stringify events
+
+        return JSON.stringify events
+
+    bind_events: ->
+        $(window).resize () => @update_height()
+        @submit_button.click =>
+            $.post @url, events:@to_json(), =>
+                Application.load "main"
+                post_message "Le calendrier a été édité avec succes"
+
+
+    update_height: ->
+        @container.height $(window).height() - @container.offset().top - 40
 
 
 class PlaylistComponent extends AppComponent
@@ -635,12 +814,13 @@ class PlaylistComponent extends AppComponent
         @fields =
             title: $ '#playlist_edit_title'
             audiofiles: @tracklist.container
-            tags: $ '.tags_table_container'
+            tags: $ '#playlist_edit_content .tags_table_container'
             file_forms: $ '#audiofile_forms'
         @form = $ '#audiosource_form'
         @submit_button = $ "#audiosource_form_submit"
 
     constructor: (json) ->
+        console.log json
         super template: "audiosource_base", context: json
         @init_components()
 
@@ -657,23 +837,24 @@ class PlaylistComponent extends AppComponent
             }
 
         @fields.file_forms.append gen_audiofile_form().ui
-
         @inputs.tags.autocomplete(multicomplete_params json.tag_list)
         @inputs.tags.unbind 'blur.autocomplete'
+
+        if json.audiosource
+            @audiosource = json.audiosource
 
         # Add Necessary information for playlist, if in edition mode
         if @action == "edition"
 
             @submit_button.text("Editer la playlist")
-            @tags_table = new TagsTable(json.audiosource.tags_by_category)
+            @tags_table = new TagsTable(@audiosource.tags_by_category)
             @fields.tags.append(@tags_table.ui)
 
-            for audiofile in json.audiosource.sorted_audiofiles
+            for audiofile in @audiosource.sorted_audiofiles
                 @tracklist.append(audiofile, no)
         else
             @submit_button.text("Créer la playlist")
 
-        @submit_button.button()
         @submit_button.click (e) =>
             e.preventDefault();@submit()
 
@@ -682,20 +863,33 @@ class PlaylistComponent extends AppComponent
         $.extend data, @tracklist.get_tracks_map()
         @form.ajaxSubmit
             data: data
-            success: (r) ->
+            success: (r) =>
                 if Widgets.audiomodels.current_model == "audiosource"
                     Widgets.audiomodels.load()
                 Application.load "main"
                 action = if @action=="edition" then "modifiée" else "ajoutée"
                 post_message "La playlist #{r.audiosource.title} à été #{action} avec succès"
+                @close()
 
 
 handle_audiofile_play = (e) ->
     # Plays an audiofile on the flash player 
 
     e.preventDefault(); e.stopPropagation()
+    play_audiofile e.currentTarget.href
+
+
+play_audiofile = (url) ->
     player = document.getElementById 'audiofile_player'
-    if player then player.dewset e.target.href
+    if player then player.dewset url
+
+get_player_pos = ->
+    player = document.getElementById 'audiofile_player'
+    if player then player.dewgetpos() else 0
+
+player_stop = ->
+    player = document.getElementById 'audiofile_player'
+    if player then player.dewstop() else 0
 
 
 # ================================ PLANNINGS PART ================================= #
@@ -712,6 +906,8 @@ class PlanningComponent extends AppComponent
             else
                 planning_element.ui.hide()
 
+    hide_hook: -> $("body").css overflow:"auto"
+
     bind_events: ->
 
         @submit_button.click =>
@@ -720,12 +916,21 @@ class PlanningComponent extends AppComponent
                 name = @title_input.val()
                 Application.load "main"
                 post_message "Le planning #{name} a été #{if @mode=="creation" then "créé" else "édité"} avec succes"
+                @close()
 
+            # TODO : REfactor
             if @mode == "creation"
                 $.post @create_link, {planning_data:@to_json()}, success_function()
             else if @mode == "edition"
                 tjs = @to_json()
                 $.post "#{@edit_link}/#{@id}", {planning_data:tjs}, success_function()
+
+        str1 = "Montrer détails"
+        str2 = "Cacher détails"
+        @show_details_button.click =>
+            @planning_more.toggle('fast', =>
+                @update_height())
+            @show_details_button.text(if @show_details_button.text() == str1 then str2 else str1)
 
         @show_choices.find("input").click (e) =>
             @active_type = e.target.id.split(/planning_show_/)[1]
@@ -740,25 +945,28 @@ class PlanningComponent extends AppComponent
         @tds_width = @tds.map (i, el) -> $(el).width()
         @board_table = $ '#planning_board'
         @submit_button = $ '#planning_submit'
+        @show_details_button = $ '#planning_show_details'
         @title_input = $ '#planning_title'
         @tags_input = $ '#planning_tags'
-        @tags_table_container = $ '#planning_edit_content .tags_table_container'
+        @tags_table_container = $ '#planning_edit .tags_table_container'
         @show_choices = $ '#planning_show_choices'
         @show_choices.buttonset()
         @show_choices.disableTextSelect()
-        @submit_button.button()
+        @planning_more = $ "#planning_more"
         @update_height()
 
     update_height: ->
-        @container.height $(document).height() - @container.offset().top - 20
+        @container.height $(window).height() - @container.offset().top - 20
 
     add_grid: ->
         for h in [0...24]
             for i in [1..6]
                 div_class = {3:'half',6:'hour'}[i] or 'tenth'
-                content = if i == 1 then "#{format_number h, 2}h00" else ""
-                gridiv = div content, class:"grid_time grid_#{div_class}"
+                gridiv = div "", class:"grid_time grid_#{div_class}"
                 @board.append(gridiv)
+                if i == 1
+                    timediv = div "#{format_number h, 2}h00", class:"grid_showtime"
+                    @board.find(".hours_td").append(timediv)
 
     init_data: (data) ->
         if data.name
@@ -776,21 +984,19 @@ class PlanningComponent extends AppComponent
         @planning_elements = new Set()
         @init_components()
         @add_grid()
-        console.log "First phase : #{(new Date).getTime() - start}"
         start = (new Date).getTime()
         @bind_events()
-        console.log "Binding events: #{(new Date).getTime() - start}"
+        $("body").css overflow:"hidden"
 
         if data
             @tags_table = new TagsTable(data.tags_by_category)
-            @tags_table_container.append(tag 'p' , 'Tags').append @tags_table.ui
+            @tags_table_container.append @tags_table.ui
             @id = data.id
             @mode = "edition"
             start = (new Date).getTime()
             @init_data data
         else
             @mode = "creation"
-        console.log "Adding data: #{(new Date).getTime() - start}"
         @active_type = "single"
         @show_hide()
 
@@ -848,6 +1054,8 @@ class PlanningComponent extends AppComponent
 
 class PlanningElement extends Audiomodel
 
+    is_dragged:no
+
     constructor: (planning, json_model) ->
         height = 0; handles = no; cl=""
         
@@ -873,10 +1081,14 @@ class PlanningElement extends Audiomodel
         @dom = "
         <div class='planning_element #{@type}' style='top:#{@top}px;width:#{@planning.tds_width[@day + 1]}px;height:#{height}px;'>
           <div class='planning_element_container' >
-            #{if handles then "<div class='planning_element_head'></div>" else ""}
-            <p>#{json_model.audiosource.title}</p>
+            <div class='phead'>
+                <div style='position:relative;top:-3px;'>
+                    <span class='planning_element_time'>#{format_time @time_start}</span>
+                    <span>#{@audiosource.title}</span>
+                    <span class='delete_button'>x</span>
+                </div>
+            </div>
             #{if handles then "<div class='planning_element_foot'></div>" else ""}
-            <button type='button' class='delete_button'>x</button>
           </div>
         </div> "
         @ui = $(@dom)
@@ -886,6 +1098,7 @@ class PlanningElement extends Audiomodel
 
         @bind_events()
         @column.append(@ui)
+        @update_width()
 
     make_model: () ->
         # Returns every piece of information about the planning element
@@ -899,10 +1112,11 @@ class PlanningElement extends Audiomodel
         planning_id:@planning_id
 
     init_components: ->
-        # TODO : Rework this, construct the ui manually and don't use selectors
         @ui_head = @ui.find('.planning_element_head')
+        @ui_phead = @ui.find('.phead')
         @ui_foot = @ui.find('.planning_element_foot')
         @delete_button = @ui.find('.delete_button')
+        @time_span = @ui.find('.planning_element_time')
 
     edit_properties: -> =>
         form = div ""
@@ -919,14 +1133,34 @@ class PlanningElement extends Audiomodel
         @ui.css 'z-index':400
         @ui.height @audiosource.length / 60
 
+    update_width: -> @ui.width @column.width()
+
     bind_events: ->
         color = null; z_index=null
         td_positions = []
         element = null
 
+        phead_set_normal_size = => @ui_phead.animate {height:"10px"}, 200
+
+        @ui.hover =>
+            if not @is_dragged then @ui.addClass "planning_element_hover"
+        , => @ui.removeClass "planning_element_hover"
+
+        timeout = null
+        @ui_phead.hover =>
+            if not @is_dragged
+                timeout = setTimeout (=>
+                    height = @ui_phead.find('div').height() + 4
+                    if (not @is_dragged) and height > 20 then @ui_phead.animate {height:"#{height}px"}, 200
+                    timeout = null
+                ), 400
+        , =>
+            if timeout then clearTimeout timeout
+            else phead_set_normal_size()
+
         # Bind the resizing of the window 
         # to the resizing of the planning window
-        $(window).resize => @ui.width @column.width()
+        $(window).resize => @update_width()
 
         # Planning drag routines
         # ----------------------
@@ -935,20 +1169,23 @@ class PlanningElement extends Audiomodel
         # Doesn't use jquery ui draggable, but the lower level jquery.drag plugin
 
         @ui.bind 'dragstart', (e, dd) =>
+            @planning.has_changes = yes
+            phead_set_normal_size()
             # Drag start function. 
             # It has the responsibility of creating a new element if ctrl is pressed
             e.stopPropagation(); e.preventDefault()
+
+            @is_dragged = yes
 
             if Application.is_ctrl_pressed
                 element = @planning.create_element @make_model()
             else
                 element = @
 
-            color = element.ui.css 'background-color'
             z_index = element.ui.css 'z-index'
 
             # TODO: Remove hard-coded color element
-            element.ui.css 'background-color':'#EBC'
+            element.ui.addClass "planning_element_dragged"
             element.ui.css 'z-index': z_index + 10
             td_positions = new GridPositionner(@planning.tds)
 
@@ -964,29 +1201,41 @@ class PlanningElement extends Audiomodel
                 element.set_day_from_column column
                 element.ui.width element.column.width()
             element.set_time_from_pos top
+            @time_span.text format_time @time_start
             if element.type == "continuous" then element.refresh_time_end()
 
         @ui.bind 'dragend', (e, dd) =>
             # Drag end function
             # Called when the user releases the button
+
+            @is_dragged = no
+
             e.stopPropagation();e.preventDefault()
-            element.ui.css 'background-color':color
+            element.ui.removeClass "planning_element_dragged"
             element.ui.css "z-index": z_index
 
         orig_height = null; orig_top = null
 
-        @ui_head.bind 'dragstart', (e, dd) =>
-            e.stopPropagation();e.preventDefault()
-            orig_height = @ui.height()
-            orig_top = @top
+        if @type == "continuous"
+            @ui_phead.css cursor:"s-resize"
+            @ui_phead.bind 'dragstart', (e, dd) =>
+                phead_set_normal_size()
+                @is_dragged = yes
+                e.stopPropagation();e.preventDefault()
+                orig_height = @ui.height()
+                orig_top = @top
 
-        @ui_head.bind 'drag', (e, dd) =>
-            e.stopPropagation();e.preventDefault()
-            difference = step(dd.deltaY, 10)
-            @set_time_from_pos(orig_top + difference)
-            @set_time_end_from_height orig_height - difference
+            @ui_phead.bind 'drag', (e, dd) =>
+                e.stopPropagation();e.preventDefault()
+                difference = step(dd.deltaY, 10)
+                @set_time_from_pos(orig_top + difference)
+                @set_time_end_from_height orig_height - difference
+
+            @ui_phead.bind 'dragend', (e, dd) => @is_dragged = no
 
         @ui_foot.bind 'dragstart', (e, dd) =>
+            phead_set_normal_size()
+            @is_dragged = yes
             e.stopPropagation();e.preventDefault()
             orig_height = @ui.height()
 
@@ -994,6 +1243,8 @@ class PlanningElement extends Audiomodel
             e.stopPropagation();e.preventDefault()
             difference = step(dd.deltaY, 10)
             @set_time_end_from_height orig_height + difference
+
+        @ui_foot.bind 'dragend', (e, dd) => @is_dragged = no
 
         @delete_button.click (e, dd) =>
             @planning.delete_element @
@@ -1072,6 +1323,128 @@ class GridPositionner
         return [col, ret]
 
 step = (num, step) -> num - (num % step)
+
+
+# ================================================ MENUS =============================================== #
+
+class Menu extends TemplateComponent
+    header: d$ '#headertools'
+    
+    constructor: (name, opts) ->
+        if opts then $.extend this, opts
+        super template:'menu_widget', context: {name:name}
+        @header.append(@ui)
+        @init_components()
+        @bind_events()
+
+    init_components: ->
+        @ui_menu  = @ui.find("ul.menu-items")
+        @ui_menu_head = @ui.find(".menu_head")
+        @ui_menu.hide()
+
+    set_selected: (el) ->
+        @ui_menu.find("li").removeClass "menu_selected"
+        el.addClass "menu_selected"
+
+    add_link_element: (name, handler, do_set_selected) ->
+        link_el = tag "a", name, href:"#"
+        el = tag "li", link_el
+        @ui_menu.append el
+
+        if do_set_selected then @set_selected(el)
+
+        if handler
+            el.click (e) =>
+                if (handler e) then @ui_menu.hide()
+                if @do_select then @set_selected(el)
+
+        return el
+
+    bind_events: ->
+        @ui_menu_head.click => @ui_menu.toggle()
+
+class Playlist extends Menu
+
+
+    trigger_show_hide: ->
+        if @audiofiles.length == 0
+            @ui.hide()
+        else
+            @ui.show()
+
+    constructor: ->
+        super "Playlist", do_select:true
+        @dragging = no
+        @triggering = no
+        @audiofiles = []
+        start_pos=null;stop_pos=null
+        @ui_menu.sortable
+            start: (e, ui) =>
+                $.each @ui_menu.find("li"), (i, el) -> if el == ui.item[0] then start_pos = i
+                @dragging = yes
+            stop: (e, ui) =>
+                $.each @ui_menu.find("li"), (i, el) -> if el == ui.item[0] then stop_pos = i
+                el = @audiofiles.splice(start_pos, 1)[0]
+                @audiofiles.splice(stop_pos, 0, el)
+        @trigger_show_hide()
+
+
+    play: (audiofile) ->
+        player_stop()
+        play_audiofile audiofile.file_url
+        prn audiofile.file_url
+        @current = audiofile
+        @triggering = yes
+        if not @inter
+            @inter = setInterval (=>
+
+                if @triggering and get_player_pos() > 0
+                    @triggering = no
+
+                if get_player_pos() == 0 and not(@triggering)
+                    i = @audiofiles.indexOf(@current) + 1
+                    if i < @audiofiles.length
+                        @current = @audiofiles[i]
+                        play_audiofile @current.file_url
+                        @set_selected $(@ui_menu.find("li")[i])
+                ), 100
+
+    
+    add_audiofile: (audiofile, do_play) ->
+        do_play ?= no
+        play = => @play audiofile
+
+        el = @add_link_element "#{audiofile.title} - #{audiofile.artist}",null , do_play
+
+        el.click (e) =>
+            if @dragging then @dragging = no
+            else
+                @set_selected(el)
+                play()
+
+        @audiofiles.push audiofile
+        if do_play then play()
+        @ui_menu.sortable('refresh')
+        @trigger_show_hide()
+
+
+make_actions_menu = () ->
+    actions_menu = new Menu "Actions"
+    actions_menu.add_link_element "Creer nouvelle playlist", -> global.create_playlist();yes
+    actions_menu.add_link_element "Creer nouveau planning", -> global.create_planning();yes
+    actions_menu.add_link_element "Editer le calendrier", -> global.create_calendar();yes
+
+
+# ========================================= GLOBAL ACTIONS PART ======================================== #
+
+global =
+    create_playlist : ->
+        $.getJSON "/audiosources/json/create-audio-source", (data) ->
+            Application.load "playlist", data
+
+    create_planning : -> Application.load "planning"
+
+    create_calendar : -> Application.load "calendar"
 
 # ========================================= DOCUMENT READY PART ======================================== #
 

@@ -68,6 +68,13 @@ format_number = (num, length) ->
     zeroes = if length > len then length - len else 0
     strnum = ("0" for _ in [0...zeroes]).join('') + strnum
 
+format_time = (time) ->
+    fnum = (num) -> format_number num, 2
+    nh = fnum time.hour
+    nm = fnum time.minute
+    "#{nh}h#{nm}"
+
+
 
 format_length = (l) ->
     fnum = (num) -> format_number num, 2
@@ -145,3 +152,14 @@ object_with_keys = (obj, keys) ->
     for key in keys
         new_obj[key] = obj[key]
     new_obj
+
+object_transform = (obj, mappings) ->
+    new_obj = {}
+    for key, val of mappings
+        if $.isArray(val)
+            [out_key, func] = val
+        else
+            func = if val? then val else (x) -> x
+            out_key = key
+        new_obj[out_key] = func(obj[key])
+    return new_obj

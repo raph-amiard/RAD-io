@@ -1,31 +1,120 @@
-<div id="playlist_edit"> 
-  <div id="playlist_edit_content" class="content_div">
-    <h2><%= action == "edition" ? title : "" %></h2>
-    <h3>Envoyer des morceaux:</h3>
-    <div id="audiofile_forms">
-    </div>
-    <form id="audiosource_form" action="<%= form_url %>" method="POST" accept-charset="utf-8">
+<div class="module" id="playlist_edit"> 
 
-      <div class="columns">
-        <div class="audiosource_left_column">
-          <h3>Ordre des morceaux:</h3>
-          <div class="playlist_box">
-            <ul id="uploaded_audiofiles">
-            </ul>
-          </div>
-          <p> Durée de la playlist : <span id="playlist_length"></span> </p>
+  <div id="playlist_edit_content">
+
+    <h2><%= action == "edition" ? title : "Création d'une nouvelle playlist" %></h2>
+
+    <div class="row">
+      <div>
+        <div class="column span-4">
+          <label for="audiofile_forms">Envoyer des morceaux:</label>
         </div>
-        <div class="audiosource_right_column">
-          <h3>Informations:</h3>
-          <p> Nom de la playlist</p>
-          <input type="text" id="playlist_title" name="title" value="<%= action == "edition" ? audiosource.title : "" %>"/>
-          <p>Ajouter des tags</p> <input type="text" id="audiosource_tags" name="tags" value=""/> 
-          <p>Tags existants</p>
-          <div class="tags_table_container"></div>
+
+        <div class="column span-flexible" id="audiofile_forms">
         </div>
       </div>
-    </form>
-    <button id="audiosource_form_submit" type="button">Créer la playlist</button>
-  </div>
-</div>
+    </div>
 
+    <form id="audiosource_form" action="<%= form_url %>" method="POST" accept-charset="utf-8">
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="playlist_title"> Nom de la playlist</label>
+          </div>
+
+          <div class="column span-flexible">
+            <input class="input" type="text" id="playlist_title" name="title" value="<%= action == "edition" ? audiosource.title : "" %>"/>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="row">
+        <div>
+
+          <div class="column span-4">
+            <label for="uploaded_audiofiles">Ordre des morceaux:</label>
+          </div>
+
+          <div class="column span-flexible">
+            <div class="playlist_box list_container input">
+              <ul id="uploaded_audiofiles">
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label> Durée de la playlist:</label> 
+          </div>
+          <div class="column span-flexible">
+            <span id="playlist_length"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="playlist_description"> Description de la playlist </label>
+          </div>
+
+          <div class="column span-flexible">
+            <textarea class="input" id="playlist_description" name="description"><%= action == "edition" ? audiosource.description : "" %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="audiosource_tags">Ajouter des tags</label> 
+          </div>
+
+          <div class="column span">
+            <input class="input" type="text" id="audiosource_tags" name="tags" value=""/> 
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="tags_table_container">Tags existants</label>
+          </div>
+
+          <div class="column span">
+            <div class="tags_table_container input"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="column span-4">
+            <label for="shared">Partager avec le public</label>
+          </div>
+
+          <div class="column span">
+            <input type="radio" name="share" value="yes" <% if (action == "edition" && audiosource.share) { %> checked <% } %>/> <span>Oui</span>
+          <input type="radio" name="share" value="no" <% if (!(action == "edition" && audiosource.share)) { %> checked <% } %>/> <span>Non</span>
+          </div>
+        </div>
+      </div>
+
+    </form>
+
+    <div class="row last">
+      <div>
+        <span style="float:right;font-size:12.5px;padding:8px;" id="audiosource_form_submit">Créer la playlist</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>

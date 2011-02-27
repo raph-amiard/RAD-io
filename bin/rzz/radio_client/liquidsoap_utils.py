@@ -36,21 +36,28 @@ def generate_script(mount_point_name, outputs):
     base_string = """
         set("log.file.path", "{LOG_PATH}")
         set("server.telnet",true)
+        set("server.telnet.port",{TELNET_PORT})
         program_queue = request.equeue(id="{PROGRAM_QUEUE_NAME}")
         back_queue = request.equeue(id="{BACK_QUEUE_NAME}")
         jingles_queue = request.equeue(id="{JINGLES_QUEUE_NAME}")
         timed_jingles = delay({JINGLES_FREQUENCY}., jingles_queue)
         security = single("{SECURITY}")
         radio = fallback(track_sensitive = true, [timed_jingles, program_queue, back_queue])
-        full = fallback(track_sensitive = false, [radio, security])
+        with_live = fallback(track_sensitive=false, [input.http("http://{RADIO_HOST}/{RADIO_NAME}_live.mp3"), radio])
+        full = fallback(track_sensitive = false, [with_live, security])
     """.format(
         LOG_PATH = settings.LIQUIDSOAP_LOG_PATH,
         PROGRAM_QUEUE_NAME = settings.LIQUIDSOAP_PROGRAM_QUEUE_NAME,
         BACK_QUEUE_NAME = settings.LIQUIDSOAP_BACK_QUEUE_NAME,
         JINGLES_QUEUE_NAME = settings.LIQUIDSOAP_JINGLES_QUEUE_NAME,
         SECURITY = settings.LIQUIDSOAP_SECURITY_AUDIOFILE,
-        JINGLES_FREQUENCY = settings.RADIO_JINGLES_FREQUENCY
+        JINGLES_FREQUENCY = settings.RADIO_JINGLES_FREQUENCY,
+        TELNET_PORT = settings.LIQUIDSOAP_TELNET_PORT,
+        RADIO_HOST = settings.RADIO_HOST,
+        RADIO_NAME = settings.RADIO_SHORT_NAME.strip().replace(" ", "_").lower()
     )
+
+    print "TELNET PORT :", settings.LIQUIDSOAP_TELNET_PORT
 
     for output in outputs:
 

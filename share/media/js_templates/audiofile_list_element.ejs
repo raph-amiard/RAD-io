@@ -1,12 +1,14 @@
-<li class="unselectable ui-widget-content audiomodel-box">
+<li class="unselectable">
   <input type="hidden" value="<%= audiomodel.id %>"/> 
-  <p> <span class="audiofile_title"> <%= audiomodel.title %> </span> - 
-      <span class="audiofile_artist"> <%= audiomodel.artist %> </span> 
-      <span class="audiofile_length"> <%= format_length(audiomodel.length) %> </span>
+  <p class="description"> 
+    <span class="audiofile_title mdesc"> <%= audiomodel.title %> </span> 
+    <span class="mdesc"> - </span> 
+    <span class="audiofile_artist mdesc"> <%= audiomodel.artist %> </span> 
+    <span class="audiofile_length mlength"> <%= format_length(audiomodel.length) %> </span>
   </p>
-  <div class="audiofile_actions">
-    <a class="audiofile_play" href="<%= audiomodel.file_url %>">Play</a>
-    <a class="audiofile_edit" href="<%= audiomodel.form_url %>">Edit</a>
-    <a class="audiomodel_delete" href="/audiosources/json/delete-audio-file/<%= audiomodel.id %>">Delete</a>
+  <div class="audiomodel_actions">
+    <a class="audiofile_play" href="<%= audiomodel.file_url %>"><img src="/site_media/img/site_content/admin/play.png"/></a>
+    <a class="audiofile_edit" href="<%= audiomodel.form_url %>"><img src="/site_media/img/site_content/admin/pen.png"/></a>
+    <a class="audiomodel_delete" href="/audiosources/json/delete-audio-file/<%= audiomodel.id %>"><img src="/site_media/img/site_content/admin/arrow.png"/></a>
   </div>
 </li>

@@ -83,6 +83,7 @@ MEDIA_URL = '/site_media/'
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
+GRAPPELLI_ADMIN_TITLE = RADIO_LONG_NAME
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'c&=+et6-23xc4g^er%pb_8*%r+-7to)2v&myi)s3)^2llq5b+g'
@@ -116,6 +117,7 @@ FILE_UPLOAD_HANDLERS = ('rzz.utils.handlers.UploadProgressCachedHandler', ) + gl
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10
 
 INSTALLED_APPS = (
+    'grappelli',
 	'rzz.news',
 	'rzz.artists',
 	'rzz.friends',

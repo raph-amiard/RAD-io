@@ -18,6 +18,7 @@ urlpatterns = patterns('',
     url(r'^json/edit-planning/(?P<planning_id>\d+)$', views.edit_planning, name='edit-planning'),
     url(r'^json/edit-audio-files$', views.edit_audio_files, name='edit-audio-files'),
     url(r'^json/planning-set-active/(?P<planning_id>\d+)$', views.set_planning_active, name='planning-set-active'),
+    url(r'^json/edit-calendar/$', views.edit_calendar, name="edit-calendar"),
     url_delete_model(AudioFile, 'audio-file'),
     url_delete_model(AudioSource, 'audio-source'),
     url_delete_model(SourceElement, 'source-element'),
@@ -38,5 +39,8 @@ urlpatterns = patterns('',
     url(r'^audiofile/(?P<audiofile_id>\d+)/edit/$', views.edit_audio_file, name='audio-file-edit'),
     url(r'^audiofile/tag/list/$', views.tags_list,{'audiomodel_klass':AudioFile}, name='audiofile-tags-list'),
     url(r'^planning/tag/list/$', views.tags_list,{'audiomodel_klass':Planning}, name='audiofile-tags-list'),
-    url(r'^audiosource/tag/list/$', views.tags_list,{'audiomodel_klass':AudioSource}, name='audiosource-tags-list')
-    )
+    url(r'^audiosource/tag/list/$', views.tags_list,{'audiomodel_klass':AudioSource}, name='audiosource-tags-list'),
+    url(r'playing/', views.show_active_planning, name='show-active-planning'),
+    url(r'shared/list/$', views.shared_contents_list, {'page':1}),
+    url(r'shared/list/(?P<page>\d+)$', views.shared_contents_list, name="shared-contents-list"),
+)

@@ -1,4 +1,5 @@
 from os import path
+from functools import partial
 
 from django.db import models, transaction
 from django.db.models.signals import post_save
@@ -119,8 +120,10 @@ class AudioFile(AudioModel):
 
 class AudioSource(AudioModel):
     title = models.CharField('AudioSource title', max_length=400)
+    description = models.TextField()
     rzz_artist = models.ForeignKey(Artist, null=True)
     audio_files = models.ManyToManyField(AudioFile, through='SourceElement')
+    share = models.BooleanField()
 
     def __unicode__(self):
         return self.title
@@ -219,7 +222,21 @@ class PlanningElement(models.Model):
         d['audiosource'] = self.source.to_dict()
         return d
 
-def planning_changed_handler(sender, **kwargs):
-    cache.set('planning_change', True)
+
+class PlanningStartEvent(models.Model):
+    """
+    Represents the triggering of a planning as the active planning at a certain point in time
+    """
+    when = models.DateField()
+    planning = models.ForeignKey(Planning)
+    triggered = models.BooleanField()
+
+    def to_dict(self):
+        return instance_to_dict(self)
+
+
+def planning_changed_handler(sender, instance=None, **kwargs):
+    if instance.active:
+        cache.set('planning_change', True)
 
 post_save.connect(planning_changed_handler, sender=Planning)

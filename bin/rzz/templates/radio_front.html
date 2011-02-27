@@ -1,8 +1,17 @@
 {% extends "base_jquery.html" %}
 
 {% block css %}
-  <link href='{{ MEDIA_URL }}css/radio_front.css' rel='stylesheet' type='text/css'/>
+
+  {% if include_default_css %}
+    <link href='{{ MEDIA_URL }}css/radio_front.css' rel='stylesheet' type='text/css'/>
+  {% endif %}
+
+  {% if custom_css %}
+    <link href='{{ MEDIA_URL }}css/{{ custom_css }}' rel='stylesheet' type='text/css'/>
+  {% endif %}
+
   <link href='http://fonts.googleapis.com/css?family=Cantarell&subset=latin' rel='stylesheet' type='text/css' />
+
 {% endblock %}
 
 {% block scripts %}
@@ -23,7 +32,13 @@
       <li><a href="{% url listen %}" onclick='window.open("{% url listen %}", "Listen!", "width=350,height=200,scrollbars=no");return false'>Listen!</a></li>
       <li><a href="{% url news-post-list 1 %}">News</a></li>
       <li><a href="{% url playlist-now %}">Playlist</a></li>
-      {% if is_friends_app_activated %}
+      {% if is_planning_show_app_activated %}
+        <li><a href="{% url show-active-planning %}">{{ planning_show_app_menu_name }}</a></li>
+      {% endif %}
+      {% if is_share_content_app_activated %}
+        <li><a href="{% url shared-contents-list 1 %}">{{ share_content_app_menu_name }}</a></li>
+      {% endif %}
+      {% if is_friend_app_activated %}
         <li><a href="{% url friend-list 1 %}">{{ friends_app_menu_name }}</a></li>
       {% endif %}
       {% if is_artists_app_activated %}
