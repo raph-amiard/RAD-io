@@ -23,7 +23,7 @@
       <li><a href="{% url listen %}" onclick='window.open("{% url listen %}", "Listen!", "width=350,height=200,scrollbars=no");return false'>Listen!</a></li>
       <li><a href="{% url news-post-list 1 %}">News</a></li>
       <li><a href="{% url playlist-now %}">Playlist</a></li>
-      {% if is_friend_app_activated %}
+      {% if is_friends_app_activated %}
         <li><a href="{% url friend-list 1 %}">{{ friends_app_menu_name }}</a></li>
       {% endif %}
       {% if is_artists_app_activated %}
