@@ -786,9 +786,6 @@ class CalendarComponent extends AppComponent
                 planning_id: null
                 start: (x) -> [x.getFullYear(), x.getMonth() + 1, x.getDate()]
 
-        prn events
-        prn JSON.stringify events
-
         return JSON.stringify events
 
     bind_events: ->
@@ -1329,7 +1326,7 @@ step = (num, step) -> num - (num % step)
 
 class Menu extends TemplateComponent
     header: d$ '#headertools'
-    
+
     constructor: (name, opts) ->
         if opts then $.extend this, opts
         super template:'menu_widget', context: {name:name}
@@ -1392,7 +1389,6 @@ class Playlist extends Menu
     play: (audiofile) ->
         player_stop()
         play_audiofile audiofile.file_url
-        prn audiofile.file_url
         @current = audiofile
         @triggering = yes
         if not @inter
@@ -1409,7 +1405,7 @@ class Playlist extends Menu
                         @set_selected $(@ui_menu.find("li")[i])
                 ), 100
 
-    
+
     add_audiofile: (audiofile, do_play) ->
         do_play ?= no
         play = => @play audiofile

@@ -1077,8 +1077,6 @@ CalendarComponent = (function() {
       }
       return _results;
     }).call(this);
-    prn(events);
-    prn(JSON.stringify(events));
     return JSON.stringify(events);
   };
   CalendarComponent.prototype.bind_events = function() {
@@ -1843,7 +1841,6 @@ Playlist = (function() {
   Playlist.prototype.play = function(audiofile) {
     player_stop();
     play_audiofile(audiofile.file_url);
-    prn(audiofile.file_url);
     this.current = audiofile;
     this.triggering = true;
     if (!this.inter) {
