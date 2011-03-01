@@ -1035,7 +1035,6 @@ CalendarComponent = (function() {
     this.update_height();
   }
   CalendarComponent.prototype.fetch_cal_events = function() {
-    console.log("in fetch_cal_events");
     return $.getJSON(this.url, __bind(function(data) {
       var e, my_event, _i, _len, _results;
       _results = [];
@@ -1047,7 +1046,6 @@ CalendarComponent = (function() {
           title: e.planning__name,
           planning_id: e.planning__id
         };
-        console.log(my_event);
         _results.push(this.container.fullCalendar("renderEvent", my_event, true));
       }
       return _results;
@@ -1117,7 +1115,6 @@ PlaylistComponent = (function() {
   };
   function PlaylistComponent(json) {
     var audiofile, gen_audiofile_form, _i, _len, _ref;
-    console.log(json);
     PlaylistComponent.__super__.constructor.call(this, {
       template: "audiosource_base",
       context: json
