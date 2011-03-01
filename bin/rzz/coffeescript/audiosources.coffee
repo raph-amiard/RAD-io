@@ -764,7 +764,6 @@ class CalendarComponent extends AppComponent
         @update_height()
 
     fetch_cal_events: () ->
-        console.log "in fetch_cal_events"
         $.getJSON @url, (data) =>
             for e in data
                 my_event =
@@ -772,7 +771,6 @@ class CalendarComponent extends AppComponent
                     allDay:yes
                     title:e.planning__name
                     planning_id:e.planning__id
-                console.log my_event
                 @container.fullCalendar "renderEvent", my_event, yes
 
     init_components: ->
@@ -817,7 +815,6 @@ class PlaylistComponent extends AppComponent
         @submit_button = $ "#audiosource_form_submit"
 
     constructor: (json) ->
-        console.log json
         super template: "audiosource_base", context: json
         @init_components()
 
