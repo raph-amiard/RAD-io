@@ -6,6 +6,7 @@
   <div class="audiomodel_actions ">
     <a class="planning_edit" href="<%= audiomodel.form_url %>"><img src="/site_media/img/site_content/admin/pen.png"/></a>
     <% if (!audiomodel.active) { %> <a class="planning_set_active" href="/audiosources/json/planning-set-active/<%= audiomodel.id %>"><img src="/site_media/img/site_content/admin/note.png"/></a> <% } %>
-    <a class="audiomodel_delete" href="/audiosources/json/delete-audio-source/<%= audiomodel.id %>"><img src="/site_media/img/site_content/admin/arrow.png"/></a>
+    <a class="audiomodel_delete" href="/audiosources/json/delete-planning/<%= audiomodel.id %>"><img src="/site_media/img/site_content/admin/arrow.png"/></a>
+    <a class="planning_duplicate" href=""><img src="/site_media/img/site_content/admin/dupli.png"/></a>
   </div>
 </li>

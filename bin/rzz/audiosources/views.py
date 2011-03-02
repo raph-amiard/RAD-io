@@ -62,9 +62,10 @@ def edit_planning(request, planning_id):
 
     if request.method == 'POST':
         planning_data = json.loads(request.POST['planning_data'])
+        print planning_data
         planning.planningelement_set.all().delete()
         planning.add_elements(planning_data['planning_elements'])
-        planning.title = planning_data["title"]
+        planning.name = planning_data["title"]
         remove_tags_from_model(planning, planning_data["to_delete_tags"])
         add_tags_to_model(planning_data['tags'], planning)
         planning.save()
@@ -330,6 +331,18 @@ def show_active_planning(request):
                                   'days':elements,
                                   'today':day_name[date.today().weekday()]
                               })
+
+def duplicate_planning(request):
+    planning = Planning.objects.get(id=request.GET["planning_id"])
+    new_planning = Planning(name=request.GET["name"], active = False)
+    new_planning.save()
+    for planning_element in planning.planningelement_set.all():
+        # Set id to none to create a new element
+        planning_element.id = None
+        planning_element.planning = new_planning
+        planning_element.save()
+
+    return HttpResponse()
 
 def edit_calendar(request):
     from datetime import date

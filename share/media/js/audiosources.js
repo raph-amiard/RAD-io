@@ -484,6 +484,7 @@ Audiomodel = (function() {
 })();
 ListAudiomodel = (function() {
   __extends(ListAudiomodel, Audiomodel);
+  ListAudiomodel.prototype.planning_duplicate_url = "/audiosources/json/planning-duplicate";
   ListAudiomodel.prototype.clear_events = function() {
     var event, event_name, _ref, _results;
     this.ui.draggable("destroy");
@@ -663,7 +664,8 @@ ListAudiomodel = (function() {
     return function(e) {
       e.preventDefault();
       e.stopPropagation();
-      return show_menu(delete_menu(e.target.href));
+      console.log(e.currentTarget.href);
+      return show_menu(delete_menu(e.currentTarget.href));
     };
   };
   ListAudiomodel.prototype.bind_events = function() {
@@ -684,6 +686,35 @@ ListAudiomodel = (function() {
         });
       });
     } else if (this.type === "planning") {
+      console.log(this);
+      this.ui.find('.planning_duplicate').click(__bind(function(e) {
+        var id, menu, menu_content, menu_text, url;
+        e.stopPropagation();
+        e.preventDefault();
+        menu_text = "Quel nom voulez vous donner au nouveau planning ?";
+        menu_content = tag("div");
+        menu_content.append(tag("p", menu_text));
+        menu_content.append(tag("input", {
+          type: "text",
+          value: "" + this.name + "_copy"
+        }));
+        id = this.id;
+        url = this.planning_duplicate_url;
+        menu = make_xps_menu({
+          text: menu_content,
+          validate_action: function() {
+            var name;
+            name = this.find("input").val();
+            return $.getJSON(url, {
+              planning_id: id,
+              name: name
+            }, __bind(function(d, s) {
+              return post_message("Planning dupliqué avec succès");
+            }, this));
+          }
+        });
+        return show_menu(menu);
+      }, this));
       this.ui.find('.planning_edit').click(function(e) {
         e.stopPropagation();
         e.preventDefault();
@@ -1232,7 +1263,7 @@ PlanningComponent = (function() {
   PlanningComponent.prototype.bind_events = function() {
     var str1, str2;
     this.submit_button.click(__bind(function() {
-      var success_function, tjs;
+      var link, success_function;
       success_function = __bind(function() {
         return __bind(function() {
           var name;
@@ -1242,16 +1273,10 @@ PlanningComponent = (function() {
           return this.close();
         }, this);
       }, this);
-      if (this.mode === "creation") {
-        return $.post(this.create_link, {
-          planning_data: this.to_json()
-        }, success_function());
-      } else if (this.mode === "edition") {
-        tjs = this.to_json();
-        return $.post("" + this.edit_link + "/" + this.id, {
-          planning_data: tjs
-        }, success_function());
-      }
+      link = this.mode === "creation" ? this.create_link : "" + this.edit_link + "/" + this.id;
+      return $.post(link, {
+        planning_data: this.to_json()
+      }, success_function());
     }, this));
     str1 = "Montrer détails";
     str2 = "Cacher détails";

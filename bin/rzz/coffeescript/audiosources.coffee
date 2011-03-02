@@ -354,6 +354,8 @@ class Audiomodel extends TemplateComponent
 class ListAudiomodel extends Audiomodel
     # Represents an audiomodel in the audiomodel list
 
+    planning_duplicate_url: "/audiosources/json/planning-duplicate"
+
     clear_events: ->
         @ui.draggable "destroy"
         for event_name, event of @handlers
@@ -493,7 +495,8 @@ class ListAudiomodel extends Audiomodel
         return (e) ->
             e.preventDefault()
             e.stopPropagation()
-            show_menu delete_menu(e.target.href)
+            console.log e.currentTarget.href
+            show_menu delete_menu(e.currentTarget.href)
 
     bind_events: ->
 
@@ -512,6 +515,28 @@ class ListAudiomodel extends Audiomodel
                     Application.load 'playlist', json
 
         else if @type == "planning"
+
+            console.log @
+
+            @ui.find('.planning_duplicate').click (e) =>
+                e.stopPropagation(); e.preventDefault()
+
+                menu_text = "Quel nom voulez vous donner au nouveau planning ?"
+                menu_content = tag "div"
+                menu_content.append tag "p", menu_text
+                menu_content.append tag "input", type:"text", value:"#{@name}_copy"
+                id = @id; url = @planning_duplicate_url
+
+                menu = make_xps_menu
+                    text: menu_content
+                    validate_action: ->
+                        name = @.find("input").val()
+                        $.getJSON url , planning_id:id, name:name , (d, s) =>
+                            post_message "Planning dupliqué avec succès"
+
+
+                show_menu menu
+
             @ui.find('.planning_edit').click (e) ->
                 e.stopPropagation(); e.preventDefault()
                 $.getJSON @href, (json) ->
@@ -912,12 +937,8 @@ class PlanningComponent extends AppComponent
                 post_message "Le planning #{name} a été #{if @mode=="creation" then "créé" else "édité"} avec succes"
                 @close()
 
-            # TODO : REfactor
-            if @mode == "creation"
-                $.post @create_link, {planning_data:@to_json()}, success_function()
-            else if @mode == "edition"
-                tjs = @to_json()
-                $.post "#{@edit_link}/#{@id}", {planning_data:tjs}, success_function()
+            link = if @mode == "creation" then @create_link else "#{@edit_link}/#{@id}"
+            $.post link, {planning_data:@to_json()}, success_function()
 
         str1 = "Montrer détails"
         str2 = "Cacher détails"
