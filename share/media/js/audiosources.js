@@ -664,7 +664,6 @@ ListAudiomodel = (function() {
     return function(e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log(e.currentTarget.href);
       return show_menu(delete_menu(e.currentTarget.href));
     };
   };
@@ -686,7 +685,6 @@ ListAudiomodel = (function() {
         });
       });
     } else if (this.type === "planning") {
-      console.log(this);
       this.ui.find('.planning_duplicate').click(__bind(function(e) {
         var id, menu, menu_content, menu_text, url;
         e.stopPropagation();

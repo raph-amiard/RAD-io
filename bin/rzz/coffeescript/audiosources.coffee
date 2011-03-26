@@ -495,7 +495,6 @@ class ListAudiomodel extends Audiomodel
         return (e) ->
             e.preventDefault()
             e.stopPropagation()
-            console.log e.currentTarget.href
             show_menu delete_menu(e.currentTarget.href)
 
     bind_events: ->
@@ -516,7 +515,6 @@ class ListAudiomodel extends Audiomodel
 
         else if @type == "planning"
 
-            console.log @
 
             @ui.find('.planning_duplicate').click (e) =>
                 e.stopPropagation(); e.preventDefault()

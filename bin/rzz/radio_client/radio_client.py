@@ -35,9 +35,19 @@ DISPLAY_LOG_CATS = {
 DISPLAY_LOG_INFO = False
 
 def log(strn, category="other", info=False):
-    logstrn = u"{0} -- {1}\n".format(datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"), smart_unicode(strn))
-    prnstrn = u"{0} -- {1} -- {2}".format(datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"), category, smart_unicode(strn))
-    log_file = file(path_join(settings.LOG_PATH, "radio_log_{0}".format(category)), "a")
+
+    logstrn = u"{0} -- {1}\n".format(
+        datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"),
+        smart_unicode(strn)
+    )
+    prnstrn = u"{0} -- {1} -- {2}".format(
+        datetime.now().strftime("[%d/%m/%Y %H:%M:%S]"),
+        category, smart_unicode(strn)
+    )
+
+    log_file_name = "radio_log_{0}".format(category)
+    log_file = file(path_join(settings.LOG_PATH, log_file_name), "a")
+
     if category in DISPLAY_LOG_CATS and DISPLAY_LOG_CATS[category]:
         if not(info) or DISPLAY_LOG_INFO:
             print prnstrn.encode('utf-8')
@@ -45,7 +55,11 @@ def log(strn, category="other", info=False):
         log_file.write(logstrn.encode('utf-8'))
 
 def connection():
-    return telnetlib.Telnet(settings.LIQUIDSOAP_HOST, settings.LIQUIDSOAP_TELNET_PORT, 1000)
+    return telnetlib.Telnet(
+        settings.LIQUIDSOAP_HOST,
+        settings.LIQUIDSOAP_TELNET_PORT,
+        1000
+    )
 
 def start_radio():
     agent = LiquidsoapAgent()
@@ -60,12 +74,17 @@ class LiquidsoapAgent(object):
     queues = {}
 
     def __init__(self):
-        self.script = create_temp_script_file(settings.RADIO_MOUNT_NAME, settings.RADIO_OUTPUTS)
+        self.script = create_temp_script_file(
+            settings.RADIO_MOUNT_NAME,
+            settings.RADIO_OUTPUTS
+        )
         self.liquidsoap_process = None
 
     def start(self):
         if not self.liquidsoap_process:
-            self.liquidsoap_process = subprocess.Popen([settings.LIQUIDSOAP_BIN, "-t", self.script.name])
+            self.liquidsoap_process = subprocess.Popen([
+                settings.LIQUIDSOAP_BIN, "-t", self.script.name
+            ])
             self.status = "started"
 
     def stop(self):
@@ -115,12 +134,13 @@ class PlaylistLogger(object):
             if stop_event.isSet():
                 log(u"EXITING: playlist logger thread", "main")
                 return
-            rid, playlist_element = self.request_handler.on_air()
+            rid, on_air = self.request_handler.on_air()
 
             if not(rid is None) and rid != self.current_rid and\
-                    not(playlist_element["planning_element"].type == "jingle"):
-                audiofile = playlist_element["audiofile"]
-                audiosource = playlist_element["audiosource"]
+                    not(on_air["planning_element"].type == "jingle"):
+
+                audiofile = on_air["audiofile"]
+                audiosource = on_air["audiosource"]
                 self.current_rid = rid
 
                 log("LOGGING a file in the playlist", "playlist")
@@ -177,7 +197,8 @@ class QueueCommandWrapper(CommandWrapper):
         response = response.strip()
         return [int(t) for t in response.split(' ')] if response else []
         if not response == 'OK':
-            log('ERROR: get_queue - There is no source with the given id', "errors")
+            log('ERROR: get_queue - There is no source with the given id',
+                "errors")
 
     def get_secondary_queue(self):
         """

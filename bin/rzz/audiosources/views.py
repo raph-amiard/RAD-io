@@ -1,36 +1,54 @@
-import logging as log
+"""
+This module contains every view that is related to
+the handling of audio content on the radio. A lot
+of theses views are simple json wrappers for the
+radio admin interface to communicate with the database.
+Some of theses views **should** be simple wrappers
+but aren't.
+"""
 import json
+from datetime import date
+import locale
+from calendar import day_name
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.simple import direct_to_template
-from django.views.generic.list_detail import object_list, object_detail
+from django.views.generic.list_detail import object_list
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.template import Context, loader
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 from rzz.artists.models import Artist
 
-from rzz.audiosources.models import AudioModel, AudioFile, AudioSource, Planning, SourceElement,Tag, TagCategory, tag_list, Planning, TaggedModel, PlanningStartEvent
+from rzz.audiosources.models import AudioFile, AudioSource, Planning, Tag, tag_list, PlanningStartEvent
 from rzz.audiosources.forms import EditAudioFileForm
 from rzz.audiosources.utils import add_tags_to_model, add_audiofiles_to_audiosource, remove_tags_from_model
 
-from rzz.utils.jsonutils import instance_to_json, instance_to_dict, JSONResponse
+from rzz.utils.jsonutils import JSONResponse
 from rzz.utils.queries import Q_or
 from rzz.utils.file import get_mp3_metadata
 from rzz.utils.collections import dict_transform
 
 
 def listen(request):
+    """
+    Simple view, not really necessary (could use direct linking in the url file)
+    """
+    # TODO: Use direct_to_template in the url file
     return direct_to_template(request, "listen.html")
 
 @staff_member_required
 def main(request):
+    """
+    This view is the backbone of the radio admin interface
+    """
     return direct_to_template(request, 'audiosources/main.html')
 
 
 @staff_member_required
-def set_planning_active(request, planning_id):
+def set_planning_active(_, planning_id):
     """
     Set the corresponding planning as active
     """
@@ -72,8 +90,8 @@ def edit_planning(request, planning_id):
         return HttpResponse()
     else:
         planning_dict = planning.to_dict(with_tags=True)
-        planning_elements_dicts = [pe.to_dict() for pe in planning.planningelement_set.all()]
-        planning_dict["planning_elements"] = planning_elements_dicts
+        pe_dicts = [pe.to_dict() for pe in planning.planningelement_set.all()]
+        planning_dict["planning_elements"] = pe_dicts
         return JSONResponse(planning_dict)
 
 
@@ -110,7 +128,11 @@ def create_audio_source(request):
 @staff_member_required
 def edit_audio_source(request, audiosource_id):
     """
+    JSON View for edition of an audio source (playlist)
+    This view deletes every source element of the audio source
+    every time it is edited
     """
+    # TODO: Send 
     audio_source = get_object_or_404(AudioSource, id=audiosource_id)
     if request.method == 'POST':
         print request.POST
@@ -143,7 +165,8 @@ def edit_audio_source(request, audiosource_id):
         'action':'edition',
         'tag_list':tag_list(),
         'title': "Edition de la playlist %s" % audio_source.title,
-        'audiosource':audio_source.to_dict(with_audiofiles=True, with_tags=True),
+        'audiosource':audio_source.to_dict(with_audiofiles=True,
+                                           with_tags=True),
         'form_url': reverse('edit-audio-source', args=[audiosource_id])
     })
 
@@ -160,14 +183,14 @@ def create_audio_file(request):
         files = request.FILES.getlist('file')
         af_list = []
 
-        for file in files:
-            af = AudioFile()
-            path = file.temporary_file_path()
-            af.artist, af.title, af.length = get_mp3_metadata(path)
-            af.original_filename = file.name
-            af.file = file
-            af.save()
-            af_list.append(af.to_dict())
+        for afile in files:
+            instance = AudioFile()
+            path = afile.temporary_file_path()
+            instance.artist, instance.title, instance.length = get_mp3_metadata(path)
+            instance.original_filename = afile.name
+            instance.file = afile
+            instance.save()
+            af_list.append(instance.to_dict())
 
         return JSONResponse({
             'audiofiles':af_list,
@@ -175,7 +198,7 @@ def create_audio_file(request):
             }, mimetype=False)
 
 
-def audio_models_list(request,audiomodel_klass, page):
+def audio_models_list(request, audiomodel_klass, page):
     """
     AJAX
     Displays a list of audio files depending on filter clauses
@@ -183,14 +206,18 @@ def audio_models_list(request,audiomodel_klass, page):
     nb_items = 50
     bottom = nb_items * page
     top = bottom + nb_items
-    text_filter = request.GET['text_filter'] if request.GET.has_key('text_filter') else None
-    tags = Tag.objects.filter(id__in=[int(el) for key, el in request.GET.items() if "tag_" in key])
+    text_filter = request.GET.get('text_filter', None)
+    tags = Tag.objects.filter(
+        id__in=[int(el) for key, el in request.GET.items() if "tag_" in key]
+    )
 
     if text_filter:
         search_clauses = ['title']
         if audiomodel_klass == AudioFile:
             search_clauses += ['artist']
-        search_dict = dict([(sc + '__icontains', text_filter) for sc in search_clauses])
+        search_dict = dict(
+            [(sc + '__icontains', text_filter) for sc in search_clauses]
+        )
         audiomodels = audiomodel_klass.objects.filter(Q_or(**search_dict))
     else:
         audiomodels = audiomodel_klass.objects.all()
@@ -200,15 +227,13 @@ def audio_models_list(request,audiomodel_klass, page):
             audiomodels = audiomodels.filter(tags=tag)
 
     cnt = audiomodels.count()
+
     if bottom > cnt:
         raise Http404
+
     audiomodels = audiomodels[bottom:top if top <= cnt else cnt]
 
     return JSONResponse([af.to_dict() for af in audiomodels])
-
-
-def taggedmodel_common_tags(request, taggedmodel_id):
-    taggedmodel = get_object_or_404(TaggedModel, pk=taggedmodel_id)
 
 
 def edit_audio_files(request):
@@ -229,7 +254,10 @@ def edit_audio_files(request):
         artist_updated = True
         audiofiles.update(artist=request.POST["artist"])
 
-    return JSONResponse({'tags_updated':tags_updated, 'artist_updated':artist_updated})
+    return JSONResponse({
+        'tags_updated':tags_updated,
+        'artist_updated':artist_updated
+    })
 
 
 def edit_audio_file(request, audiofile_id):
@@ -309,17 +337,14 @@ def tags_list(request, audiomodel_klass):
 
 
 def show_active_planning(request):
-    import locale
-    from calendar import day_name
-    from datetime import date
 
     locale.setlocale(locale.LC_ALL, '')
     planning = Planning.objects.active_planning()
-    planning_elements = list(planning.planningelement_set.all())
+    p_elements = list(planning.planningelement_set.all())
     elements = [
         (
             day_name[i],
-            sorted([p for p in planning_elements if p.day == i and p.type == 'single'],
+            sorted([p for p in p_elements if p.day == i and p.type == 'single'],
                    key=lambda p: p.time_start)
         )
          for i in range(7)
@@ -345,7 +370,6 @@ def duplicate_planning(request):
     return HttpResponse()
 
 def edit_calendar(request):
-    from datetime import date
 
     if request.method == "POST":
         transform_map = {
@@ -360,7 +384,9 @@ def edit_calendar(request):
         return HttpResponse()
 
 
-    events = PlanningStartEvent.objects.values("when", "planning__id", "planning__name")
+    events = PlanningStartEvent.objects.values(
+        "when", "planning__id", "planning__name"
+    )
     for event in events:
         w = event["when"]
         event["when"] = {"day":w.day,"month":w.month,"year":w.year}
