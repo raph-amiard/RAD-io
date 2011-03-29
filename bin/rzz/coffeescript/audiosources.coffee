@@ -141,7 +141,7 @@ Widgets.text_selector =
             Widgets.audiomodels.load()
             @timeout_id = undefined
 
-    reset: -> @container.val(""); Widgets.audiomodels.text_filter = ""
+    reset: -> @container.val ""; Widgets.audiomodels.text_filter = ""
 
     load: ->
         @container.keyup (e) =>
@@ -642,6 +642,12 @@ class AudioFileForm extends TemplateComponent
             success: @success
 
             beforeSubmit: (arr, form, options) =>
+                domfile = form.find "#id_file"
+                for file in domfile[0].files
+                    if not file.name.match /\.mp3$/
+                        alert "One of the files you wish to upload is not in mp3 format"
+                        return false
+
                 opts.beforeSubmit?()
                 @progress_bar.progressbar progress: 0
                 @interval_id = setInterval @update_progress_info(), @update_freq
@@ -1340,6 +1346,7 @@ step = (num, step) -> num - (num % step)
 
 # ================================================ MENUS =============================================== #
 
+
 class Menu extends TemplateComponent
     header: d$ '#headertools'
 
@@ -1376,8 +1383,8 @@ class Menu extends TemplateComponent
     bind_events: ->
         @ui_menu_head.click => @ui_menu.toggle()
 
-class Playlist extends Menu
 
+class Playlist extends Menu
 
     trigger_show_hide: ->
         if @audiofiles.length == 0

@@ -864,6 +864,16 @@ AudioFileForm = (function() {
       beforeSubmit: this,
       success: this.success,
       beforeSubmit: __bind(function(arr, form, options) {
+        var domfile, file, _i, _len, _ref;
+        domfile = form.find("#id_file");
+        _ref = domfile[0].files;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          file = _ref[_i];
+          if (!file.name.match(/\.mp3$/)) {
+            alert("One of the files you wish to upload is not in mp3 format");
+            return false;
+          }
+        }
         if (typeof opts.beforeSubmit == "function") {
           opts.beforeSubmit();
         }
