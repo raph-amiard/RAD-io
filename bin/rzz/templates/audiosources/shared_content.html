@@ -1,0 +1,21 @@
+{% load markup %}
+
+<div class="content_holder">
+  <h2><a href="{% url shared-content-detail shared_content.id %}">{{ shared_content.title }}</a></h2>
+  {{ shared_content.description|markdown }}
+  <p>
+    {% if shared_content.audio_files.count == 1 %}
+      <object type="application/x-shockwave-flash" data="{{ MEDIA_URL }}/flash/dewplayer.swf" width="240" height="20" id="audiofile_player" name="dewplayer">
+      <param name="wmode" value="transparent" />
+      <param name="movie" value="{{ MEDIA_URL }}/flash/dewplayer-multi.swf" />
+      <param name="flashvars" value="mp3={{ shared_content.audio_files.all.0.file.url }}" />
+      </object>
+    {% else %}
+      <object type="application/x-shockwave-flash" data="{{ MEDIA_URL }}/flash/dewplayer-playlist.swf" width="240" height="200" id="audiofile_player" name="dewplayer">
+      <param name="wmode" value="transparent" />
+      <param name="movie" value="{{ MEDIA_URL }}/flash/dewplayer-multi.swf" />
+      <param name="flashvars" value="xml={% url audiosource-playlist shared_content.id %}" />
+      </object>
+    {% endif %}
+  </p>
+</div>

@@ -13,7 +13,7 @@ from calendar import day_name
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.simple import direct_to_template
-from django.views.generic.list_detail import object_list
+from django.views.generic.list_detail import object_list, object_detail
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.template import Context, loader
@@ -402,3 +402,18 @@ def shared_contents_list(request, page):
         template_object_name="shared_contents"
     )
 
+def shared_content_detail(request, audiosource_id):
+    return object_detail(request,
+        queryset = AudioSource.objects.all(),
+        object_id = audiosource_id,
+        template_name = "audiosources/shared_content_detail.html",
+        template_object_name = "shared_content"
+    )
+
+def audiosource_playlist(request, audiosource_id):
+    return object_detail(request,
+        queryset = AudioSource.objects.all(),
+        object_id = audiosource_id,
+        template_name = "audiosources/playlist.xml",
+        template_object_name = "audiosource"
+    )
