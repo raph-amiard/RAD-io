@@ -24,7 +24,7 @@
                /*
                 * Register button
                 */
-               title : 'imageupload.image_desc',
+               title : 'Ajouter une image',
                cmd : 'mceImageUpload',
                image : url + '/img/imageupload.gif'
            });

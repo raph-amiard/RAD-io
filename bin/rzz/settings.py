@@ -131,6 +131,7 @@ INSTALLED_APPS = (
     'rzz.config',
     'rzz.radio_client',
     'rzz.playlist',
+    'rzz.user_media',
     'rzz.admin',
     'django.contrib.auth',
 	'django.contrib.admin',

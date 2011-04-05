@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.auth.models import User
 
 from rzz.news.models import NewsPost, Comment
+from rzz.urls import *
 
 class NewsPostForm(forms.ModelForm):
 	content = forms.CharField(widget=forms.Textarea)
@@ -12,7 +13,10 @@ class NewsPostForm(forms.ModelForm):
 class NewsPostAdmin(admin.ModelAdmin):
 
     class Media:
-        js = ('tinymce/jscripts/tiny_mce/tiny_mce.js', 'js/tinymce_setup.js',)
+        js = (
+            'tinymce/jscripts/tiny_mce/tiny_mce.js',
+            '/templatejs/tinymce_setup.js'
+        )
 
     form = NewsPostForm
     list_display = ('title', 'poster')
