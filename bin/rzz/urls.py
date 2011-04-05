@@ -17,12 +17,20 @@ urlpatterns = patterns('',
 	(r'^friends/', include('rzz.friends.urls')),
 	(r'^playlist/', include('rzz.playlist.urls')),
 	(r'^news/', include('rzz.news.urls')),
-	(r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
-        {'document_root': settings.MEDIA_ROOT,
-         'show_indexes': True}),
     url(r'upload-progress/$', upload_progress, name='upload-progress'),
     url(r'^listen/$',listen , name='listen'),
     url(r'^$', 'django.views.generic.simple.redirect_to', {'url':'news/'}),
     url(r'^admin_root/$', admin_root, name="admin-root"),
     url(r'^login/$', 'django.contrib.auth.views.login', name="login"),
 )
+
+if settings.DEBUG:
+    urlpatterns += patterns('',
+
+        (r'^media/(?P<path>.*)$', 'django.views.static.serve',
+            {'document_root': "/usr/local/lib/python2.6/dist-packages/grappelli/media/", 'show_indexes':True}),
+
+        (r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
+            {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
+
+    )
