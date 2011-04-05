@@ -1,0 +1,65 @@
+{% load i18n compressed %}
+<html>
+  <head>
+    <script type="text/javascript" src="/local-media/assets/js/jquery.js"></script>
+    <script type="text/javascript" src="/local-media/assets/js/jquery.form.js"></script>
+    <script type="text/javascript" src="/local-media/assets/js/tinymce/tiny_mce_popup.js"></script>
+    <script type="text/javascript">
+tinyMCEPopup.requireLangPack();
+
+var ImageUploadDialog = {
+	init : function() {
+	},
+
+	insert : function() {
+        function show_error (s, message) {if (message) {$(s).text(message)} $(s).show(); setTimeout(function(){$(s).hide(1000)}, 1500);}
+        var ed = tinyMCEPopup.editor;
+        var pic_val = $('#id_picture').val();
+        var pic_ext = pic_val.split('.').pop();
+        if (pic_val && (pic_ext == "png" || pic_ext == "gif" || pic_ext == "jpg" || pic_ext == "bmp")) {
+            $("#file_form").ajaxSubmit({
+                dataType:'json',
+                success: function(json) {
+                    if (json.success) {
+                        ed.execCommand('mceInsertContent', false, '<img id="__mce_tmp" />', {skip_undo : 1});
+                        ed.dom.setAttrib('__mce_tmp', 'src', json.url);
+                        ed.dom.setAttrib('__mce_tmp', 'id', '');
+                        tinyMCEPopup.close();
+                    } else {
+                        if (json.message) {
+                          show_error('.misc', json.message);                          
+                        } else {
+                          show_error('.unknown_error');
+                        }
+                    }
+                }   
+            });
+        } else {
+            show_error('.bad_file_format');
+        }
+        return false;
+	}
+};
+
+tinyMCEPopup.onInit.add(ImageUploadDialog.init, ImageUploadDialog);
+
+    </script>
+  </head> 
+  <body>
+    <div class="content-holder">
+      <div class="misc" style="display:none;color:red;"></div>
+      <div class="bad_file_format" style="display:none;color:red;"> {% trans "Le fichier que vous avez choisi n'est pas un fichier image" %} </div>
+      <div class="unknown_error" style="display:none;color:red;"> {% trans "Une erreur inconnue s'est produite lors de l'envoi de votre fichier" %} </div>
+      <h2>{% trans "Choisissez votre image" %}</h2>
+      {% blocktrans %}
+      <p> Si vos images sont trop larges, elles seront automatiquement redimensionnées pour avoir une largeur de 490 pixels </p>
+      {% endblocktrans %}
+      <form enctype="multipart/form-data" action="" method="post" accept-charset="utf-8" id="file_form">
+        {{ form }}
+        <br />
+      </form>
+		<input type="button" id="insert" name="insert" value="{% trans "Insérer" %}" onclick="ImageUploadDialog.insert();" />
+		<input type="button" id="cancel" name="cancel" value="{% trans "Annuler" %}" onclick="tinyMCEPopup.close();" />
+    </div>
+  </body>
+</html>

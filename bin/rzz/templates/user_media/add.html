@@ -1,0 +1,74 @@
+{% extends "base_jquery.html" %}
+
+{% block jslibs %}
+  {{ block.super }}
+  <script type="text/javascript" src="{{ MEDIA_URL }}/tinymce/jscripts/tiny_mce/tiny_mce_popup.js"></script>
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.form.js"></script>
+{% endblock %}
+
+{% block scripts %}
+
+  <script type="text/javascript">
+tinyMCEPopup.requireLangPack();
+
+var ImageUploadDialog = {
+	init : function() {
+	},
+
+	insert : function() {
+        function show_error (s, message) {if (message) {$(s).text(message)} $(s).show(); setTimeout(function(){$(s).hide(1000)}, 1500);}
+        var ed = tinyMCEPopup.editor;
+        var pic_val = $('#id_picture').val();
+        var pic_ext = pic_val.split('.').pop();
+        if (pic_val && (pic_ext == "png" || pic_ext == "gif" || pic_ext == "jpg" || pic_ext == "bmp")) {
+            $("#file_form").ajaxSubmit({
+                dataType:'json',
+                success: function(json) {
+                    if (json.success) {
+                        ed.execCommand('mceInsertContent', false, '<img id="__mce_tmp" />', {skip_undo : 1});
+                        ed.dom.setAttrib('__mce_tmp', 'src', json.url);
+                        ed.dom.setAttrib('__mce_tmp', 'id', '');
+                        tinyMCEPopup.close();
+                    } else {
+                        if (json.message) {
+                          show_error('.misc', json.message);                          
+                        } else {
+                          show_error('.unknown_error');
+                        }
+                    }
+                }   
+            });
+        } else {
+            show_error('.bad_file_format');
+        }
+        return false;
+	}
+};
+
+tinyMCEPopup.onInit.add(ImageUploadDialog.init, ImageUploadDialog);
+
+    </script>
+{% endblock %}
+
+{% block content %}
+
+  <div class="misc" style="display:none;color:red;"></div>
+  <div class="bad_file_format" style="display:none;color:red;"> Le fichier que vous avez choisi n'est pas un fichier image </div>
+  <div class="unknown_error" style="display:none;color:red;"> Une erreur inconnue s'est produite lors de l'envoi de votre fichier </div>
+
+  <p> Selectionnez le media a envoyer </p>
+  <form class="usermediaform" action="" enctype="multipart/form-data" id="file_form" method="post">
+    <p><input type="file" name="file" id="id_picture"/></p>
+    <p><input type="text" name="file_url"/></p>
+    <div class="mceActionPanel module submit-row">
+      <ul class="submit-row">
+        <li class="submit-button-container">
+          <input type="button" id="insert" class="default" name="insert" value="Insérer" onclick="ImageUploadDialog.insert();" />
+        </li>
+        <li class="cancel-button-container left">
+          <input type="button" id="cancel" class="cancel" name="cancel" value="Annuler" onclick="tinyMCEPopup.close();" />
+        </li>
+      </ul>
+    </div>
+  </form>
+{% endblock %}

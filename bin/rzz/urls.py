@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import *
-
 from django.contrib import admin
 from django.conf import settings
+
 from rzz.utils.views import upload_progress
 from rzz.admin.views import admin_root
 from rzz.audiosources.views import listen
@@ -9,6 +9,7 @@ from rzz.audiosources.views import listen
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    (r'^templatejs/', include('templatejs_urls')),
     (r'^grappelli/', include('grappelli.urls')),
 	(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 	(r'^admin/', include(admin.site.urls)),
@@ -16,6 +17,7 @@ urlpatterns = patterns('',
 	(r'^artists/', include('rzz.artists.urls')),
 	(r'^friends/', include('rzz.friends.urls')),
 	(r'^playlist/', include('rzz.playlist.urls')),
+    (r'^usermedia/', include('rzz.user_media.urls')),
 	(r'^news/', include('rzz.news.urls')),
     url(r'upload-progress/$', upload_progress, name='upload-progress'),
     url(r'^listen/$',listen , name='listen'),
