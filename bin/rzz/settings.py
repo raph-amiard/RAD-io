@@ -1,5 +1,5 @@
 import os.path
-from django.conf import global_settings 
+from django.conf import global_settings
 import logging
 
 REQUIRED_KEYS = ["PROJECT_PATH", "ICECAST_HOST", "ICECAST_PORT", "ICECAST_PWD", "RADIO_HOST"]
@@ -73,6 +73,7 @@ USE_I18N = True
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = os.path.join(PROJECT_PATH, 'share/media/')
+GRAPPELLI_MEDIA_ROOT = "/usr/local/lib/python2.6/dist-packages/grappelli/static/grappelli/"
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -82,7 +83,11 @@ MEDIA_URL = '/site_media/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+if DEBUG:
+    ADMIN_MEDIA_PREFIX = 'http://localhost:8000/media/'
+else:
+    ADMIN_MEDIA_PREFIX = '/media/'
+
 GRAPPELLI_ADMIN_TITLE = RADIO_LONG_NAME
 
 # Make this unique, and don't share it with anybody.
@@ -151,7 +156,6 @@ LIQUIDSOAP_WORKING_DIRECTORY = os.path.join(PROJECT_PATH, "liquidsoap/")
 LIQUIDSOAP_BIN = "liquidsoap"
 
 LOGIN_URL = "/login/"
-
 
 # TODO : Factorize the two for loops into a function
 
