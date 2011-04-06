@@ -31,7 +31,9 @@
     <ul id="main_menu_list">
       <li><a href="{% url listen %}" onclick='window.open("{% url listen %}", "Listen!", "width=350,height=200,scrollbars=no");return false'>Listen!</a></li>
       <li><a href="{% url news-post-list 1 %}">News</a></li>
-      <li><a href="{% url playlist-now %}">Playlist</a></li>
+      {% if is_playlist_app_activated %}
+        <li><a href="{% url playlist-now %}">Playlist</a></li>
+      {% endif %}
       {% if is_planning_show_app_activated %}
         <li><a href="{% url show-active-planning %}">{{ planning_show_app_menu_name }}</a></li>
       {% endif %}
