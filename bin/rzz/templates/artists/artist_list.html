@@ -6,9 +6,11 @@
     <div class="content_holder clear_div">
       <h2><a href="{% url artist-detail artist.id %}">{{ artist.name }}</a></h2>
       <div class="artist_image">
-        <img src="{% thumbnail artist.picture 100x100 bw %}" alt="{{ artist.name }} picture"/>
+        {% thumbnail artist.picture "150x150" as ap %}
+          <img src="{{ ap.url }}" alt="{{ artist.name }} picture"/>
+        {% endthumbnail %}
       </div>
-      <div>{{ artist.biography|truncatewords:20 }}</div>
+      <div>{{ artist.biography|truncatewords:50 }}</div>
     </div>
   {% endfor %}
 {% endblock %}

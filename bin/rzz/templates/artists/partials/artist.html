@@ -4,7 +4,9 @@
 <div class="content_holder">
   <h2>{{ artist.name }}</h2>
   <div class="artist_image">
-    <img src="{% thumbnail artist.picture 250x250 %}" alt="{{ artist.name }} picture"/>
+    {% thumbnail artist.picture "200x200" as ap %}
+      <img src="{{ ap.url }}" alt="{{ artist.name }} picture"/>
+    {% endthumbnail %}
   </div>
   <div>{{ artist.biography|markdown }}</div>
 </div>

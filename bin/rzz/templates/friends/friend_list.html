@@ -7,7 +7,9 @@
       <h2><a href="{{ friend.url }}">{{ friend.name }}</a></h2>
       <div class="friend_image">
         {% if friend.picture %}
-          <img src="{% thumbnail friend.picture 100x100 bw %}" alt="{{ friend.name }} picture"/>
+          {% thumbnail friend.picture "150x150" as fp %}
+            <img src="{{ fp.url }}" alt="{{ friend.name }} picture"/>
+          {% endthumbnail %}
         {% endif %}
       </div>
       <div>{{ friend.description }}</div>
