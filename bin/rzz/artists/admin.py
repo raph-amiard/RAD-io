@@ -16,6 +16,11 @@ class ArtistAdmin(admin.ModelAdmin):
     """
     Use the custom ArtistForm for artist edition
     """
+    class Media:
+        js = (
+            'tinymce/jscripts/tiny_mce/tiny_mce.js',
+            '/templatejs/tinymce_setup.js'
+        )
     form = ArtistForm
 
 admin.site.register(Artist, ArtistAdmin)
