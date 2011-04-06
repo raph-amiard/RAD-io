@@ -1,7 +1,7 @@
 from django.db import models
 
 def friend_image_path(instance, filename):
-    return 'img/friends/{0}.{1}'.format(instance.name, 
+    return 'img/friends/{0}.{1}'.format(instance.name,
 									filename.split('.')[-1])
 
 class Friend(models.Model):
