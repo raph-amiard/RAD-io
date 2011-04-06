@@ -12,6 +12,6 @@ class FriendAdmin(admin.ModelAdmin):
             'tinymce/jscripts/tiny_mce/tiny_mce.js',
             '/templatejs/tinymce_setup.js'
         )
-	form = FriendForm
+    form = FriendForm
 
 admin.site.register(Friend, FriendAdmin)
