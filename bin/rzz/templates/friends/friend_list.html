@@ -1,5 +1,6 @@
 {% extends "radio_front.html" %}
 {% load thumbnail %}
+{% load markup %}
 
 {% block content %}
   {% for friend in friend_list %}
@@ -12,7 +13,7 @@
           {% endthumbnail %}
         {% endif %}
       </div>
-      <div>{{ friend.description }}</div>
+      <div>{{ friend.description|markdown }}</div>
     </div>
   {% endfor %}
 {% endblock %}

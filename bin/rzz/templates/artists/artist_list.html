@@ -1,5 +1,6 @@
 {% extends "radio_front.html" %}
 {% load thumbnail %}
+{% load markup %}
 
 {% block content %}
   {% for artist in artist_list %}
@@ -10,7 +11,7 @@
           <img src="{{ ap.url }}" alt="{{ artist.name }} picture"/>
         {% endthumbnail %}
       </div>
-      <div>{{ artist.biography|truncatewords:50 }}</div>
+      <div>{{ artist.biography|markdown|truncatewords:50 }}</div>
     </div>
   {% endfor %}
 {% endblock %}
