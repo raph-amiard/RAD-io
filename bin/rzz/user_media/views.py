@@ -7,7 +7,6 @@ from models import UserMedia
 def add_user_media(request):
 
     if request.method == 'POST':
-        print request.POST
         user_media = UserMedia(
             media=request.FILES["file"],
             user=request.user
