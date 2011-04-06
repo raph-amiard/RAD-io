@@ -1,74 +1,125 @@
-{% extends "base_jquery.html" %}
+<!DOCTYPE HTML>
 
-{% block jslibs %}
-  {{ block.super }}
-  <script type="text/javascript" src="{{ MEDIA_URL }}/tinymce/jscripts/tiny_mce/tiny_mce_popup.js"></script>
-  <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.form.js"></script>
-{% endblock %}
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Ajouter une image</title>
 
-{% block scripts %}
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}/tinymce/jscripts/tiny_mce/tiny_mce_popup.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.form.js"></script>
 
-  <script type="text/javascript">
-tinyMCEPopup.requireLangPack();
+    <script type="text/javascript">
+  tinyMCEPopup.requireLangPack();
 
-var ImageUploadDialog = {
-	init : function() {
-	},
+  var ImageUploadDialog = {
+    init : function() {
+    },
 
-	insert : function() {
-        function show_error (s, message) {if (message) {$(s).text(message)} $(s).show(); setTimeout(function(){$(s).hide(1000)}, 1500);}
-        var ed = tinyMCEPopup.editor;
-        var pic_val = $('#id_picture').val();
-        var pic_ext = pic_val.split('.').pop();
-        if (pic_val && (pic_ext == "png" || pic_ext == "gif" || pic_ext == "jpg" || pic_ext == "bmp")) {
+    insert : function() {
+
+          function show_error (s, message) {
+            if (message) $(s).text(message);
+            $(s).show();
+            setTimeout(function(){$(s).hide(1000)}, 1500);
+          }
+
+          function is_valid_ext(fname) {
+            var e = fname.split('.').pop();
+            return (e == "png" || e == "gif" || 
+                    e == "jpg" || e == "bmp");
+          }
+
+          function add_img_node(url) {
+            var ed = tinyMCEPopup.editor;
+            ed.execCommand('mceInsertContent', false, '<img id="__mce_tmp" />', {skip_undo : 1});
+            ed.dom.setAttrib('__mce_tmp', 'src', url);
+            ed.dom.setAttrib('__mce_tmp', 'id', '');
+            tinyMCEPopup.close();
+          }
+
+          var pic_val = $('#id_picture').val();
+          var url_val = $('#id_file_url').val();
+
+          if ((pic_val && url_val) || (!pic_val && !url_val)) {
+            show_error('.misc', "Choose either an url OR a file on your harddrive");
+            return false;
+          }
+
+          if (pic_val && is_valid_ext(pic_val))
             $("#file_form").ajaxSubmit({
                 dataType:'json',
+                iframe:true,
                 success: function(json) {
-                    if (json.success) {
-                        ed.execCommand('mceInsertContent', false, '<img id="__mce_tmp" />', {skip_undo : 1});
-                        ed.dom.setAttrib('__mce_tmp', 'src', json.url);
-                        ed.dom.setAttrib('__mce_tmp', 'id', '');
-                        tinyMCEPopup.close();
-                    } else {
-                        if (json.message) {
+                    if (json.success)
+                      add_img_node(json.url);
+                    else {
+                        if (json.message)
                           show_error('.misc', json.message);                          
-                        } else {
+                        else
                           show_error('.unknown_error');
-                        }
                     }
-                }   
+                }
             });
-        } else {
-            show_error('.bad_file_format');
-        }
-        return false;
-	}
-};
+          else if (url_val && is_valid_ext(url_val)) 
+            add_img_node(url_val);
+          else
+              show_error('.bad_file_format');
 
-tinyMCEPopup.onInit.add(ImageUploadDialog.init, ImageUploadDialog);
+          return false;
+    }
+  };
 
-    </script>
-{% endblock %}
+  tinyMCEPopup.onInit.add(ImageUploadDialog.init, ImageUploadDialog);
 
-{% block content %}
+      </script>
+  </head>
 
-  <div class="misc" style="display:none;color:red;"></div>
-  <div class="bad_file_format" style="display:none;color:red;"> Le fichier que vous avez choisi n'est pas un fichier image </div>
-  <div class="unknown_error" style="display:none;color:red;"> Une erreur inconnue s'est produite lors de l'envoi de votre fichier </div>
+  <body class="tinyMCE">
+    <div class="misc" style="display:none;color:red;"></div>
+    <div class="bad_file_format" style="display:none;color:red;"> Le fichier que vous avez choisi n'est pas un fichier image </div>
+    <div class="unknown_error" style="display:none;color:red;"> Une erreur inconnue s'est produite lors de l'envoi de votre fichier </div>
 
-  <p> Selectionnez le media a envoyer </p>
-  <form class="usermediaform" action="" enctype="multipart/form-data" id="file_form" method="post">
-    <p><input type="file" name="file" id="id_picture"/></p>
-    <p><input type="text" name="file_url"/></p>
-    <div class="mceActionPanel module submit-row">
-      <ul class="submit-row">
-        <li class="submit-button-container">
-          <input type="button" id="insert" class="default" name="insert" value="Insérer" onclick="ImageUploadDialog.insert();" />
-        </li>
-        <li class="cancel-button-container left">
-          <input type="button" id="cancel" class="cancel" name="cancel" value="Annuler" onclick="tinyMCEPopup.close();" />
-        </li>
-      </ul>
-    </div>
-  </form>
-{% endblock %}
+    <p> Select the image to send. Either select a file on your hard drive, or enter an image's url</p>
+
+    <form class="usermediaform" action="" enctype="multipart/form-data" id="file_form" method="POST" onsubmit="ImageUploadDialog.insert();return false">
+
+      <div class="panel_wrapper">
+        <fieldset class="module">
+
+          <div class="row first">
+            <div class="column span-4">
+              <label for="file">Local File</label>
+            </div>
+            <div class="column span-flexible">
+              <input type="file" name="file" id="id_picture"/>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="column span-4">
+              <label for="file_url">File Url</label>
+            </div>
+            <div class="column span-flexible">
+              <input type="text" name="file_url" id="id_file_url"/>
+            </div>
+          </div>
+
+        </fieldset>
+      </div>
+
+      <div class="mceActionPanel module submit-row">
+        <ul class="submit-row">
+          <li class="submit-button-container">
+            <input type="submit" id="insert" class="default" name="insert" value="Insérer" />
+          </li>
+          <li class="cancel-button-container left">
+            <input type="button" id="cancel" class="cancel" name="cancel" value="Annuler" onclick="tinyMCEPopup.close();" />
+          </li>
+        </ul>
+      </div>
+
+    </form>
+
+  </body>
+</html>

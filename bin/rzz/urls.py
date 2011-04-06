@@ -9,7 +9,7 @@ from rzz.audiosources.views import listen
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    (r'^templatejs/', include('templatejs_urls')),
+    (r'^templatejs/', include('rzz.templatejs_urls')),
     (r'^grappelli/', include('grappelli.urls')),
 	(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 	(r'^admin/', include(admin.site.urls)),
@@ -30,7 +30,7 @@ if settings.DEBUG:
     urlpatterns += patterns('',
 
         (r'^media/(?P<path>.*)$', 'django.views.static.serve',
-            {'document_root': "/usr/local/lib/python2.6/dist-packages/grappelli/media/", 'show_indexes':True}),
+            {'document_root': "/usr/local/lib/python2.6/dist-packages/grappelli/static/grappelli/", 'show_indexes':True}),
 
         (r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
             {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
