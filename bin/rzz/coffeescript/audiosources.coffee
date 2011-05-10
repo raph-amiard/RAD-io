@@ -94,6 +94,7 @@ Application =
 Widgets = {}
 
 Widgets.tags =
+    container: d$ '#tag_selector'
     view_url: -> "/audiosources/#{Widgets.audiomodels.current_model}/tag/list"
     selected_tags: {}
     clear: -> @selected_tags = {}
@@ -102,9 +103,20 @@ Widgets.tags =
             @selected_tags = (i.value for i in $ '#tag_selector li.ui-selected input')
             Widgets.audiomodels.load()
 
-        $.get @view_url(), (html_data) ->
-            $('#tag_selector').html html_data
-            $('#tag_selector ul').make_selectable handler:select_handler
+        $.get @view_url(), (html_data) =>
+            @container.html html_data
+            @container.find('ul').make_selectable handler:select_handler
+
+            for el in @container.find(".cat_name")
+                do(el) =>
+                    visible = true
+                    $(el).click ->
+                        ul = $(@).next()
+                        ul.slideToggle(200)
+                        char = if visible then "▸" else "▾"
+                        visible = not visible
+                        t = $(@).text()
+                        $(@).text(char + t.slice(1, t.length))
 
 
 Widgets.audiomodel_selector =

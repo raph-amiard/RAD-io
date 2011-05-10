@@ -325,6 +325,28 @@ class JingleSource(RadioSource):
 
         self.queue.flush()
 
+def log_listeners():
+
+    import re
+    from time import sleep
+    from urllib import urlopen
+    from datetime import datetime
+    from rzz.radio_client.models import RadioStats
+    from django.conf import settings
+    RADIO_URL = "http://"+settings.RADIO_HOST
+
+    print RADIO_URL
+
+    def get_nb_listeners():
+        html = urlopen(RADIO_URL).read()
+        return int(re.findall("\d+", html.split("Current")[1])[0])
+
+    while True:
+        nbl = get_nb_listeners()
+        d = datetime.now()
+        print d.strftime("[%d/%m/%Y %H:%M] - record stats : {0} listeners").format(nbl)
+        RadioStats(when=d, listeners=nbl).save()
+        sleep(60)
 
 class Scheduler(object):
 
@@ -427,6 +449,8 @@ class Scheduler(object):
 
         # Record events for the playlist
         thread_plogger = PlaylistLogger().start()
+
+        Thread(target=log_listeners).start()
 
         try:
             self.cron_tab.run()
