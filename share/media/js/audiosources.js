@@ -124,6 +124,7 @@ Application = {
 };
 Widgets = {};
 Widgets.tags = {
+  container: d$('#tag_selector'),
   view_url: function() {
     return "/audiosources/" + Widgets.audiomodels.current_model + "/tag/list";
   },
@@ -147,12 +148,32 @@ Widgets.tags = {
       })();
       return Widgets.audiomodels.load();
     }, this);
-    return $.get(this.view_url(), function(html_data) {
-      $('#tag_selector').html(html_data);
-      return $('#tag_selector ul').make_selectable({
+    return $.get(this.view_url(), __bind(function(html_data) {
+      var el, _i, _len, _ref, _results;
+      this.container.html(html_data);
+      this.container.find('ul').make_selectable({
         handler: select_handler
       });
-    });
+      _ref = this.container.find(".cat_name");
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        el = _ref[_i];
+        _results.push(__bind(function(el) {
+          var visible;
+          visible = true;
+          return $(el).click(function() {
+            var char, t, ul;
+            ul = $(this).next();
+            ul.slideToggle(200);
+            char = visible ? "▸" : "▾";
+            visible = !visible;
+            t = $(this).text();
+            return $(this).text(char + t.slice(1, t.length));
+          });
+        }, this)(el));
+      }
+      return _results;
+    }, this));
   }
 };
 Widgets.audiomodel_selector = {

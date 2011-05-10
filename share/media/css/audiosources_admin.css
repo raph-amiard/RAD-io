@@ -671,6 +671,7 @@ body {
     font-weight:bold;
     font-size:13px;
     margin-left:5px;
+    cursor: pointer;
 }
 .continuous {
   z-index:200;
