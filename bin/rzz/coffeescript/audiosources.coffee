@@ -1102,7 +1102,7 @@ class PlanningElement extends Audiomodel
           <div class='planning_element_container' >
             <div class='phead'>
                 <div style='position:relative;top:-3px;'>
-                    <span class='planning_element_time'>#{format_time @time_start}</span>
+                    <span class='planning_element_time'>#{@get_formated_time()} - #{}</span>
                     <span>#{@audiosource.title}</span>
                     <span class='delete_button'>x</span>
                 </div>
@@ -1118,6 +1118,16 @@ class PlanningElement extends Audiomodel
         @bind_events()
         @column.append(@ui)
         @update_width()
+
+    get_formated_time: () ->
+        if @time_end?.hour then time_end = @time_end
+        else
+            time_end = {}
+            len_min = Math.floor(@audiosource.length/60) + @time_start.minute
+            time_end.minute = len_min % 60
+            time_end.hour = (@time_start.hour + Math.floor(len_min / 60)) % 24
+
+        "#{format_time @time_start} - #{format_time time_end}"
 
     make_model: () ->
         # Returns every piece of information about the planning element
@@ -1220,7 +1230,7 @@ class PlanningElement extends Audiomodel
                 element.set_day_from_column column
                 element.ui.width element.column.width()
             element.set_time_from_pos top
-            @time_span.text format_time @time_start
+            @time_span.text @get_formated_time()
             if element.type == "continuous" then element.refresh_time_end()
 
         @ui.bind 'dragend', (e, dd) =>
@@ -1249,6 +1259,8 @@ class PlanningElement extends Audiomodel
                 difference = step(dd.deltaY, 10)
                 @set_time_from_pos(orig_top + difference)
                 @set_time_end_from_height orig_height - difference
+                @time_span.text @get_formated_time()
+
 
             @ui_phead.bind 'dragend', (e, dd) => @is_dragged = no
 
@@ -1262,6 +1274,7 @@ class PlanningElement extends Audiomodel
             e.stopPropagation();e.preventDefault()
             difference = step(dd.deltaY, 10)
             @set_time_end_from_height orig_height + difference
+            @time_span.text @get_formated_time()
 
         @ui_foot.bind 'dragend', (e, dd) => @is_dragged = no
 
