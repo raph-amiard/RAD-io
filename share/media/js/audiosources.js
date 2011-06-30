@@ -1498,7 +1498,7 @@ PlanningElement = (function() {
     }
     this._set_column_from_day();
     this.top = this.time_start.minute + this.time_start.hour * 60;
-    this.dom = "        <div class='planning_element " + this.type + "' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;height:" + height + "px;'>          <div class='planning_element_container' >            <div class='phead'>                <div style='position:relative;top:-3px;'>                    <span class='planning_element_time'>" + (format_time(this.time_start)) + "</span>                    <span>" + this.audiosource.title + "</span>                    <span class='delete_button'>x</span>                </div>            </div>            " + (handles ? "<div class='planning_element_foot'></div>" : "") + "          </div>        </div> ";
+    this.dom = "        <div class='planning_element " + this.type + "' style='top:" + this.top + "px;width:" + this.planning.tds_width[this.day + 1] + "px;height:" + height + "px;'>          <div class='planning_element_container' >            <div class='phead'>                <div style='position:relative;top:-3px;'>                    <span class='planning_element_time'>" + (this.get_formated_time()) + " - " + "</span>                    <span>" + this.audiosource.title + "</span>                    <span class='delete_button'>x</span>                </div>            </div>            " + (handles ? "<div class='planning_element_foot'></div>" : "") + "          </div>        </div> ";
     this.ui = $(this.dom);
     this.init_components();
     if (this.time_end === null) {
@@ -1508,6 +1508,18 @@ PlanningElement = (function() {
     this.column.append(this.ui);
     this.update_width();
   }
+  PlanningElement.prototype.get_formated_time = function() {
+    var len_min, time_end, _ref;
+    if ((_ref = this.time_end) != null ? _ref.hour : void 0) {
+      time_end = this.time_end;
+    } else {
+      time_end = {};
+      len_min = Math.floor(this.audiosource.length / 60) + this.time_start.minute;
+      time_end.minute = len_min % 60;
+      time_end.hour = (this.time_start.hour + Math.floor(len_min / 60)) % 24;
+    }
+    return "" + (format_time(this.time_start)) + " - " + (format_time(time_end));
+  };
   PlanningElement.prototype.make_model = function() {
     return {
       time_start: $.extend({}, this.time_start),
@@ -1633,7 +1645,7 @@ PlanningElement = (function() {
         element.ui.width(element.column.width());
       }
       element.set_time_from_pos(top);
-      this.time_span.text(format_time(this.time_start));
+      this.time_span.text(this.get_formated_time());
       if (element.type === "continuous") {
         return element.refresh_time_end();
       }
@@ -1667,7 +1679,8 @@ PlanningElement = (function() {
         e.preventDefault();
         difference = step(dd.deltaY, 10);
         this.set_time_from_pos(orig_top + difference);
-        return this.set_time_end_from_height(orig_height - difference);
+        this.set_time_end_from_height(orig_height - difference);
+        return this.time_span.text(this.get_formated_time());
       }, this));
       this.ui_phead.bind('dragend', __bind(function(e, dd) {
         return this.is_dragged = false;
@@ -1685,7 +1698,8 @@ PlanningElement = (function() {
       e.stopPropagation();
       e.preventDefault();
       difference = step(dd.deltaY, 10);
-      return this.set_time_end_from_height(orig_height + difference);
+      this.set_time_end_from_height(orig_height + difference);
+      return this.time_span.text(this.get_formated_time());
     }, this));
     this.ui_foot.bind('dragend', __bind(function(e, dd) {
       return this.is_dragged = false;
