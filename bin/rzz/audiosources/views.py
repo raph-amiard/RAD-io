@@ -411,9 +411,12 @@ def shared_content_detail(request, audiosource_id):
     )
 
 def audiosource_playlist(request, audiosource_id):
-    return object_detail(request,
-        queryset = AudioSource.objects.all(),
-        object_id = audiosource_id,
-        template_name = "audiosources/playlist.xml",
-        template_object_name = "audiosource"
+    a = AudioSource.objects.get(id=audiosource_id)
+    elements = a.sourceelement_set.order_by("position")
+    return direct_to_template(
+        request,
+        'audiosources/playlist.xml',
+        extra_context={
+            "audiosource": a,
+            "source_elements": elements}
     )
