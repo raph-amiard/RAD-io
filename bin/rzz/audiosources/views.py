@@ -420,3 +420,7 @@ def audiosource_playlist(request, audiosource_id):
             "audiosource": a,
             "source_elements": elements}
     )
+
+def get_playing_element(request):
+    playing_element = Planning.objects.active_planning().get_playing_element()
+    return JSONResponse({"playing_element": playing_element.to_dict() if playing_element else None})

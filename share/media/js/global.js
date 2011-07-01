@@ -1,4 +1,4 @@
-var Set, d$, debug, div, extractLast, format_length, format_number, format_time, gen_uuid, js_template, make_xps_menu, multicomplete_params, object_transform, object_with_keys, print, render_template, show_menu, split, tag, template;
+var Set, d$, debug, div, extractLast, format_length, format_number, format_time, gen_uuid, js_template, make_xps_menu, multicomplete_params, object_transform, object_with_keys, print, render_template, show_menu, split, tag, template, time_add_length;
 debug = true;
 print = debug && (typeof console != "undefined" && console !== null) ? console.log : function() {
   return false;
@@ -138,7 +138,15 @@ format_length = function(l) {
   num_hours = Math.floor(l / 3600);
   hours = fnum(num_hours);
   minutes = fnum(Math.floor((l % 3600) / 60));
-  seconds = fnum(Math.floor(l % 60));
+  return seconds = fnum(Math.floor(l % 60));
+};
+time_add_length = function(time, length) {
+  var len_min, ntime;
+  ntime = {};
+  len_min = Math.floor(length / 60) + time.minute;
+  ntime.minute = len_min % 60;
+  ntime.hour = (time.hour + Math.floor(len_min / 60)) % 24;
+  return ntime;
   if (num_hours) {
     return "" + hours + "h" + minutes + "m" + seconds;
   } else {

@@ -199,6 +199,18 @@ class Planning(TaggedModel):
 
             planning_element.save()
 
+    def get_playing_element(self):
+        from datetime import datetime
+        now = datetime.now()
+        pes = self.planningelement_set.filter(day=now.weekday())
+        elements = [pe for pe in pes
+                    if pe.time_start < now.time() and pe.get_time_end() > now.time()]
+        if elements:
+            single = [pe for pe in elements if pe.type == 'single']
+            return single[0] if single else elements[0]
+        else:
+            return None
+
 
 class PlanningElement(models.Model):
 
@@ -221,6 +233,14 @@ class PlanningElement(models.Model):
         d.pop('source_id')
         d['audiosource'] = self.source.to_dict()
         return d
+
+    def get_time_end(self):
+        from rzz.utils.time import add_secs_to_time
+        if self.type == "continuous":
+            return self.time_end
+        else:
+            return add_secs_to_time(self.time_start,
+                                    self.source.length)
 
 
 class PlanningStartEvent(models.Model):

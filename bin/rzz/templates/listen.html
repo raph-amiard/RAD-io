@@ -1,14 +1,25 @@
 {% extends "base_jquery.html" %}
 {% load radio_adress %}
 
+{% block scripts %}
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/global.js"></script>
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/listen.js"></script>
+  <script type="text/javascript" src="{{ MEDIA_URL }}js/ejs.js"></script>
+{% endblock %}
+
 {% block css %}
   <link href='{{ MEDIA_URL }}css/radio_front.css' rel='stylesheet' type='text/css'/>
   <link href='http://fonts.googleapis.com/css?family=Cantarell&subset=latin' rel='stylesheet' type='text/css' />
+  <style>
+    p.subtitle { font-size:0.8em; }
+  </style>
 {% endblock %}
 
 {% block morebody %}
   {% include "partials/ffmp3_player.html" %}
-  <p> Si vous n'avez pas flash ou que vous voulez écouter la radio sans vous connecter au site internet, vous pouvez en cliquant <a href="{% main_radio_adress "mp3" %}">ici</a></p>
+  <p class="subtitle"> Si vous n'avez pas flash ou que vous voulez écouter la radio sans vous connecter au site internet, vous pouvez en cliquant <a href="{% main_radio_adress "mp3" %}">ici</a></p>
+  <div id="current_program">
+  </div>
 {% endblock %}
 
 {% block background %}

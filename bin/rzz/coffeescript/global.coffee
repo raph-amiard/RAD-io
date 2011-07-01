@@ -74,14 +74,19 @@ format_time = (time) ->
     nm = fnum time.minute
     "#{nh}h#{nm}"
 
-
-
 format_length = (l) ->
     fnum = (num) -> format_number num, 2
     num_hours = Math.floor l / 3600
     hours = fnum num_hours
     minutes = fnum Math.floor (l % 3600) / 60
     seconds = fnum Math.floor l % 60
+
+time_add_length = (time, length) ->
+    ntime = {}
+    len_min = Math.floor(length/60) + time.minute
+    ntime.minute = len_min % 60
+    ntime.hour = (time.hour + Math.floor(len_min / 60)) % 24
+    return ntime
 
     if num_hours then "#{hours}h#{minutes}m#{seconds}" else "#{minutes}m#{seconds}"
 
@@ -163,3 +168,4 @@ object_transform = (obj, mappings) ->
             out_key = key
         new_obj[out_key] = func(obj[key])
     return new_obj
+
