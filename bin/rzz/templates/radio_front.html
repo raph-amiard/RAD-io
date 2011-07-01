@@ -59,6 +59,10 @@
         <li><a href="{% url admin-root %}">Admin</a></li>
       {% endif %}
 
+      {% if is_contact_page_activated %}
+        <li><a href="{% url contact %}">Contact</a></li>
+      {% endif %}
+
     </ul>
   </div>
 {% endblock %}
