@@ -338,7 +338,10 @@ def tags_list(request, audiomodel_klass):
 
 def show_active_planning(request):
 
-    locale.setlocale(locale.LC_ALL, '')
+    from django.conf import settings
+
+    print settings.LOCALE_NAME
+    locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
     planning = Planning.objects.active_planning()
     p_elements = list(planning.planningelement_set.all())
     elements = [
