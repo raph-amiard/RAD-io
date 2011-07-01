@@ -355,12 +355,15 @@ def show_active_planning(request):
         )
          for i in range(7)
     ]
+    active_el = planning.get_playing_element()
+    active_el = active_el if active_el.type == "single" else None
 
     return direct_to_template(request,
                               'audiosources/show_active_planning.html',
                               extra_context={
                                   'days':elements,
-                                  'today':weekdays[date.today().weekday()]
+                                  'today':weekdays[date.today().weekday()],
+                                  'active_el': active_el
                               })
 
 def duplicate_planning(request):

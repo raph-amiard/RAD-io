@@ -25,8 +25,8 @@
         <div class="day_elements" id="{{ day }}_element" {% if day == today %}{% else %}style="display:none;"{% endif %}>
           {% for element in elements %}
             {% with element.source as source %}
-              <div class="planning_element">
-                <h4>{{ element.time_start }} - {{ source.title }}</h4>
+              <div class="planning_element {% if element == active_el %}active_element{% endif %}">
+                <h4>{{ element.time_start|time:"H\hi" }} - {{ source.title }}</h4>
                 <p>{{ source.description }}</p>
               </div>
             {% endwith %}

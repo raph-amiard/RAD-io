@@ -125,3 +125,9 @@ p, ul {
   padding:0px;
   padding-right:5px;
 }
+
+.active_element {
+  background-color:#EDC;
+  -webkit-border-radius:5px;
+  -moz-border-radius:5px;
+}
