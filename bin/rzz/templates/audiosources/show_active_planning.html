@@ -1,4 +1,5 @@
 {% extends "radio_front.html" %}
+{% load markup %}
 
 {% block content %}
 
@@ -27,7 +28,7 @@
             {% with element.source as source %}
               <div class="planning_element {% if element == active_el %}active_element{% endif %}">
                 <h4>{{ element.time_start|time:"H\hi" }} - {{ source.title }}</h4>
-                <p>{{ source.description }}</p>
+                <p>{{ source.description|markdown }}</p>
               </div>
             {% endwith %}
           {% endfor %}
