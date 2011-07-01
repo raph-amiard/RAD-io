@@ -340,13 +340,16 @@ def show_active_planning(request):
 
     from django.conf import settings
 
-    print settings.LOCALE_NAME
+    weekdays = getattr(settings, "WEEK_DAYS_NAMES", None)
+    if not weekdays:
+        weekdays = day_name
+
     locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
     planning = Planning.objects.active_planning()
     p_elements = list(planning.planningelement_set.all())
     elements = [
         (
-            day_name[i],
+            weekdays[i],
             sorted([p for p in p_elements if p.day == i and p.type == 'single'],
                    key=lambda p: p.time_start)
         )
@@ -357,7 +360,7 @@ def show_active_planning(request):
                               'audiosources/show_active_planning.html',
                               extra_context={
                                   'days':elements,
-                                  'today':day_name[date.today().weekday()]
+                                  'today':weekdays[date.today().weekday()]
                               })
 
 def duplicate_planning(request):
