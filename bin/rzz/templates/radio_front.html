@@ -55,7 +55,10 @@
         <li><a href="{% url artist-list 1 %}">{{ artists_app_menu_name }}</a></li>
       {% endif %}
 
-      <li><a href="{% url admin-root %}">Admin</a></li>
+      {% if show_admin_link %}
+        <li><a href="{% url admin-root %}">Admin</a></li>
+      {% endif %}
+
     </ul>
   </div>
 {% endblock %}
