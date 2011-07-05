@@ -80,7 +80,6 @@ def edit_planning(request, planning_id):
 
     if request.method == 'POST':
         planning_data = json.loads(request.POST['planning_data'])
-        print planning_data
         planning.planningelement_set.all().delete()
         planning.add_elements(planning_data['planning_elements'])
         planning.name = planning_data["title"]
@@ -135,7 +134,6 @@ def edit_audio_source(request, audiosource_id):
     # TODO: Send 
     audio_source = get_object_or_404(AudioSource, id=audiosource_id)
     if request.method == 'POST':
-        print request.POST
         audio_source.title = request.POST['title']
         audio_source.description = request.POST['description']
         share = request.POST['share']
