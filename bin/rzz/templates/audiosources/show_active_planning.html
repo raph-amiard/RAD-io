@@ -10,6 +10,15 @@
         $(".day").attr('href', '#')
         $(el).removeAttr('href')
     }
+    $(function() {
+        scrollTo = $(".active_element");
+        container = $(".day_elements:visible");
+        if ($.contains(container[0], scrollTo[0])) {
+            container.scrollTop(
+                scrollTo.offset().top - container.offset().top
+            );
+        }
+      });
   </script>
 
   <div class="content_holder">

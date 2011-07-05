@@ -27,6 +27,17 @@ IS_PLANNING_SHOW_APP_ACTIVATED = True
 IS_PLAYLIST_APP_ACTIVATED = True
 IS_NEWS_APP_ACTIVATED = True
 IS_CONTACT_PAGE_ACTIVATED = True
+<<<<<<< HEAD:bin/rzz/radio_settings.py
+=======
+
+DATABASE_ENGINE = 'postgresql_psycopg2'
+DATABASE_NAME = 'rzz'
+DATABASE_USER = 'rzz'
+DATABASE_PASSWORD = 'rzz'
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = '5432'
+
+>>>>>>> f09125d... Program page modifications:bin/rzz/radio_settings.py
 INCLUDE_DEFAULT_CSS = True
 SHOW_ADMIN_LINK = True
 
