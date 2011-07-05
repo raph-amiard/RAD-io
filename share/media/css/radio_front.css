@@ -69,15 +69,11 @@ p, ul {
 .playlist_table, #planning_show {
     width:100%;
     border: dashed 1px black;
-<<<<<<< HEAD:share/media/css/radio_front.css
-    padding: 0.5em;
-=======
 }
 
 #planning_days_list, .day_elements {
     margin-left: 0.5em;
     margin-right: 0.5em;
->>>>>>> f09125d... Program page modifications:share/media/css/radio_front.css
 }
 
 .day_elements {
