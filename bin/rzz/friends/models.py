@@ -10,6 +10,7 @@ class Friend(models.Model):
     url = models.URLField(verify_exists=False, max_length=300, null=True, blank=True)
     description = models.CharField('Artist biography', max_length=10000)
     picture = models.ImageField(upload_to=friend_image_path, null=True,blank=True)
+    priority = models.IntegerField()
 
     def __unicode__(self):
         return self.name
