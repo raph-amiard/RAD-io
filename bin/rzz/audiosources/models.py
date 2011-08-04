@@ -236,7 +236,7 @@ class PlanningElement(models.Model):
         return d
 
     def get_time_end(self):
-        from rzz.utils.time import add_secs_to_time
+        from rzz.utils.timeutils import add_secs_to_time
         if self.type == "continuous":
             return self.time_end
         else:
