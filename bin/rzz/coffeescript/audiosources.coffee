@@ -847,6 +847,7 @@ class PlaylistComponent extends AppComponent
         @inputs =
             title: $ '#playlist_title'
             tags: $ '#audiosource_tags'
+            date_created: $ '#audiosource_date_created'
         @fields =
             title: $ '#playlist_edit_title'
             audiofiles: @tracklist.container
@@ -874,6 +875,7 @@ class PlaylistComponent extends AppComponent
         @fields.file_forms.append gen_audiofile_form().ui
         @inputs.tags.autocomplete(multicomplete_params json.tag_list)
         @inputs.tags.unbind 'blur.autocomplete'
+        @inputs.date_created.datepicker()
 
         if json.audiosource
             @audiosource = json.audiosource

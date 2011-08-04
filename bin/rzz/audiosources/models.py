@@ -124,6 +124,7 @@ class AudioSource(AudioModel):
     rzz_artist = models.ForeignKey(Artist, null=True)
     audio_files = models.ManyToManyField(AudioFile, through='SourceElement')
     share = models.BooleanField()
+    date_created = models.DateField(auto_now_add=True)
 
     def __unicode__(self):
         return self.title

@@ -1162,7 +1162,8 @@ PlaylistComponent = (function() {
     this.container = $('#playlist_edit');
     this.inputs = {
       title: $('#playlist_title'),
-      tags: $('#audiosource_tags')
+      tags: $('#audiosource_tags'),
+      date_created: $('#audiosource_date_created')
     };
     this.fields = {
       title: $('#playlist_edit_title'),
@@ -1200,6 +1201,7 @@ PlaylistComponent = (function() {
     this.fields.file_forms.append(gen_audiofile_form().ui);
     this.inputs.tags.autocomplete(multicomplete_params(json.tag_list));
     this.inputs.tags.unbind('blur.autocomplete');
+    this.inputs.date_created.datepicker();
     if (json.audiosource) {
       this.audiosource = json.audiosource;
     }

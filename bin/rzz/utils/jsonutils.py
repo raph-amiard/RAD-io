@@ -8,8 +8,12 @@ from django.http import HttpResponse
 def serialize(element):
     if type(element) == datetime.time:
         return {'minute':element.minute,'hour':element.hour}
-    else:
-        return element
+    elif type(element) == datetime.datetime:
+        return element.strftime("%s")
+    elif type(element) == datetime.date:
+        return str(element)
+
+    return element
 
 def instance_to_dict(instance, *args, **kwargs):
     fields = [f.attname for f in instance._meta._fields()]

@@ -80,6 +80,7 @@ format_length = (l) ->
     hours = fnum num_hours
     minutes = fnum Math.floor (l % 3600) / 60
     seconds = fnum Math.floor l % 60
+    return "#{minutes}m#{seconds}"
 
 time_add_length = (time, length) ->
     ntime = {}

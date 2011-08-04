@@ -138,7 +138,8 @@ format_length = function(l) {
   num_hours = Math.floor(l / 3600);
   hours = fnum(num_hours);
   minutes = fnum(Math.floor((l % 3600) / 60));
-  return seconds = fnum(Math.floor(l % 60));
+  seconds = fnum(Math.floor(l % 60));
+  return "" + minutes + "m" + seconds;
 };
 time_add_length = function(time, length) {
   var len_min, ntime;

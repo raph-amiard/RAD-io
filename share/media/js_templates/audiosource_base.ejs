@@ -109,6 +109,17 @@
 
     </form>
 
+    <div class="row">
+      <div>
+        <div class="column span-4">
+          <label for="date_created"> Date de création </label>
+        </div>
+        <div class="column span">
+          <input class="input" type="text" id="audiosource_date_created" name="date_created" value="<%= action == "edition" ? audiosource.date_created : "" %>"/>
+        </div>
+      </div>
+    </div>
+
     <div class="row last">
       <div>
         <span style="float:right;font-size:12.5px;padding:8px;" id="audiosource_form_submit">Créer la playlist</span>
