@@ -32,8 +32,13 @@ RAD|io aims to be just the administration side of the current code base. The tod
 
 ### Screenshots !
 
+Main screen
 ![Main screen](http://radiozerozero.com/site_media/public/radiosc1.jpg)
+
+Playlist editing
 ![Playlist editing](http://radiozerozero.com/site_media/public/radiosc2.jpg)
+
+Planning editing
 ![Planning editing](http://radiozerozero.com/site_media/public/radiosc3.jpg)
 
 ### Installation instructions
