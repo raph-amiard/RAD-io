@@ -16,7 +16,8 @@ Installation process is fully undocumented, and almost downright impossible for 
 
 [django]: https://www.djangoproject.com/
 [liquidsoap]:  http://savonet.sourceforge.net/
-[coffeescript]: http://coffeescript.org/
+[coffee]: http://coffeescript.org/
+[rzz]: http://www.radiozerozero.com/
 
 I'm probably forgetting some right now, streamlining the dependencies is on my todo list.
 
